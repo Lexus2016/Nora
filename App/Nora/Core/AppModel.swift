@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import MoleKit
 import Observation
@@ -39,6 +40,9 @@ final class AppModel {
     let smartCare = SmartCareModel()
     let spaceMap = SpaceMapModel()
     let history = HistoryModel()
+    let protection = ProtectionModel()
+    let tools = ToolsModel()
+    let security = SecurityModel()
 
     let home = FileManager.default.homeDirectoryForCurrentUser
 
@@ -62,6 +66,28 @@ final class AppModel {
             || FileManager.default.isReadableFile(atPath: home.appendingPathComponent("Library/Safari/Bookmarks.plist").path)
     }
 
+    /// Set by the main window so the menu bar can reopen it after it was closed.
+    @ObservationIgnored var openMainWindow: (() -> Void)?
+
+    /// Brings the main window forward, optionally on a module.
+    func showMain(_ module: Module?) {
+        if let module, module.isAvailable { selection = module }
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate()
+        if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "main" && $0.isVisible }) {
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            openMainWindow?()
+        }
+    }
+
+    /// Extra environment from Settings for every Mole command.
+    var userEnvironment: [String: String] {
+        var env: [String: String] = [:]
+        if UserDefaults.standard.bool(forKey: "moleNoOpLog") { env["MO_NO_OPLOG"] = "1" }
+        return env
+    }
+
     /// Prepares the askpass helper and undoes a whitelist overlay left by a crash.
     func prepare() {
         try? PrivilegeBroker.writeDialogAskpass(
@@ -81,6 +107,7 @@ final class AppModel {
         case .applications: apps.stage
         case .performance: performance.stage
         case .spaceMap: spaceMap.loading ? .scanning : spaceMap.stage
+        case .security: security.stage
         case .smartCare: smartCare.phase == .scanning || smartCare.phase == .running ? .running : nil
         default: nil
         }
@@ -127,7 +154,7 @@ final class AppModel {
     /// Runs a Mole command in a PTY (prompts, same-tty sudo), mirroring the screen into the console.
     func runPTY(_ arguments: [String], sudo: Bool = false, environment: [String: String] = [:]) async throws -> PTYRun.Result {
         guard let mole else { throw NoraError.moleMissing }
-        var env = mole.environment.merging(environment) { $1 }
+        var env = mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }
         if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
         let shown = mole.command(arguments, environment: environment)
         let id = console.begin(shown, prefix: sudo ? "sudo -A -v && " : "")
@@ -153,7 +180,7 @@ final class AppModel {
         _ driver: @escaping @Sendable (PTYSession) throws -> T
     ) async throws -> (value: T, result: PTYRun.Result) {
         guard let mole else { throw NoraError.moleMissing }
-        var env = mole.environment.merging(environment) { $1 }
+        var env = mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }
         if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
         let id = console.begin(mole.command(arguments, environment: environment), prefix: sudo ? "sudo -A -v && " : "")
         let console = self.console
@@ -176,7 +203,7 @@ final class AppModel {
         var out: [String] = [], err: [String] = []
         var status: Int32 = 0
         do {
-            for try await line in ProcessRunner.lines(mole.executable, arguments, environment: mole.environment.merging(environment) { $1 }) {
+            for try await line in ProcessRunner.lines(mole.executable, arguments, environment: mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }) {
                 if line.isError { err.append(line.text) } else { out.append(line.text) }
                 console.append(id, [ANSI.strip(line.text)])
             }

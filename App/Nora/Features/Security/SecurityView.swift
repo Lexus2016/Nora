@@ -74,7 +74,7 @@ private struct SecurityStart: View {
     }
 
     @ViewBuilder private func installButton(_ title: String, formula: String) -> some View {
-        if Homebrew.brew != nil {
+        if BrewTools.brew != nil {
             VStack(alignment: .leading, spacing: 6) {
                 Button(title) { model.install(formula, app) }.buttonStyle(GlassButtonStyle())
                 CommandPreview(command: "brew install \(formula)").frame(maxWidth: 420)
@@ -142,7 +142,7 @@ private struct SecurityResults: View {
             value = String(localized: "Unavailable")
             detail = String(localized: "yara is not installed, so Apple's XProtect rules do not run.")
             actionTitle = "Install with Homebrew"
-            if Homebrew.brew != nil { action = { model.install("yara", app) } }
+            if BrewTools.brew != nil { action = { model.install("yara", app) } }
         } else if model.rulesMissing {
             value = String(localized: "Unavailable")
             detail = String(localized: "Apple's XProtect rules were not found on this Mac.")
@@ -173,7 +173,7 @@ private struct SecurityResults: View {
             value = String(localized: "Not installed")
             detail = String(localized: "The antivirus scan needs ClamAV from Homebrew.")
             actionTitle = "Install ClamAV with Homebrew"
-            if Homebrew.brew != nil { action = { model.install("clamav", app) } }
+            if BrewTools.brew != nil { action = { model.install("clamav", app) } }
         } else if !model.databaseReady {
             value = String(localized: "No database")
             detail = String(localized: "Download the virus database before scanning.")

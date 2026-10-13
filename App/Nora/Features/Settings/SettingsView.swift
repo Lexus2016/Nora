@@ -1,22 +1,184 @@
 import MoleKit
+import ServiceManagement
+import Sparkle
 import SwiftUI
 
+/// Settings window (⌘,): General, Mole, Security, Updates.
 struct SettingsView: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
+        TabView {
+            GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }
+            MoleSettings().tabItem { Label("Mole", systemImage: "terminal") }
+            Form { SecuritySettingsSection(model: app.security) }
+                .formStyle(.grouped)
+                .tabItem { Label("Security", systemImage: "checkmark.shield") }
+            UpdateSettings().tabItem { Label("Updates", systemImage: "arrow.triangle.2.circlepath") }
+        }
+        .frame(width: 560, height: 470)
+    }
+}
+
+/// Menu bar tile choices: any four of six.
+enum MenuTile: String, CaseIterable, Identifiable {
+    case cpu, memory, network, disk, gpu, fan
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .cpu: "Processor"
+        case .memory: "Memory"
+        case .network: "Network"
+        case .disk: "Disk"
+        case .gpu: "Graphics"
+        case .fan: "Fan"
+        }
+    }
+
+    static let defaults: [MenuTile] = [.cpu, .memory, .network, .disk]
+
+    static var chosen: [MenuTile] {
+        let raw = UserDefaults.standard.string(forKey: "menuTiles") ?? ""
+        let tiles = raw.split(separator: ",").compactMap { MenuTile(rawValue: String($0)) }
+        return tiles.count == 4 ? tiles : defaults
+    }
+}
+
+/// How the menu bar item looks.
+enum MenuBarStyle: String, CaseIterable, Identifiable {
+    case icon, cpu, memory, both
+    var id: String { rawValue }
+    var title: LocalizedStringKey {
+        switch self {
+        case .icon: "Icon only"
+        case .cpu: "Icon and CPU"
+        case .memory: "Icon and memory"
+        case .both: "CPU and memory"
+        }
+    }
+}
+
+private struct GeneralSettings: View {
+    @AppStorage("showMenuBar") private var showMenuBar = true
+    @AppStorage("menuBarStyle") private var style = MenuBarStyle.icon.rawValue
+    @AppStorage("menuTiles") private var tilesRaw = MenuTile.defaults.map(\.rawValue).joined(separator: ",")
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var loginError: String?
+
+    var body: some View {
         Form {
-            Section("Mole") {
-                if let mole = app.mole {
-                    LabeledContent("Version", value: mole.version)
-                    LabeledContent("Location", value: mole.executable.path)
-                } else {
-                    Text("Mole is not installed.")
+            Section {
+                Toggle("Open Nora at login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, on in
+                        do {
+                            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+                            loginError = nil
+                        } catch {
+                            loginError = error.localizedDescription
+                            launchAtLogin = SMAppService.mainApp.status == .enabled
+                        }
+                    }
+                if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
+            }
+            Section("Menu bar") {
+                Toggle("Show Nora in the menu bar", isOn: $showMenuBar)
+                Picker("Menu bar item", selection: $style) {
+                    ForEach(MenuBarStyle.allCases) { Text($0.title).tag($0.rawValue) }
                 }
+                .disabled(!showMenuBar)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Tiles in the quick menu (pick four)")
+                    HStack {
+                        ForEach(MenuTile.allCases) { tile in
+                            Toggle(isOn: Binding(get: { tiles.contains(tile) }, set: { on in toggle(tile, on) })) { Text(tile.title) }
+                                .toggleStyle(.button)
+                                .disabled(!tiles.contains(tile) && tiles.count >= 4)
+                        }
+                    }
+                    Text("Shortcut: ⌥⌘N opens the quick menu.").font(.caption).foregroundStyle(.secondary)
+                }
+                .disabled(!showMenuBar)
+            }
+            Section {
+                Text("Nora follows your Mac's language: English, Ukrainian or Russian. Change it per app in System Settings → General → Language & Region → Applications.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520)
-        .padding()
     }
+
+    private var tiles: [MenuTile] { tilesRaw.split(separator: ",").compactMap { MenuTile(rawValue: String($0)) } }
+
+    private func toggle(_ tile: MenuTile, _ on: Bool) {
+        var list = tiles
+        if on, !list.contains(tile), list.count < 4 { list.append(tile) }
+        if !on { list.removeAll { $0 == tile } }
+        tilesRaw = list.map(\.rawValue).joined(separator: ",")
+    }
+}
+
+private struct MoleSettings: View {
+    @Environment(AppModel.self) private var app
+    @AppStorage("moleDebug") private var debug = false
+    @AppStorage("moleNoOpLog") private var noOpLog = false
+
+    var body: some View {
+        Form {
+            Section("Mole") {
+                LabeledContent("Version", value: app.mole?.version ?? "—")
+                LabeledContent("Location", value: app.mole?.executable.path ?? "—")
+                LabeledContent("Installed with", value: app.mole?.isHomebrew == true ? "Homebrew" : String(localized: "Mole installer"))
+                HStack {
+                    Button("Choose another mo…") {
+                        let panel = NSOpenPanel()
+                        panel.treatsFilePackagesAsDirectories = true
+                        if panel.runModal() == .OK, let url = panel.url {
+                            UserDefaults.standard.set(url.path, forKey: "molePath")
+                            Task { await app.locate() }
+                        }
+                    }
+                    Button("Find again") {
+                        UserDefaults.standard.removeObject(forKey: "molePath")
+                        Task { await app.locate() }
+                    }
+                }
+            }
+            Section("Logs") {
+                Toggle("Detailed Mole logs (--debug)", isOn: $debug)
+                Toggle("Do not write Mole's operations log (MO_NO_OPLOG)", isOn: $noOpLog)
+                Text("The History screen reads the operations log, so it stays empty while this is on.").font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Credits") {
+                Text("Nora is a window for Mole by tw93 (github.com/tw93/Mole, GPL-3.0). Nora is not affiliated with Mole.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct UpdateSettings: View {
+    @AppStorage("SUEnableAutomaticChecks") private var automatic = true
+
+    var body: some View {
+        Form {
+            Section("Nora") {
+                LabeledContent("Version", value: "\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""))")
+                Toggle("Check for updates automatically", isOn: $automatic)
+                Button("Check for updates now") { Updater.shared.checkForUpdates() }
+                Text("Updates come from GitHub Releases and are verified with Nora's EdDSA signature.").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+/// Sparkle 2 with the standard UI. The feed and public key are in Info.plist.
+@MainActor
+final class Updater {
+    static let shared = Updater()
+    let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+
+    func checkForUpdates() { controller.checkForUpdates(nil) }
 }

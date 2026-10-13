@@ -1,7 +1,7 @@
 import Foundation
 
 /// Homebrew binaries. Nora never installs anything itself; installs run only on the user's click.
-enum Homebrew {
+enum BrewTools {
     static let directories = ["/opt/homebrew/bin", "/usr/local/bin"]
     static let environment = ["PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"]
 
@@ -22,8 +22,8 @@ struct ClamAVTools: Equatable, Sendable {
     let clamdscan: URL?
 
     static func locate() -> ClamAVTools {
-        ClamAVTools(clamscan: Homebrew.locate("clamscan"), freshclam: Homebrew.locate("freshclam"),
-                    clamd: Homebrew.locate("clamd"), clamdscan: Homebrew.locate("clamdscan"))
+        ClamAVTools(clamscan: BrewTools.locate("clamscan"), freshclam: BrewTools.locate("freshclam"),
+                    clamd: BrewTools.locate("clamd"), clamdscan: BrewTools.locate("clamdscan"))
     }
 
     var isInstalled: Bool { clamscan != nil && freshclam != nil }

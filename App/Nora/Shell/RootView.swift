@@ -3,12 +3,16 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        switch app.moleState {
-        case .ready: MainView()
-        default: OnboardingView()
+        Group {
+            switch app.moleState {
+            case .ready: MainView()
+            default: OnboardingView()
+            }
         }
+        .onAppear { app.openMainWindow = { openWindow(id: "main") } }
     }
 }
 
@@ -45,6 +49,7 @@ struct MainView: View {
 
 struct ModuleDetail: View {
     let module: Module
+    @Environment(AppModel.self) private var app
 
     var body: some View {
         switch module {
@@ -57,6 +62,9 @@ struct ModuleDetail: View {
         case .smartCare: SmartCareView()
         case .spaceMap: SpaceMapView()
         case .history: HistoryView()
+        case .protection: ProtectionView()
+        case .tools: ToolsView()
+        case .security: SecurityView(model: app.security)
         default: EmptyView()
         }
     }

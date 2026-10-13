@@ -111,7 +111,7 @@ final class SecurityModel {
     var findings: [SecurityFinding] { scanFindings + watchFindings }
     var launchFlagged: Int { findings.filter { $0.source == .launchItem }.count }
     var clamavSignals: Int { findings.filter { $0.source == .clamav }.count }
-    var yaraMissing: Bool { Homebrew.locate("yara") == nil }
+    var yaraMissing: Bool { BrewTools.locate("yara") == nil }
     var rulesMissing: Bool { XProtect.rulesURL == nil }
 
     var scanCommand: String {
@@ -184,7 +184,7 @@ final class SecurityModel {
     }
 
     private func runXProtect(_ roots: [String], _ app: AppModel) async throws {
-        guard let yara = Homebrew.locate("yara"), let rules = XProtect.rulesURL else {
+        guard let yara = BrewTools.locate("yara"), let rules = XProtect.rulesURL else {
             xprotect = .notRun
             return
         }
@@ -220,7 +220,7 @@ final class SecurityModel {
         var lines: [String] = []
         var status: Int32 = 0
         do {
-            for try await line in ProcessRunner.lines(clamscan, arguments, environment: Homebrew.environment) {
+            for try await line in ProcessRunner.lines(clamscan, arguments, environment: BrewTools.environment) {
                 lines.append(line.text)
                 app.console.append(id, [line.text])
             }
@@ -242,7 +242,7 @@ final class SecurityModel {
         let id = app.console.begin(command)
         do {
             let result = try await ProcessRunner.run(URL(fileURLWithPath: command.executable), command.arguments,
-                                                     environment: Homebrew.environment)
+                                                     environment: BrewTools.environment)
             app.console.finish(id, result: result)
             return result
         } catch {
@@ -318,7 +318,7 @@ final class SecurityModel {
 
     private func isLoaded(_ label: String) async -> Bool {
         guard let result = try? await ProcessRunner.run(URL(fileURLWithPath: "/bin/launchctl"), ["list"],
-                                                        environment: Homebrew.environment) else { return false }
+                                                        environment: BrewTools.environment) else { return false }
         return result.stdout.split(separator: "\n").contains { line in
             line.split(whereSeparator: \.isWhitespace).last == Substring(label)
         }
@@ -358,11 +358,11 @@ final class SecurityModel {
 
     /// Installs a Homebrew formula. Called only from a button the user clicks.
     func install(_ formula: String, _ app: AppModel) {
-        guard task == nil, let brew = Homebrew.brew else { return }
+        guard task == nil, let brew = BrewTools.brew else { return }
         task = Task {
             defer { self.task = nil }
             do {
-                try await app.stream(ShellCommand(brew.path, ["install", formula]), environment: Homebrew.environment)
+                try await app.stream(ShellCommand(brew.path, ["install", formula]), environment: BrewTools.environment)
                 self.notice = nil
             } catch {
                 self.notice = String(localized: "brew install \(formula) did not finish. The console shows the output.")
