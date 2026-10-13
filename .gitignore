@@ -1,0 +1,34 @@
+# macOS
+.DS_Store
+._*
+
+# Local tooling artifacts (browser automation, scratch)
+.playwright-mcp/
+.lazyweb/
+*.log
+
+# Xcode / Swift
+build/
+DerivedData/
+.build/
+.swiftpm/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.moved-aside
+
+# Release artifacts are attached to GitHub Releases, not committed
+*.dmg
+*.zip
+dist/
+
+# Secrets — never commit
+.env
+.env.*
+*.p12
+*.cer
+*.mobileprovision
+*.pem
+*.key
+sparkle_private_key*
+AuthKey_*.p8
