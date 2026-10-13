@@ -283,7 +283,8 @@ struct DoneView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(Array(Self.problemsFirst(lines).enumerated()), id: \.offset) { _, line in
-                                Text(line).font(.system(size: 13))
+                                // Mole's summary lines arrive in English; Nora's own pass through.
+                                Text(MoleSummaryText.localize(line)).font(.system(size: 13))
                                     .foregroundStyle(line.hasPrefix("✕") ? Palette.crit : Palette.fg2)
                                     .textSelection(.enabled)
                             }

@@ -243,7 +243,7 @@ struct ToolsView: View {
             .labelsHidden()
             .disabled(model.externalCleaning)
             ForEach(Array(model.externalPreview.suffix(4).enumerated()), id: \.offset) { _, line in
-                Text(line).font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(1)
+                Text(MoleSummaryText.localize(line)).font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(1)
             }
             HStack {
                 Spacer()

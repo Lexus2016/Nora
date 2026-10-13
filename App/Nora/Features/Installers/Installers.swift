@@ -67,7 +67,7 @@ final class InstallersModel {
                 // The driver refuses before the final Enter, so nothing was touched.
                 failed = true
                 resultHeadline = String(localized: "Nothing was removed")
-                resultLines = [String(describing: refusal)]
+                resultLines = [Self.describe(refusal)]
             } catch {
                 // After the confirmation some files may already be in the Trash.
                 failed = true
@@ -80,6 +80,26 @@ final class InstallersModel {
 
     func stop() { task?.cancel() }
     func reset() { stage = .start; files = []; selected = [] }
+
+    /// Why the driver stopped before the final confirmation, in words. Nothing was touched.
+    static func describe(_ refusal: InstallerDriverError) -> String {
+        switch refusal {
+        case .targetNotListed(let name):
+            String(localized: "\(name) is no longer in Mole's list. Scan again.")
+        case .targetListedTwice(let name):
+            String(localized: "Mole lists \(name) twice, so Nora cannot tell which file you chose.")
+        case .sourceNotAllowed(let name, let source):
+            String(localized: "\(name) is now listed from another folder (\(source)). Scan again.")
+        case .targetChanged(let name):
+            String(localized: "\(name) changed since the scan. Scan again.")
+        case .preselected:
+            String(localized: "Mole had files selected in advance, so Nora stopped.")
+        case .paginated:
+            String(localized: "Mole's list is longer than one screen. Remove fewer installers at once.")
+        case .selectionMismatch, .reviewMismatch:
+            String(localized: "Mole's confirmation did not match your choice, so Nora cancelled it.")
+        }
+    }
 }
 
 struct InstallersView: View {

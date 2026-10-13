@@ -155,7 +155,7 @@ private struct ProjectsReview: View {
                 if !preview.isComplete {
                     Notice(text: String(localized: "Some project folders could not be scanned completely, so nothing was removed. Scan again, or limit the folders in Protection."))
                 }
-                ForEach(Array(preview.warnings.prefix(2).enumerated()), id: \.offset) { _, w in Notice(text: w, symbol: "info.circle", color: Palette.fg2) }
+                ForEach(Array(preview.warnings.prefix(2).enumerated()), id: \.offset) { _, w in Notice(text: MoleSummaryText.localize(w), symbol: "info.circle", color: Palette.fg2) }
                 if preview.items.isEmpty {
                     Text("No old build folders found.").font(.system(size: 15)).foregroundStyle(Palette.fg2)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

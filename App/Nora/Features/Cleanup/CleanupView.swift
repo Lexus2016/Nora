@@ -106,7 +106,9 @@ private struct CleanupNotes: View {
                 ForEach(Array(shown.enumerated()), id: \.offset) { _, note in
                     if note.text.localizedCaseInsensitiveContains("Full Disk Access") && !app.hasFullDiskAccess {
                         HStack {
-                            Notice(text: String(localized: "\(note.text.components(separatedBy: " · ").first ?? note.section): skipped until Nora has Full Disk Access."), symbol: "lock.shield")
+                            // Mole's item label ("Trash"), translated when Nora's catalog knows it.
+                            let label = note.text.components(separatedBy: " · ").first ?? note.section
+                            Notice(text: String(localized: "\(Bundle.main.localizedString(forKey: label, value: label, table: nil)): skipped until Nora has Full Disk Access."), symbol: "lock.shield")
                             Button("Open settings") { Permissions.openFullDiskAccess() }.buttonStyle(.link)
                         }
                     }
