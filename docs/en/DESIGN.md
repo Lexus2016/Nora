@@ -278,4 +278,5 @@ Tests: parser tests on fixtures recorded from real runs (CI matrix with `brew in
 - **CLI drift:** text parsers break with new versions. Mitigation: capability probing, golden fixtures, CI against the current Mole, upstream JSON.
 - **PTY driver** is brittle. Mitigation: on-screen verification before confirming, fallback embedded terminal.
 - **Competitors:** mole.fit (official, $19) and Burrow (free, MIT). Our edge: honest selection, a neon 3D design and full CLI coverage without our own engine.
-- **Permissions:** Full Disk Access, notarization, the askpass helper (signed, minimal).
+- **Permissions:** Full Disk Access, notarization, the askpass helper (signed, minimal), and Automation access to System Events (`NSAppleEventsUsageDescription`): every real `mo uninstall` removes login items through AppleScript, so macOS asks on the first uninstall.
+- **App personal data (`D`):** `mo uninstall <name>` offers no `D` key; it exists only in the interactive TUI. The "personal data" toggle in Apps has no mechanism yet and is an M2 item. The e2e tests also do not yet cover the default Trash path or the System Events step, because they run with `MOLE_TEST_NO_AUTH=1 --permanent`.
