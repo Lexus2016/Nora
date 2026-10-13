@@ -149,7 +149,12 @@ public final class PTYSession: @unchecked Sendable {
         // whole group, not just the leader.
         let deadline = Date().addingTimeInterval(grace)
         while Date() < deadline, exitStatus == nil || ChildProcesses.groupAlive(pid) { usleep(50_000) }
-        if exitStatus == nil || ChildProcesses.groupAlive(pid) { kill(-pid, SIGKILL) }
+        guard exitStatus == nil || ChildProcesses.groupAlive(pid) else { return }
+        kill(-pid, SIGKILL)
+        // Returns once the group is really gone, so a caller that puts the whitelist back
+        // next never does it under a helper that is still dying.
+        let hard = Date().addingTimeInterval(1)
+        while Date() < hard, exitStatus == nil || ChildProcesses.groupAlive(pid) { usleep(20_000) }
     }
 
     public func close() {

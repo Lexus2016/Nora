@@ -1679,6 +1679,22 @@
         }
       }
     },
+    "A cleaning task is running. Scan again when it finishes.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Идёт очистка. Просканируйте снова, когда она завершится."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Триває очищення. Скануйте знову, коли воно завершиться."
+          }
+        }
+      }
+    },
     "A file already exists at %@. Move it away first.": {
       "localizations": {
         "ru": {

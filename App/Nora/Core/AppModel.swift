@@ -76,6 +76,11 @@ final class AppModel {
         if exclusiveRun == id { exclusiveRun = nil }
     }
 
+    /// A preview taken now would not see what the running task protects for itself.
+    var exclusiveRunActive: Bool { exclusiveRun != nil || overlay.needsRecovery }
+
+    static let busyScanMessage = String(localized: "A cleaning task is running. Scan again when it finishes.")
+
     /// Full Disk Access lets Mole clean the Trash and app containers. Mole runs as Nora's
     /// child, so the permission belongs to Nora.
     var hasFullDiskAccess: Bool {

@@ -42,6 +42,7 @@
  ".venv, __pycache__, .gradle",
  "/s",
  "A cleaning task is running. Change this list when it finishes.",
+ "A cleaning task is running. Scan again when it finishes.",
  "A file already exists at %@. Move it away first.",
  "Activity History",
  "Adapter",

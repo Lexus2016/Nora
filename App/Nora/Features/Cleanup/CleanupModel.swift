@@ -33,6 +33,8 @@ final class CleanupModel {
     }
 
     func scan(_ app: AppModel) {
+        // Under another run's temporary whitelist the preview would miss what that run protects.
+        guard !app.exclusiveRunActive else { error = AppModel.busyScanMessage; return }
         error = nil
         stage = .scanning
         task = Task {

@@ -104,12 +104,12 @@ public enum ChildProcesses {
     }
 
     private static func waitUntilGone(_ deadline: Date) -> Bool {
-        repeat {
+        while true {
             let (children, leaders) = lock.withLock { (Array(running.values), Array(groups)) }
             if !children.contains(where: \.isRunning) && !leaders.contains(where: groupAlive) { return true }
+            guard Date() < deadline else { return false }
             usleep(50_000)
-        } while Date() < deadline
-        return false
+        }
     }
 
     /// Call right after `run()`: stops a child that was launched after Nora began quitting or

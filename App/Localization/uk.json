@@ -640,5 +640,6 @@
   "Downloading the virus database…": "Завантажую вірусну базу…",
   "The virus database could not be updated, so this scan used the copy already on this Mac.": "Вірусну базу не вдалося оновити, тому сканування пройшло з копією, що вже є на цьому Mac.",
   "The virus database could not be updated, so this scan used the copy from %@.": "Вірусну базу не вдалося оновити, тому сканування пройшло з копією від %@.",
-  "Updating the virus database": "Оновлюю вірусну базу"
+  "Updating the virus database": "Оновлюю вірусну базу",
+  "A cleaning task is running. Scan again when it finishes.": "Триває очищення. Скануйте знову, коли воно завершиться."
 }
