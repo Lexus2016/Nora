@@ -23,7 +23,7 @@ struct MainView: View {
             SceneBackground(palette: app.selection.palette)
                 .animation(.easeInOut(duration: 0.45), value: app.selection)
             HStack(spacing: 0) {
-                Rail(selection: $app.selection)
+                Rail(selection: $app.selection).zIndex(2)
                 ModuleDetail(module: app.selection)
                     .id(app.selection)
                     .transition(.opacity)
@@ -39,6 +39,7 @@ struct MainView: View {
         .animation(.easeOut(duration: 0.22), value: app.selection)
         .animation(.easeOut(duration: 0.22), value: app.showConsole)
         .background(Button("") { app.showConsole.toggle() }.keyboardShortcut("j", modifiers: .command).hidden())
+        .background(WindowReader { window in app.orb.attach(to: window, app: app) })
     }
 }
 
@@ -52,6 +53,8 @@ struct ModuleDetail: View {
         case .projects: ProjectsView()
         case .installers: InstallersView()
         case .applications: ApplicationsView()
+        case .performance: PerformanceView()
+        case .smartCare: SmartCareView()
         default: EmptyView()
         }
     }
@@ -62,6 +65,9 @@ struct Rail: View {
     static let width: CGFloat = 84
     @Binding var selection: Module
     @Environment(AppModel.self) private var app
+    @State private var hovered: Module?
+    @State private var tooltip: Module?
+    @State private var hoverTask: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 6) {
@@ -109,9 +115,56 @@ struct Rail: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(Text(module.title))
         .accessibilityLabel(Text(module.title))
+        .accessibilityHint(Text(LocalizedStringKey(module.summary)))
+        .onHover { inside in
+            hoverTask?.cancel()
+            if inside {
+                hovered = module
+                hoverTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 350_000_000)
+                    if !Task.isCancelled, hovered == module { tooltip = module }
+                }
+            } else if hovered == module {
+                hovered = nil
+                tooltip = nil
+            }
+        }
+        .overlay(alignment: .leading) {
+            if tooltip == module {
+                RailTooltip(module: module)
+                    .offset(x: 66)
+                    .transition(.opacity.combined(with: .offset(x: -6)))
+                    .allowsHitTesting(false)
+            }
+        }
+        .zIndex(tooltip == module ? 1 : 0)
+        .animation(.easeOut(duration: 0.16), value: tooltip)
         .animation(.easeOut(duration: 0.2), value: isSelected)
+    }
+}
+
+/// The rail's hover card: the module's name and what it does, on frosted glass with a tint.
+struct RailTooltip: View {
+    let module: Module
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            FeatureDisc(symbol: module.symbol, tint: module.palette.glow, size: 32)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(module.title).font(.system(size: 14, weight: .semibold))
+                Text(LocalizedStringKey(module.summary)).font(.system(size: 12)).foregroundStyle(Palette.fg2)
+                    .lineLimit(3).frame(width: 220, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 11)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(hex: 0x1A1030, opacity: 0.92)))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .strokeBorder(LinearGradient(colors: [module.palette.glow.opacity(0.7), .white.opacity(0.1)], startPoint: .top, endPoint: .bottom), lineWidth: 0.8))
+        .shadow(color: .black.opacity(0.45), radius: 16, y: 8)
+        .shadow(color: module.palette.glow.opacity(0.25), radius: 18)
+        .fixedSize()
     }
 }
 

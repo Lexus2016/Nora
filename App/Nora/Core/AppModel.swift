@@ -30,10 +30,13 @@ final class AppModel {
     var showConsole = false
     let console = ConsoleLog()
     let status = StatusStore()
+    let orb = OrbController()
     let cleanup = CleanupModel()
     let projects = ProjectsModel()
     let installers = InstallersModel()
     let apps = AppsModel()
+    let performance = PerformanceModel()
+    let smartCare = SmartCareModel()
 
     let home = FileManager.default.homeDirectoryForCurrentUser
 
@@ -74,6 +77,8 @@ final class AppModel {
         case .projects: projects.stage
         case .installers: installers.stage
         case .applications: apps.stage
+        case .performance: performance.stage
+        case .smartCare: smartCare.phase == .scanning || smartCare.phase == .running ? .running : nil
         default: nil
         }
         return stage == .scanning || stage == .running

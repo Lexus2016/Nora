@@ -12,34 +12,35 @@ struct Feature: Identifiable {
     var id: String { symbol }
 }
 
-/// The frame of every module step: top bar, content, and the round action at the bottom centre
-/// that sits half over the window edge.
+/// The frame of every module step: top bar and content. The round action is published to
+/// `OrbController`, which draws it in a child window over the window's bottom edge.
 struct ModuleScene<Content: View>: View {
     let module: Module
     var leading: TopBarAction?
     var orb: OrbAction?
     @ViewBuilder var content: Content
+    @Environment(AppModel.self) private var app
+    @State private var owner = UUID()
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            VStack(spacing: 0) {
-                TopBar(title: module.title, leading: leading)
-                content.frame(maxWidth: .infinity, maxHeight: .infinity)
-                if orb != nil { Color.clear.frame(height: 112) }
-            }
-            if let orb {
-                BottomOrb(action: orb, palette: module.palette)
-                    .padding(.bottom, -12)
-            }
+        VStack(spacing: 0) {
+            TopBar(title: module.title, leading: leading)
+            content.frame(maxWidth: .infinity, maxHeight: .infinity)
+            Color.clear.frame(height: orb == nil ? 16 : 78)
         }
+        .onAppear { app.orb.publish(orb, palette: module.palette, owner: owner) }
+        .onChange(of: orb?.signature) { app.orb.publish(orb, palette: module.palette, owner: owner) }
+        .onDisappear { app.orb.withdraw(owner: owner) }
     }
 }
 
 struct OrbAction {
-    let title: LocalizedStringKey
+    let title: String
     var busy = false
     var destructive = false
     let action: () -> Void
+
+    var signature: String { "\(title)|\(busy)|\(destructive)" }
 }
 
 /// The big round action button with a specular highlight; busy shows a spinning ring.
@@ -54,19 +55,19 @@ struct BottomOrb: View {
             ZStack {
                 Circle()
                     .fill(RadialGradient(colors: [tint.blend(with: .white, by: 0.35), tint, tint.blend(with: palette.depth, by: 0.45)],
-                                         center: UnitPoint(x: 0.5, y: 0.25), startRadius: 2, endRadius: 78))
+                                         center: UnitPoint(x: 0.5, y: 0.25), startRadius: 2, endRadius: 64))
                 Circle().strokeBorder(.white.opacity(0.6), lineWidth: 1.6)
                 Ellipse()
                     .fill(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0)], startPoint: .top, endPoint: .bottom))
-                    .frame(width: 80, height: 34).offset(y: -38).blur(radius: 1.5)
-                Text(action.title)
-                    .font(.system(size: 18, weight: .medium))
+                    .frame(width: 64, height: 27).offset(y: -30).blur(radius: 1.5)
+                Text(LocalizedStringKey(action.title))
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
                     .lineLimit(1).minimumScaleFactor(0.7)
                     .padding(.horizontal, 12)
             }
-            .frame(width: 128, height: 128)
+            .frame(width: OrbController.diameter, height: OrbController.diameter)
             .overlay {
                 if action.busy {
                     Circle().trim(from: 0, to: 0.22)
@@ -85,7 +86,7 @@ struct BottomOrb: View {
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .keyboardShortcut(.defaultAction)
-        .accessibilityLabel(Text(action.title))
+        .accessibilityLabel(Text(LocalizedStringKey(action.title)))
     }
 
     private var tint: Color { action.destructive ? Palette.pink : palette.glow.blend(with: palette.body, by: 0.25) }
@@ -97,19 +98,14 @@ struct ModuleStart<Extra: View>: View {
     let subtitle: LocalizedStringKey
     let features: [Feature]
     let command: String
-    var scanTitle: LocalizedStringKey = "Scan"
+    var scanTitle: String = "Scan"
     let action: () -> Void
     @ViewBuilder var extra: Extra
-    @State private var float = false
 
     var body: some View {
         ModuleScene(module: module, orb: OrbAction(title: scanTitle, action: action)) {
             HStack(spacing: 56) {
-                GlassImage(name: module.glass, size: 340, glow: module.palette.glow)
-                    .offset(y: float ? -8 : 8)
-                    .rotation3DEffect(.degrees(float ? 3 : -3), axis: (x: 0.4, y: 1, z: 0))
-                    .animation(.easeInOut(duration: 3.4).repeatForever(autoreverses: true), value: float)
-                    .onAppear { float = true }
+                Glass3D(name: module.glass, size: 340, glow: module.palette.glow, amplitude: 9, period: 7)
                 VStack(alignment: .leading, spacing: 18) {
                     Text(module.title)
                         .font(.system(size: 54, weight: .light))
@@ -137,7 +133,7 @@ struct ModuleStart<Extra: View>: View {
 
 extension ModuleStart where Extra == EmptyView {
     init(module: Module, subtitle: LocalizedStringKey, features: [Feature], command: String,
-         scanTitle: LocalizedStringKey = "Scan", action: @escaping () -> Void) {
+         scanTitle: String = "Scan", action: @escaping () -> Void) {
         self.init(module: module, subtitle: subtitle, features: features, command: command, scanTitle: scanTitle,
                   action: action, extra: { EmptyView() })
     }
@@ -169,17 +165,12 @@ struct WorkingView: View {
     let title: LocalizedStringKey
     var detail: String?
     var onStop: (() -> Void)?
-    @State private var pulse = false
 
     var body: some View {
         ModuleScene(module: module, orb: onStop.map { OrbAction(title: "Stop", busy: true, action: $0) }) {
             VStack(spacing: 26) {
                 Spacer(minLength: 0)
-                GlassImage(name: module.glass, size: 300, glow: module.palette.glow)
-                    .scaleEffect(pulse ? 1.03 : 0.97)
-                    .shadow(color: module.palette.glow.opacity(pulse ? 0.85 : 0.3), radius: pulse ? 50 : 20)
-                    .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: pulse)
-                    .onAppear { pulse = true }
+                Glass3D(name: module.glass, size: 300, glow: module.palette.glow)
                 VStack(spacing: 10) {
                     Text(title).font(.system(size: 46, weight: .light))
                     Text(detail ?? " ").font(.system(size: 15)).foregroundStyle(Palette.fg2)
@@ -244,9 +235,9 @@ struct CategoryCard: View {
                 GlassImage(name: glass, size: 300, glow: tint).offset(x: -40, y: 70).opacity(0.95)
             }
         }
-        .background(shape.fill(.white.opacity(0.07)))
+        .background(VolumeFill(radius: 22))
         .clipShape(shape)
-        .glassPanel(radius: 22)
+        .volumeCard(radius: 22, tint: tint)
     }
 }
 
@@ -385,5 +376,68 @@ struct ReviewFooter: View {
             if let note { Text(note).font(.system(size: 11)).foregroundStyle(Palette.muted) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Gentle left-right rocking around the vertical axis with perspective, so a glass object shows
+/// its depth while its module works.
+struct Rocking: ViewModifier {
+    var amplitude: Double = 24
+    var period: Double = 2.6
+    @State private var phase = false
+
+    func body(content: Content) -> some View {
+        content
+            .rotation3DEffect(.degrees(phase ? amplitude : -amplitude), axis: (x: 0.12, y: 1, z: 0.04), anchor: .center, perspective: 0.55)
+            .rotation3DEffect(.degrees(phase ? -4 : 4), axis: (x: 1, y: 0, z: 0), perspective: 0.55)
+            .offset(y: phase ? -5 : 5)
+            .brightness(phase ? 0.05 : -0.03)
+            .animation(.easeInOut(duration: period / 2).repeatForever(autoreverses: true), value: phase)
+            .onAppear { phase = true }
+    }
+}
+
+extension View {
+    func rocking(amplitude: Double = 24, period: Double = 2.6) -> some View {
+        modifier(Rocking(amplitude: amplitude, period: period))
+    }
+
+    /// A card with depth: lit top edge, soft inner shade at the bottom, deep drop shadow.
+    func volumeCard(radius: CGFloat, tint: Color) -> some View {
+        modifier(VolumeCard(radius: radius, tint: tint))
+    }
+}
+
+/// The body of a volume card: lighter at the top, darker at the bottom.
+struct VolumeFill: View {
+    let radius: CGFloat
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        shape.fill(LinearGradient(colors: [.white.opacity(0.17), .white.opacity(0.07), .black.opacity(0.1)],
+                                  startPoint: .top, endPoint: .bottom))
+    }
+}
+
+struct VolumeCard: ViewModifier {
+    let radius: CGFloat
+    let tint: Color
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        content
+            .background(.ultraThinMaterial.opacity(0.35), in: shape)
+            .overlay(
+                shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.55), .white.opacity(0.12), .white.opacity(0.04), .black.opacity(0.25)],
+                                                  startPoint: .top, endPoint: .bottom), lineWidth: 1.1)
+            )
+            .overlay(alignment: .top) {
+                // Specular line along the top edge.
+                shape.inset(by: 1.5).trim(from: 0.0, to: 1.0)
+                    .stroke(LinearGradient(colors: [.white.opacity(0.35), .clear], startPoint: .top, endPoint: .center), lineWidth: 1)
+                    .blendMode(.plusLighter)
+            }
+            .shadow(color: .black.opacity(0.38), radius: 22, x: 0, y: 16)
+            .shadow(color: tint.opacity(0.16), radius: 30, x: 0, y: 0)
     }
 }

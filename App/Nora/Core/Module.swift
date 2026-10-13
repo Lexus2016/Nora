@@ -7,7 +7,10 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
 
     var id: String { rawValue }
 
-    var title: LocalizedStringKey {
+    var title: LocalizedStringKey { LocalizedStringKey(titleText) }
+
+    /// English source title; the String Catalog translates it.
+    var titleText: String {
         switch self {
         case .smartCare: "Smart Care"
         case .cleanup: "Cleanup"
@@ -21,6 +24,24 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
         case .security: "Security"
         case .history: "History"
         case .tools: "Tools"
+        }
+    }
+
+    /// One line for the rail's hover card.
+    var summary: String {
+        switch self {
+        case .smartCare: "One scan for junk, maintenance, build folders and installers."
+        case .cleanup: "Caches, logs and leftovers of removed apps. You review every item."
+        case .applications: "Remove apps together with their helpers, caches and settings."
+        case .performance: "Refresh caches and services, see what slows your Mac."
+        case .spaceMap: "See what takes your disk space and move it to the Trash."
+        case .status: "Live CPU, memory, disk, network, battery and temperatures."
+        case .projects: "Old build folders of your code projects: node_modules, target, build."
+        case .installers: "Disk images and installers you no longer need."
+        case .protection: "Paths and tasks Mole must never touch."
+        case .security: "Launch items, signatures and an antivirus scan."
+        case .history: "What Nora and Mole cleaned, and when."
+        case .tools: "Touch ID for sudo, external drives, Mole updates."
         }
     }
 
@@ -81,7 +102,7 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
 
     var isAvailable: Bool { Module.ready.contains(self) }
 
-    static let ready: Set<Module> = [.status, .cleanup, .projects, .installers, .applications]
+    static let ready: Set<Module> = [.smartCare, .status, .cleanup, .projects, .installers, .applications, .performance]
 
     static var groups: [(LocalizedStringKey?, [Module])] { [
         (nil, [.smartCare]),
@@ -100,7 +121,7 @@ struct GlassImage: View {
 
     var body: some View {
         Group {
-            if let url = Bundle.main.url(forResource: name, withExtension: "webp"), let image = NSImage(contentsOf: url) {
+            if let image = GlassLibrary.image(name) {
                 Image(nsImage: image).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
             } else {
                 Image(systemName: "circle.hexagongrid").resizable().aspectRatio(contentMode: .fit).foregroundStyle(.white.opacity(0.3))
