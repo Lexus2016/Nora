@@ -84,6 +84,11 @@ final class SecurityModel {
     var watchActive = false
     var clamav = ClamAVTools.locate()
     var databaseReady = false
+    /// The formula `brew install` is working on, for the button's busy state.
+    private(set) var installing: String?
+    /// Programs of the current launch items, read when the screen opens, so the scan command
+    /// preview lists the same paths a Quick scan will cover.
+    private(set) var previewLaunchPaths: [String] = []
 
     @ObservationIgnored private let home: URL
     @ObservationIgnored private let layout: ClamAVLayout
@@ -114,19 +119,23 @@ final class SecurityModel {
     var yaraMissing: Bool { BrewTools.locate("yara") == nil }
     var rulesMissing: Bool { XProtect.rulesURL == nil }
 
+    /// The ClamAV step of a scan as it can be pasted into Terminal: real paths, quoted.
     var scanCommand: String {
-        "clamscan -r --infected --no-summary -d \(Self.shortPath(layout.database.path)) \(scope.commandPaths)"
+        let plan = ScanPlanner.plan(scope, home: home, launchPaths: previewLaunchPaths)
+        let arguments = ClamScanParser.arguments(database: layout.database, roots: plan.roots)
+        return ShellCommand(clamav.clamscan?.path ?? "clamscan", arguments).description
     }
 
-    var quarantineCommand: String {
-        let picked = findings.filter { checked.contains($0.id) }
-        guard !picked.isEmpty else { return String(localized: "Tick findings to quarantine them") }
-        return picked.map { item -> String in
-            let path = Self.shortPath(item.path)
-            guard let label = item.launchLabel else { return "move \(path) to Quarantine" }
-            return "launchctl bootout gui/\(getuid())/\(label) (if loaded); move \(path) to Quarantine"
-        }
-        .joined(separator: "; ")
+    /// Quarantine itself is a file move inside Nora, not a shell command. The only command it runs
+    /// is unloading a ticked launch agent, so that is what the footer shows.
+    var quarantineCommand: String? {
+        let labels = findings.filter { checked.contains($0.id) }.compactMap(\.launchLabel)
+        guard !labels.isEmpty else { return nil }
+        return labels.map { ShellCommand("/bin/launchctl", ["bootout", "gui/\(getuid())/\($0)"]).description }.joined(separator: "; ")
+    }
+
+    func loadPreviewLaunchPaths() async {
+        previewLaunchPaths = await LaunchAudit.scan(LaunchAudit.defaultDirectories).items.compactMap(\.program)
     }
 
     var databaseStatus: String {
@@ -358,9 +367,14 @@ final class SecurityModel {
 
     /// Installs a Homebrew formula. Called only from a button the user clicks.
     func install(_ formula: String, _ app: AppModel) {
-        guard task == nil, let brew = BrewTools.brew else { return }
+        guard task == nil else { return }
+        guard let brew = BrewTools.brew else {
+            notice = String(localized: "Homebrew was not found. Install Homebrew first.")
+            return
+        }
+        installing = formula
         task = Task {
-            defer { self.task = nil }
+            defer { self.task = nil; self.installing = nil }
             do {
                 try await app.stream(ShellCommand(brew.path, ["install", formula]), environment: BrewTools.environment)
                 self.notice = nil

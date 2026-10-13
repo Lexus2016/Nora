@@ -25,6 +25,7 @@ struct SecurityView: View {
             }
         }
         .onAppear { model.refreshTools() }
+        .task { await model.loadPreviewLaunchPaths() }
     }
 }
 
@@ -76,11 +77,22 @@ private struct SecurityStart: View {
     @ViewBuilder private func installButton(_ title: String, formula: String) -> some View {
         if BrewTools.brew != nil {
             VStack(alignment: .leading, spacing: 6) {
-                Button(title) { model.install(formula, app) }.buttonStyle(GlassButtonStyle())
+                HStack(spacing: 10) {
+                    Button(title) { model.install(formula, app) }
+                        .buttonStyle(GlassButtonStyle())
+                        .disabled(model.installing != nil)
+                    if model.installing == formula {
+                        ProgressView().controlSize(.small).tint(.white)
+                        Text("Installing…").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+                    }
+                }
                 CommandPreview(command: "brew install \(formula)").frame(maxWidth: 420)
             }
         } else {
-            Notice(text: String(localized: "Homebrew was not found. Install Homebrew first."))
+            HStack(spacing: 10) {
+                Notice(text: String(localized: "Homebrew was not found. Install Homebrew first."))
+                Link("brew.sh", destination: URL(string: "https://brew.sh")!).font(.system(size: 12, weight: .semibold))
+            }
         }
     }
 }
@@ -299,7 +311,7 @@ private struct SecurityList: View {
             ReviewFooter(command: model.quarantineCommand,
                          note: String(localized: "Quarantine moves each ticked file into Nora's folder. Restore brings it back in one click."))
         case .quarantine:
-            ReviewFooter(command: "mv <quarantined file> <original path>",
+            ReviewFooter(command: nil,
                          note: String(localized: "Restoring does not load a launch agent again. It starts at the next login or when you load it yourself."))
         }
     }

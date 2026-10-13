@@ -3,7 +3,14 @@ import Foundation
 /// Homebrew binaries. Nora never installs anything itself; installs run only on the user's click.
 enum BrewTools {
     static let directories = ["/opt/homebrew/bin", "/usr/local/bin"]
-    static let environment = ["PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"]
+
+    /// ProcessRunner replaces the whole environment, and brew refuses to run without HOME, so the
+    /// inherited variables stay and only PATH and Homebrew's own switches are set.
+    static var environment: [String: String] {
+        ProcessInfo.processInfo.environment
+            .merging(["PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"]) { $1 }
+            .merging(Homebrew.variables) { $1 }
+    }
 
     static func locate(_ name: String) -> URL? {
         directories.lazy

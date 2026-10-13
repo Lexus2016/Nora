@@ -128,7 +128,7 @@ struct SmartCareView: View {
                                    Feature(symbol: "bolt", text: "Maintenance tasks"),
                                    Feature(symbol: "hammer", text: "Old build folders"),
                                    Feature(symbol: "shippingbox", text: "Installers you no longer need")],
-                        command: "mo clean --dry-run · mo optimize --dry-run · mo purge --dry-run · mo installer --dry-run",
+                        command: "mo clean --dry-run; mo optimize --dry-run; mo purge --dry-run; mo installer --dry-run",
                         action: { model.scan(app) }) {
                 if !app.hasFullDiskAccess {
                     HStack(spacing: 10) {

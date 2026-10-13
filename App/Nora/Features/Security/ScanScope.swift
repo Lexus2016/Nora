@@ -20,14 +20,6 @@ enum ScanScope: String, CaseIterable, Identifiable, Sendable {
         case .full: "Your home folder. iCloud folders are skipped."
         }
     }
-
-    /// The paths shown in the exact command preview.
-    var commandPaths: String {
-        switch self {
-        case .quick: "<launch items> /Applications ~/Downloads ~/Desktop"
-        case .full: "~"
-        }
-    }
 }
 
 enum ScanCadence: String, CaseIterable, Identifiable, Sendable {

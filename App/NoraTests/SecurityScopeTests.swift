@@ -56,3 +56,12 @@ final class SecurityScopeTests: XCTestCase {
         XCTAssertEqual(plan.skippedICloud, 0)
     }
 }
+
+final class BrewEnvironmentTests: XCTestCase {
+    /// brew exits with "$HOME must be set to run brew" when the environment lacks HOME.
+    func testBrewEnvironmentKeepsHome() {
+        XCTAssertNotNil(BrewTools.environment["HOME"])
+        XCTAssertEqual(BrewTools.environment["PATH"], "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
+        XCTAssertEqual(BrewTools.environment["HOMEBREW_NO_AUTO_UPDATE"], "1")
+    }
+}

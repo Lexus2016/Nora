@@ -104,7 +104,8 @@ struct InfoRow: View {
     }
 }
 
-/// The exact command an action will run, always shown before it runs.
+/// The exact command an action will run, always shown before it runs. The copy button gives the
+/// Terminal form: `sudo -A` needs Nora's password dialog, so it is copied as plain `sudo`.
 struct CommandPreview: View {
     let command: String
 
@@ -115,7 +116,7 @@ struct CommandPreview: View {
             Spacer(minLength: 0)
             Button {
                 NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(command, forType: .string)
+                NSPasteboard.general.setString(command.replacingOccurrences(of: "sudo -A ", with: "sudo "), forType: .string)
             } label: { Image(systemName: "doc.on.doc") }
             .buttonStyle(.plain)
             .help(Text("Copy command"))
