@@ -48,6 +48,25 @@ public struct UninstallDriver {
         session.send(.enter)
     }
 
+    /// Runs inside `mo uninstall --dry-run <name>`: confirms the match, reads the removal plan
+    /// and cancels with ESC. Returns the entries as Mole prints them (`~/…` for the home).
+    public func preview(app name: String, in session: PTYSession) throws -> [String] {
+        let matched = try session.awaitMoleScreen(timeout: scanTimeout, "app match") { lines in
+            lines.contains { $0.hasPrefix("Proceed with uninstallation? [y/N]") }
+        }
+        let apps = Self.parseMatches(matched)
+        guard apps == [name] else {
+            session.write("n\r")
+            throw UninstallDriverError.matchMismatch(expected: name, onScreen: apps)
+        }
+        session.write("y\r")
+        let review = try session.awaitMoleScreen(timeout: scanTimeout, "removal plan") { lines in
+            lines.contains("Files to be removed:") && lines.contains { $0.contains("Enter confirm, ESC cancel") }
+        }
+        session.send(.escape)
+        return (RemovalList(review) ?? RemovalList()).entries
+    }
+
     /// `1. Slack  512MB  |  Last: Today` → `Slack`.
     public static func parseMatches(_ lines: [String]) -> [String] {
         guard let start = lines.firstIndex(where: { $0.contains("Matched ") && $0.contains("app(s):") }) else { return [] }

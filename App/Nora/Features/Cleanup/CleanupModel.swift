@@ -10,6 +10,9 @@ final class CleanupModel {
     var preview: CleanPreview?
     var selected: Set<String> = []
     var includeSystem = false
+    /// The detailed list is open: `nil` section means every section.
+    var showList = false
+    var listSection: String?
     var error: String?
     var resultHeadline = ""
     var resultLines: [String] = []
@@ -121,9 +124,30 @@ final class CleanupModel {
     }
 
     func reset() {
+        showList = false
+        listSection = nil
         stage = .start
         preview = nil
         selected = []
+    }
+
+    func sectionSize(_ section: String) -> Int64 { items(in: section).reduce(0) { $0 + $1.size } }
+
+    /// Sections, largest first, without empty ones.
+    var rankedSections: [String] {
+        (preview?.sections ?? []).filter { sectionSize($0) > 0 }.sorted { sectionSize($0) > sectionSize($1) }
+    }
+
+    /// One-click clean of one section: everything outside it is protected for this run.
+    func clean(section: String, _ app: AppModel) {
+        let inSection = Set(items(in: section).map(\.path))
+        selected = selected.intersection(inSection).isEmpty ? inSection : selected.intersection(inSection)
+        clean(app)
+    }
+
+    func openList(_ section: String?) {
+        listSection = section
+        showList = true
     }
 
     func setSection(_ section: String, on: Bool) {

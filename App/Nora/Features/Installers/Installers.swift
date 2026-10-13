@@ -1,0 +1,136 @@
+import MoleKit
+import Observation
+import SwiftUI
+
+/// Installers: the list from Mole's own menu (`mo installer --dry-run` in a PTY), then the menu
+/// driver selects exactly the chosen files and checks Mole's removal list before confirming.
+/// `MOLE_DELETE_MODE=trash` sends them to the Trash instead of deleting them.
+@MainActor @Observable
+final class InstallersModel {
+    struct File: Identifiable, Hashable {
+        let name: String
+        let sizeText: String
+        let source: String
+        var id: String { name + "|" + source }
+        var size: Int64 { MoleSize.parse(sizeText) ?? 0 }
+    }
+
+    var stage: FlowStage = .start
+    var files: [File] = []
+    var selected: Set<String> = []
+    var error: String?
+    var resultHeadline = ""
+    var resultLines: [String] = []
+    var failed = false
+    @ObservationIgnored private var task: Task<Void, Never>?
+
+    static let trashEnvironment = ["MOLE_DELETE_MODE": "trash"]
+
+    var selectedSize: Int64 { files.filter { selected.contains($0.id) }.reduce(0) { $0 + $1.size } }
+
+    func scan(_ app: AppModel) {
+        error = nil
+        stage = .scanning
+        task = Task {
+            do {
+                let (rows, _) = try await app.drive(["installer", "--dry-run"]) { session in
+                    try InstallerDriver().list(in: session)
+                }
+                files = rows.map { File(name: $0.name, sizeText: $0.size, source: $0.source) }
+                selected = Set(files.map(\.id))
+                stage = .review
+            } catch is CancellationError {
+                stage = .start
+            } catch {
+                self.error = error.localizedDescription
+                stage = .start
+            }
+        }
+    }
+
+    func remove(_ app: AppModel) {
+        let chosen = files.filter { selected.contains($0.id) }
+        let names = Set(chosen.map(\.name))
+        let sources = Set(chosen.map(\.source))
+        stage = .running
+        task = Task {
+            do {
+                let (_, result) = try await app.drive(["installer"], environment: Self.trashEnvironment) { session in
+                    try InstallerDriver().delete(names, allowedSources: sources, in: session)
+                }
+                resultLines = MoleSummary.lines(result.text)
+                failed = !result.succeeded
+                resultHeadline = String(localized: "\(Format.bytes(chosen.reduce(0) { $0 + $1.size })) moved to the Trash")
+            } catch {
+                failed = true
+                resultHeadline = String(localized: "Nothing was removed")
+                resultLines = [error.localizedDescription]
+            }
+            stage = .done
+        }
+    }
+
+    func stop() { task?.cancel() }
+    func reset() { stage = .start; files = []; selected = [] }
+}
+
+struct InstallersView: View {
+    @Environment(AppModel.self) private var app
+    private var model: InstallersModel { app.installers }
+    private let module = Module.installers
+
+    var body: some View {
+        switch model.stage {
+        case .start:
+            ModuleStart(module: module,
+                        subtitle: "Disk images and installers you no longer need. They go to the Trash, so you can get them back.",
+                        features: [Feature(symbol: "arrow.down.circle", text: "Downloads and Desktop"),
+                                   Feature(symbol: "mug", text: "Homebrew cache"),
+                                   Feature(symbol: "icloud", text: "iCloud, Mail and Telegram")],
+                        command: "mo installer --dry-run",
+                        action: { model.scan(app) }) {
+                if let error = model.error { Notice(text: error, color: Palette.crit) }
+            }
+            .task { if app.autoScan { model.scan(app) } }
+        case .scanning:
+            WorkingView(module: module, title: "Looking for installers…", detail: String(localized: ".dmg, .pkg, .zip, .iso and .xip files"), onStop: { model.stop() })
+        case .review:
+            review
+        case .running:
+            WorkingView(module: module, title: "Moving installers to the Trash…")
+        case .done:
+            DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
+        }
+    }
+
+    private var review: some View {
+        @Bindable var model = model
+        return ModuleScene(module: module, leading: .startOver { model.reset() },
+                           orb: model.selected.isEmpty ? nil : OrbAction(title: "Remove", destructive: true, action: { model.remove(app) })) {
+        VStack(alignment: .leading, spacing: 14) {
+            StepHeader(module: module, title: "Review installers",
+                       subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected"))
+            if model.files.isEmpty {
+                Text("No installer files found.").font(.system(size: 15)).foregroundStyle(Palette.fg2)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(model.files) { file in
+                            CheckRow(isOn: Binding(get: { model.selected.contains(file.id) },
+                                                   set: { if $0 { model.selected.insert(file.id) } else { model.selected.remove(file.id) } }),
+                                     title: file.name, detail: file.source, size: file.size, tint: module.palette.glow)
+                            Divider().overlay(Palette.line)
+                        }
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 6)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .glassPanel()
+            }
+            ReviewFooter(command: "MOLE_DELETE_MODE=trash mo installer", note: String(localized: "Files go to the Trash. Nora checks Mole's list before it confirms."))
+        }
+        .padding(.horizontal, 34).padding(.top, 8)
+        }
+    }
+}

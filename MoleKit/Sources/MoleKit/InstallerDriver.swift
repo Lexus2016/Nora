@@ -30,6 +30,25 @@ public struct InstallerDriver {
 
     public init() {}
 
+    /// Reads the menu of `mo installer --dry-run` and quits it. Returns no rows when Mole
+    /// found nothing and exited without showing the menu.
+    public func list(in session: PTYSession, timeout: TimeInterval = 240) throws -> [InstallerRow] {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            let lines = session.lines
+            if lines.contains(where: { $0.hasPrefix(Self.menuTitle) }), lines.contains(where: { $0.contains("Space Select") }) {
+                Thread.sleep(forTimeInterval: 0.3)
+                let rows = Self.parseRows(session.lines)
+                session.send(.character("q"))
+                return rows
+            }
+            if session.exitStatus != nil { return [] }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        session.send(.character("q"))
+        throw PTYError(description: "timed out waiting for the installer list")
+    }
+
     /// - Parameters:
     ///   - names: file names exactly as Mole lists them.
     ///   - allowedSources: source labels the files may come from, e.g. `["Downloads", "Desktop"]`.

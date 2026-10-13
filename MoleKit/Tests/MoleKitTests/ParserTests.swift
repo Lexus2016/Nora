@@ -49,11 +49,11 @@ final class ParserTests: XCTestCase {
         → DRY RUN MODE, No project artifacts will be removed
         ◎ Skipped 1 project scan root because scanning did not complete:
         ✓ [DRY RUN] /Users/u/Code/app/node_modules, 132.5MB
-        ✓ [DRY RUN] /Users/u/Code/my, project/target, 4KB
+        ✓ [DRY RUN] ~/Code/my, project/target, 4KB
         Dry run incomplete - no changes made
         Would free approximately: 3.27GB | Items: 315 | Free: 508.57GB
         """
-        let p = PurgePreview.parse(out)
+        let p = PurgePreview.parse(out, home: URL(fileURLWithPath: "/Users/u"))
         XCTAssertEqual(p.items.map(\.path), ["/Users/u/Code/app/node_modules", "/Users/u/Code/my, project/target"])
         XCTAssertEqual(p.items[0].project, "/Users/u/Code/app")
         XCTAssertEqual(p.totalSize, 3_270_000_000)
@@ -152,7 +152,7 @@ final class RealCaptureTests: XCTestCase {
         let clean = CleanPreview.parse(cleanList: try read("clean-list.txt"), stdout: try read("clean-dry.txt"))
         XCTAssertGreaterThan(clean.items.count, 0)
         XCTAssertNotNil(clean.potentialSize)
-        let purge = PurgePreview.parse(try read("purge-dry.txt"))
+        let purge = PurgePreview.parse(try read("purge-dry.txt"), home: FileManager.default.homeDirectoryForCurrentUser)
         XCTAssertGreaterThan(purge.items.count, 0)
         let optimize = OptimizeReport.parse(try read("optimize-dry.txt"))
         XCTAssertGreaterThan(optimize.tasks.count, 10)

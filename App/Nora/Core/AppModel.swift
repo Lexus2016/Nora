@@ -30,6 +30,10 @@ final class AppModel {
     var showConsole = false
     let console = ConsoleLog()
     let status = StatusStore()
+    let cleanup = CleanupModel()
+    let projects = ProjectsModel()
+    let installers = InstallersModel()
+    let apps = AppsModel()
 
     let home = FileManager.default.homeDirectoryForCurrentUser
 
@@ -61,6 +65,18 @@ final class AppModel {
             cancel: String(localized: "Cancel"),
             ok: String(localized: "OK"))
         try? overlay.recoverIfNeeded()
+    }
+
+    /// A module with a scan or a run in progress shows a ring on its rail icon.
+    func isBusy(_ module: Module) -> Bool {
+        let stage: FlowStage? = switch module {
+        case .cleanup: cleanup.stage
+        case .projects: projects.stage
+        case .installers: installers.stage
+        case .applications: apps.stage
+        default: nil
+        }
+        return stage == .scanning || stage == .running
     }
 
     var mole: Mole? {
@@ -115,6 +131,30 @@ final class AppModel {
             console.replace(id, result.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init))
             if case .exited(let code) = result.status { console.finish(id, status: code) } else { console.finish(id, status: -1) }
             return result
+        } catch {
+            console.fail(id, error: error)
+            throw error
+        }
+    }
+
+    /// Runs a Mole command in a PTY with a driver answering its menus and prompts.
+    func drive<T: Sendable>(
+        _ arguments: [String],
+        sudo: Bool = false,
+        environment: [String: String] = [:],
+        _ driver: @escaping @Sendable (PTYSession) throws -> T
+    ) async throws -> (value: T, result: PTYRun.Result) {
+        guard let mole else { throw NoraError.moleMissing }
+        var env = mole.environment.merging(environment) { $1 }
+        if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
+        let id = console.begin(mole.command(arguments, environment: environment), prefix: sudo ? "sudo -A -v && " : "")
+        let console = self.console
+        do {
+            let outcome = try await PTYRun.drive(executable: mole.executable.path, arguments: arguments, environment: env, sudo: sudo,
+                                                 onScreen: { lines in Task { @MainActor in console.mirror(id, lines) } }, driver)
+            console.replace(id, outcome.result.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init))
+            if case .exited(let code) = outcome.result.status { console.finish(id, status: code) } else { console.finish(id, status: -1) }
+            return outcome
         } catch {
             console.fail(id, error: error)
             throw error

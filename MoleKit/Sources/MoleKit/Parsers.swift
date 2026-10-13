@@ -95,7 +95,8 @@ public struct PurgePreview: Sendable {
     public var warnings: [String]
     public var isComplete: Bool
 
-    public static func parse(_ stdout: String) -> PurgePreview {
+    /// Mole prints artifact paths with `~` for the home folder; `home` expands them back.
+    public static func parse(_ stdout: String, home: URL) -> PurgePreview {
         var items: [Item] = []
         var warnings: [String] = []
         var total: Int64?
@@ -105,7 +106,8 @@ public struct PurgePreview: Sendable {
             if let r = line.range(of: "[DRY RUN] ") {
                 let rest = line[r.upperBound...]
                 guard let comma = rest.range(of: ", ", options: .backwards) else { continue }
-                let path = String(rest[..<comma.lowerBound])
+                var path = String(rest[..<comma.lowerBound])
+                if path == "~" { path = home.path } else if path.hasPrefix("~/") { path = home.path + path.dropFirst(1) }
                 items.append(Item(path: path, size: MoleSize.parse(String(rest[comma.upperBound...])) ?? 0))
             } else if line.hasPrefix("◎ ") {
                 warnings.append(String(line.dropFirst(2)))

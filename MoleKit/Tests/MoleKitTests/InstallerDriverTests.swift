@@ -86,6 +86,44 @@ struct InstallerE2ETests {
         try MoleE2E.recordFixture(session.transcriptBytes, name: "installer-delete-2-of-5.transcript", version: version, home: home)
     }
 
+    /// Nora sets `MOLE_DELETE_MODE=trash`, undocumented in 1.59.1; this guards that `mo installer`
+    /// still routes through `mole_delete` to the Trash. `MOLE_TEST_TRASH_DIR` is Mole's own
+    /// test switch that turns the Trash move into a `mv` into a sandbox folder.
+    @Test func trashModeMovesFilesToTheTrash() throws {
+        let home = try makeHome()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let mo = try #require(MoleE2E.executable)
+        let trash = home.appendingPathComponent("TestTrash")
+        try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
+        var env = MoleE2E.environment(home: home)
+        env["MOLE_DELETE_MODE"] = "trash"
+        env["MOLE_TEST_TRASH_DIR"] = trash.path
+
+        let session = try PTYSession(executable: mo.path, arguments: ["installer"], environment: env, currentDirectory: home.path)
+        defer { session.close() }
+        try InstallerDriver().delete(["NoraQ7-2.dmg"], allowedSources: ["Downloads"], in: session)
+        #expect(try session.waitForExit(timeout: 60) == .exited(0))
+        #expect(!remaining(in: home).contains("NoraQ7-2.dmg"))
+        let trashed = (try? FileManager.default.subpathsOfDirectory(atPath: trash.path)) ?? []
+        let log = (try? String(contentsOf: home.appendingPathComponent("Library/Logs/mole/deletions.log"), encoding: .utf8)) ?? "no log"
+        // Mole's test Trash names the moved file "<name>.<pid>.<time>".
+        #expect(trashed.contains { $0.hasPrefix("NoraQ7-2.dmg.") }, "trash folder: \(trashed)")
+        #expect(log.contains("\ttrash\t") && log.contains("\tok\t"), "deletions.log: \(log)")
+    }
+
+    @Test func listsTheMenuOfADryRun() throws {
+        let home = try makeHome()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let mo = try #require(MoleE2E.executable)
+        let session = try PTYSession(executable: mo.path, arguments: ["installer", "--dry-run"],
+                                     environment: MoleE2E.environment(home: home), currentDirectory: home.path)
+        defer { session.close() }
+        let rows = try InstallerDriver().list(in: session)
+        #expect(Set(rows.map(\.name)) == Set(fixtures.map { URL(fileURLWithPath: $0).lastPathComponent }))
+        _ = try session.waitForExit(timeout: 30)
+        #expect(remaining(in: home).count == fixtures.count)
+    }
+
     /// Real installer names usually exceed the menu column and show as "Prefix...".
     @Test func deletesATruncatedLongName() throws {
         let home = try makeHome(extra: ["Downloads/\(Self.longName)"])

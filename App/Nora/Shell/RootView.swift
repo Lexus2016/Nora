@@ -12,37 +12,33 @@ struct RootView: View {
     }
 }
 
+/// Icon rail on the left, the selected module's scene on the right; the scene runs under the
+/// hidden title bar like CleanMyMac.
 struct MainView: View {
     @Environment(AppModel.self) private var app
-    @State private var visibility = NavigationSplitViewVisibility.all
 
     var body: some View {
         @Bindable var app = app
-        NavigationSplitView(columnVisibility: $visibility) {
-            Sidebar(selection: $app.selection)
-                .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 260)
-        } detail: {
-            ZStack(alignment: .bottom) {
-                SceneBackground(palette: app.selection.palette)
+        ZStack(alignment: .bottom) {
+            SceneBackground(palette: app.selection.palette)
+                .animation(.easeInOut(duration: 0.45), value: app.selection)
+            HStack(spacing: 0) {
+                Rail(selection: $app.selection)
                 ModuleDetail(module: app.selection)
                     .id(app.selection)
                     .transition(.opacity)
-                if app.showConsole {
-                    ConsoleView()
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .animation(.easeOut(duration: 0.22), value: app.selection)
-            .animation(.easeOut(duration: 0.22), value: app.showConsole)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button { app.showConsole.toggle() } label: { Label("Console", systemImage: "terminal") }
-                        .keyboardShortcut("j", modifiers: .command)
-                        .help(Text("Show the commands Nora ran and their output (⌘J)"))
-                }
+            if app.showConsole {
+                ConsoleView()
+                    .padding(.leading, Rail.width)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .toolbarBackground(.hidden, for: .windowToolbar)
+        .ignoresSafeArea()
+        .animation(.easeOut(duration: 0.22), value: app.selection)
+        .animation(.easeOut(duration: 0.22), value: app.showConsole)
+        .background(Button("") { app.showConsole.toggle() }.keyboardShortcut("j", modifiers: .command).hidden())
     }
 }
 
@@ -53,46 +49,133 @@ struct ModuleDetail: View {
         switch module {
         case .status: StatusView()
         case .cleanup: CleanupView()
+        case .projects: ProjectsView()
+        case .installers: InstallersView()
+        case .applications: ApplicationsView()
         default: EmptyView()
         }
     }
 }
 
-struct Sidebar: View {
+/// The icon-only sidebar. A module that is scanning or running shows a ring on its icon.
+struct Rail: View {
+    static let width: CGFloat = 84
     @Binding var selection: Module
+    @Environment(AppModel.self) private var app
 
     var body: some View {
-        List(selection: $selection) {
-            ForEach(Array(Module.groups.enumerated()), id: \.offset) { _, group in
-                let items = group.1.filter(\.isAvailable)
-                if !items.isEmpty {
-                    if let title = group.0 {
-                        Section(title) { rows(items) }
-                    } else {
-                        rows(items)
-                    }
-                }
+        VStack(spacing: 6) {
+            Color.clear.frame(height: 50)
+            ForEach(Module.available) { module in
+                button(module)
             }
-        }
-        .listStyle(.sidebar)
-        .safeAreaInset(edge: .bottom) {
-            HStack {
-                SettingsLink { Label("Settings", systemImage: "gearshape") }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Palette.fg2)
-                Spacer()
+            Spacer()
+            SettingsLink {
+                Image(systemName: "gearshape").font(.system(size: 19, weight: .medium)).frame(width: 56, height: 50)
             }
-            .padding(14)
+            .buttonStyle(.plain)
+            .foregroundStyle(Palette.fg2)
+            .help(Text("Settings"))
+            .padding(.bottom, 16)
         }
+        .frame(width: Self.width)
+        .frame(maxHeight: .infinity)
+        .background(Color.black.opacity(0.22))
+        .overlay(alignment: .trailing) { Rectangle().fill(.white.opacity(0.06)).frame(width: 0.5) }
     }
 
-    private func rows(_ items: [Module]) -> some View {
-        ForEach(items) { module in
-            Label { Text(module.title) } icon: {
-                Image(systemName: module.symbol).foregroundStyle(module.palette.glow)
+    private func button(_ module: Module) -> some View {
+        let isSelected = module == selection
+        return Button { selection = module } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: module.symbol)
+                    .font(.system(size: 21, weight: .medium))
+                    .foregroundStyle(.white.opacity(isSelected ? 1 : 0.82))
+                    .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                    .frame(width: 56, height: 52)
+                    .background {
+                        if isSelected {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(LinearGradient(colors: [module.palette.glow.opacity(0.42), module.palette.body.opacity(0.32)],
+                                                     startPoint: .top, endPoint: .bottom))
+                                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.22), lineWidth: 0.5))
+                                .shadow(color: module.palette.glow.opacity(0.45), radius: 10)
+                        }
+                    }
+                if app.isBusy(module) {
+                    BusyRing().frame(width: 16, height: 16).offset(x: 2, y: -2)
+                }
             }
-            .tag(module)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .help(Text(module.title))
+        .accessibilityLabel(Text(module.title))
+        .animation(.easeOut(duration: 0.2), value: isSelected)
+    }
+}
+
+/// Small spinning progress ring for a module at work.
+struct BusyRing: View {
+    @State private var spin = false
+
+    var body: some View {
+        ZStack {
+            Circle().fill(.white.opacity(0.9))
+            Circle().trim(from: 0, to: 0.3).stroke(Palette.ink, style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+                .padding(3)
+                .rotationEffect(.degrees(spin ? 360 : 0))
+                .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: spin)
+        }
+        .onAppear { spin = true }
+    }
+}
+
+/// Top strip of every module scene: leading action (Start over / Back), the module name in the
+/// middle, the console toggle on the right. Sits in the hidden title bar.
+struct TopBar: View {
+    let title: LocalizedStringKey
+    var leading: TopBarAction?
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        ZStack {
+            Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Palette.fg2)
+            HStack {
+                if let leading {
+                    Button(action: leading.action) {
+                        Label(leading.label, systemImage: leading.symbol).font(.system(size: 13, weight: .medium))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.white)
+                    .keyboardShortcut(.cancelAction)
+                    .background(Button("", action: leading.action).keyboardShortcut("[", modifiers: .command).hidden())
+                }
+                Spacer()
+                Button { app.showConsole.toggle() } label: {
+                    Image(systemName: "terminal").font(.system(size: 13, weight: .medium)).frame(width: 30, height: 26)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Palette.fg2)
+                .help(Text("Show the commands Nora ran and their output (⌘J)"))
+            }
+        }
+        .padding(.horizontal, 20)
+        .frame(height: 52)
+    }
+}
+
+struct TopBarAction {
+    let label: LocalizedStringKey
+    let symbol: String
+    let action: () -> Void
+
+    static func startOver(_ action: @escaping () -> Void) -> TopBarAction {
+        TopBarAction(label: "Start over", symbol: "arrow.counterclockwise", action: action)
+    }
+
+    static func back(_ action: @escaping () -> Void) -> TopBarAction {
+        TopBarAction(label: "Back", symbol: "chevron.left", action: action)
     }
 }
 
@@ -135,7 +218,7 @@ struct ConsoleView: View {
             }
         }
         .frame(height: 240)
-        .background(Color(hex: 0x090414, opacity: 0.86))
+        .background(Color(hex: 0x090414, opacity: 0.9))
         .overlay(alignment: .top) { Divider().overlay(Palette.line2) }
     }
 }

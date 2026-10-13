@@ -46,6 +46,46 @@ public enum PTYRun {
     }
 }
 
+extension PTYRun {
+    /// Runs `drive` against a live PTY session (menu and prompt drivers), then waits for the
+    /// command to exit. A driver error cancels the session.
+    public static func drive<T: Sendable>(
+        executable: String,
+        arguments: [String],
+        environment: [String: String],
+        sudo: Bool = false,
+        exitTimeout: TimeInterval = 1800,
+        onScreen: (@Sendable ([String]) -> Void)? = nil,
+        _ drive: @escaping @Sendable (PTYSession) throws -> T
+    ) async throws -> (value: T, result: Result) {
+        let (exe, args) = sudo ? PrivilegeBroker.wrap(executable: executable, arguments: arguments) : (executable, arguments)
+        let session = try PTYSession(executable: exe, arguments: args, environment: environment)
+        let mirror = DispatchSource.makeTimerSource(queue: .global())
+        mirror.schedule(deadline: .now(), repeating: 0.3)
+        mirror.setEventHandler { onScreen?(session.lines) }
+        mirror.resume()
+        defer { mirror.cancel() }
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<(value: T, result: Result), Error>) in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    do {
+                        let value = try drive(session)
+                        let status = try session.waitForExit(timeout: exitTimeout)
+                        Thread.sleep(forTimeInterval: 0.1)
+                        onScreen?(session.lines)
+                        continuation.resume(returning: (value, Result(status: status, text: TerminalText.render(session.transcriptBytes))))
+                    } catch {
+                        session.terminate()
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+        } onCancel: {
+            session.terminate()
+        }
+    }
+}
+
 /// Turns raw terminal output into plain lines: drops escape sequences and keeps what a
 /// carriage return overwrote last (spinners, progress).
 public enum TerminalText {

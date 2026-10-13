@@ -9,6 +9,7 @@ struct StatusView: View {
     var body: some View {
         let store = app.status
         let s = store.snapshot
+        ModuleScene(module: module) {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header(s)
@@ -33,6 +34,7 @@ struct StatusView: View {
             .frame(maxWidth: 1100, alignment: .leading)
         }
         .scrollContentBackground(.hidden)
+        }
         .onAppear { store.retain() }
         .onDisappear { store.release() }
     }
