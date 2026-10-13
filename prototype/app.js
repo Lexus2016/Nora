@@ -183,7 +183,7 @@ const DISK = T('Macintosh HD', 692600, [
   T('Системна бібліотека', 52300, [T('Frameworks', 18400, null, { partial: true }), T('PrivateFrameworks', 15200, null, { partial: true }), T('Updates', 9100, null, { partial: true }), T('Інше', 9600, null, { partial: true })], { path: '/Library', partial: true }),
   T('Інше (знімки APFS, інші користувачі)', 120900, null, { unavailable: true }),
 ], { path: '/' });
-const EXT_DISK = T('Archive (зовнішній)', 1412000, [T('Photos 2019–2024', 812000), T('Time Machine', 420000, null, { partial: true }), T('Video', 151000), T('Інше', 29000)], { path: '/Volumes/Archive' });
+const EXT_DISK = T('Archive (зовнішній)', 1412000, [T('Photos 2019-2024', 812000), T('Time Machine', 420000, null, { partial: true }), T('Video', 151000), T('Інше', 29000)], { path: '/Volumes/Archive' });
 const LARGE = [
   ['~/Movies/Final Cut/Project 2025.fcpbundle', 38600], ['~/Library/Application Support/MobileSync/Backup/00008130-…', 24600], ['~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw', 31000],
   ['~/Downloads/ubuntu-24.04.3-desktop-arm64.iso', 6100], ['~/GitHub/ml-lab/data/train.parquet', 5200], ['~/Desktop/Xcode_26.1.xip', 3400], ['~/Documents/Archive/2023-backup.zip', 2900],
