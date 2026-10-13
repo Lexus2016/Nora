@@ -17,8 +17,6 @@ public enum InstallerDriverError: Error, Equatable {
     case paginated
     case selectionMismatch(expected: [String], onScreen: [String])
     case reviewMismatch(expected: [String], onScreen: [String])
-    case privilegePrompt
-    case unknownTerminalSequences([String])
 }
 
 /// Drives `mo installer` (Mole 1.59) to delete exactly the named files and nothing else.
@@ -117,24 +115,9 @@ public struct InstallerDriver {
         return name.hasPrefix(String(row.name.dropLast(3)))
     }
 
-    /// Waits for a screen state, aborting on a password prompt or terminal drift.
     @discardableResult
     private func wait(_ session: PTYSession, _ what: String, _ predicate: ([String]) -> Bool) throws -> [String] {
-        var sawPrompt = false
-        let lines = try session.waitUntil(timeout: timeout, what) { lines in
-            if lines.contains(where: { $0.contains("Password:") }) {
-                sawPrompt = true
-                return true
-            }
-            return predicate(lines)
-        }
-        if sawPrompt {
-            session.send(.interrupt)
-            throw InstallerDriverError.privilegePrompt
-        }
-        let unknown = session.unknownSequences
-        guard unknown.isEmpty else { throw InstallerDriverError.unknownTerminalSequences(unknown) }
-        return lines
+        try session.awaitMoleScreen(timeout: timeout, what, predicate)
     }
 
     public static func parseRows(_ lines: [String]) -> [InstallerRow] {
@@ -161,16 +144,7 @@ public struct InstallerDriver {
 
     /// Names under "Files to be removed:", each printed as `✓ <name> , <size>`.
     public static func parseReview(_ lines: [String]) -> [String] {
-        guard let start = lines.firstIndex(of: "Files to be removed:") else { return [] }
-        var names: [String] = []
-        for line in lines[(start + 1)...] {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard trimmed.hasPrefix("✓ ") else { break }
-            let entry = trimmed.dropFirst(2)
-            guard let comma = entry.range(of: ", ", options: .backwards) else { break }
-            names.append(entry[..<comma.lowerBound].trimmingCharacters(in: .whitespaces))
-        }
-        return names
+        RemovalList(lines)?.entries ?? []
     }
 }
 

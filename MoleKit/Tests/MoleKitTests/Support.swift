@@ -38,14 +38,18 @@ enum MoleE2E {
     }
 
     /// The child's whole environment. No SUDO_*, no USER: nothing that points back at the real home.
-    static func environment(home: URL) -> [String: String] {
-        [
+    /// `noAuth` sets Mole's own test switch, which skips sudo and the System Events
+    /// login-item AppleScript that `mo uninstall` would otherwise run (an Automation prompt).
+    static func environment(home: URL, noAuth: Bool = false) -> [String: String] {
+        var environment = [
             "HOME": home.path,
             "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
             "TERM": "xterm-256color",
             "LANG": "en_US.UTF-8",
             "TMPDIR": home.appendingPathComponent("tmp").path + "/",
         ]
+        if noAuth { environment["MOLE_TEST_NO_AUTH"] = "1" }
+        return environment
     }
 
     /// Writes a transcript with the sandbox path replaced, when `NORA_RECORD_FIXTURES=1`.

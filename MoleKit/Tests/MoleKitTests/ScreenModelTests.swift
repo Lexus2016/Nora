@@ -80,6 +80,19 @@ struct PTYSessionTests {
         #expect(lines.contains { $0.hasPrefix("/dev/ttys") })
     }
 
+    /// Test threads block signals; a child that inherited the mask could not stop its own
+    /// background jobs (Mole's spinner hung `mo uninstall` exactly like this).
+    @Test func childStartsWithDefaultSignals() throws {
+        let session = try PTYSession(
+            executable: "/bin/bash",
+            arguments: ["-c", "sleep 30 & p=$!; kill $p; wait $p; echo \"rc=$?\""],
+            environment: ["PATH": "/usr/bin:/bin", "TERM": "xterm-256color"],
+            rows: 10, cols: 80
+        )
+        defer { session.close() }
+        try session.waitUntil(timeout: 5, "background job killed") { $0.contains("rc=143") }
+    }
+
     @Test func keysReachTheChild() throws {
         let session = try PTYSession(
             executable: "/bin/bash",
