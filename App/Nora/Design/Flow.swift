@@ -26,7 +26,7 @@ struct ModuleScene<Content: View>: View {
         VStack(spacing: 0) {
             TopBar(title: module.title, leading: leading)
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
-            Color.clear.frame(height: orb == nil ? 16 : 78)
+            Color.clear.frame(height: orb == nil ? 16 : OrbController.clearance)
         }
         .onAppear { app.orb.publish(orb, palette: module.palette, owner: owner) }
         .onChange(of: orb?.signature) { app.orb.publish(orb, palette: module.palette, owner: owner) }
@@ -365,12 +365,13 @@ struct Notice: View {
 
 /// The bottom strip of a review list: the exact command, a note, and the main action.
 struct ReviewFooter: View {
-    let command: String
+    /// Nil when the action is Nora's own file work rather than a command; the note explains it.
+    let command: String?
     var note: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            CommandPreview(command: command).frame(maxWidth: 520)
+            if let command { CommandPreview(command: command).frame(maxWidth: 520) }
             if let note { Text(note).font(.system(size: 11)).foregroundStyle(Palette.muted) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -409,10 +410,14 @@ extension View {
 /// The body of a volume card: a light, slightly brighter top over the scene colour.
 struct VolumeFill: View {
     let radius: CGFloat
+    @Environment(\.scenePalette) private var palette
 
     var body: some View {
+        // Smoked glass in the scene's own depth colour, so cards stay in the scene's hue and white
+        // text stays readable over its brightest glow; a faint sheen along the top keeps the volume.
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        shape.fill(LinearGradient(colors: [.white.opacity(0.17), .white.opacity(0.10)], startPoint: .top, endPoint: .bottom))
+        shape.fill(palette.depth.opacity(palette.cardScrim))
+            .overlay(shape.fill(LinearGradient(colors: [.white.opacity(0.07), .white.opacity(0.02)], startPoint: .top, endPoint: .bottom)))
     }
 }
 

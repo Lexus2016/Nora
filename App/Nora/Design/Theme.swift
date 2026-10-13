@@ -32,17 +32,26 @@ enum Palette {
                                   Color(hex: 0xFF6B98), Color(hex: 0xB9F45F), Color(hex: 0xC98BFF), Color(hex: 0xA3ABC0)]
 }
 
-/// The three colours of a module scene: glow, body, depth.
+/// The three colours of a module scene: glow, body, depth. `cardScrim` is how much of the depth
+/// colour a card lays over the scene so card text keeps 4.5:1 on its brightest part
+/// (SceneContrastTests measures it).
 struct ScenePalette: Equatable {
     let glow: Color
     let body: Color
     let depth: Color
+    let cardScrim: Double
 
-    init(_ glow: UInt32, _ body: UInt32, _ depth: UInt32) {
+    init(_ glow: UInt32, _ body: UInt32, _ depth: UInt32, cardScrim: Double = 0.35) {
         self.glow = Color(hex: glow)
         self.body = Color(hex: body)
         self.depth = Color(hex: depth)
+        self.cardScrim = cardScrim
     }
+}
+
+extension EnvironmentValues {
+    /// The scene a view sits on, so cards can keep their text readable on bright scenes.
+    @Entry var scenePalette = Module.smartCare.palette
 }
 
 /// Full-bleed neon background of a module scene (prototype `.scene`).
@@ -153,7 +162,7 @@ struct GlassPanel: ViewModifier {
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         content
-            .background(shape.fill(Color.white.opacity(0.11)))
+            .background(VolumeFill(radius: radius))
             .overlay(shape.strokeBorder(Color.white.opacity(0.17), lineWidth: 1))
     }
 }

@@ -19,6 +19,9 @@ final class OrbController {
     static let panelSize: CGFloat = 240
     /// How far the orb's centre sits above the window's bottom edge.
     static let lift: CGFloat = 20
+    /// Space a scene keeps free above the bottom edge: the orb's radius, its progress ring
+    /// (9 pt out, 5 pt wide) and a gap, so the busy orb never covers a card.
+    static let clearance: CGFloat = lift + diameter / 2 + 12 + 14
 
     func publish(_ action: OrbAction?, palette: ScenePalette, owner: UUID) {
         self.owner = owner
@@ -88,17 +91,27 @@ private struct OrbHost: View {
     }
 }
 
-/// Gives SwiftUI views access to their NSWindow.
+/// Gives SwiftUI views access to their NSWindow. AppKit calls `viewDidMoveToWindow` once the view
+/// is in a window, so the callback cannot be missed the way an async peek at `view.window` can.
 struct WindowReader: NSViewRepresentable {
     let onWindow: (NSWindow) -> Void
 
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        DispatchQueue.main.async { if let window = view.window { onWindow(window) } }
+    func makeNSView(context: Context) -> ReaderView {
+        let view = ReaderView()
+        view.onWindow = onWindow
         return view
     }
 
-    func updateNSView(_ view: NSView, context: Context) {
-        DispatchQueue.main.async { if let window = view.window { onWindow(window) } }
+    func updateNSView(_ view: ReaderView, context: Context) {
+        view.onWindow = onWindow
+    }
+
+    final class ReaderView: NSView {
+        var onWindow: ((NSWindow) -> Void)?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if let window { onWindow?(window) }
+        }
     }
 }

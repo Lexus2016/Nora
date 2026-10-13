@@ -22,6 +22,28 @@ final class PerformanceModel {
         }.first
     }
 
+    /// Nora's own one-line summary of the dry run instead of Mole's CLI wording
+    /// ("Run without --dry-run to apply these changes" means nothing in a window).
+    var headerSummary: String? {
+        guard report != nil else { return nil }
+        var parts: [String] = []
+        if let n = pendingCount { parts.append(String(localized: "To apply: \(n)")) }
+        if let n = summaryCount("unchanged") { parts.append(String(localized: "Already fine: \(n)")) }
+        if let n = summaryCount("skipped"), n > 0 { parts.append(String(localized: "Skipped: \(n)")) }
+        if let n = summaryCount("unavailable"), n > 0 { parts.append(String(localized: "Unavailable: \(n)")) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// "13 unchanged | 2 skipped | 2 unavailable" → the number before `word`.
+    func summaryCount(_ word: String) -> Int? {
+        for line in report?.summary ?? [] {
+            if let range = line.range(of: "\\d+ \(word)", options: .regularExpression) {
+                return Int(line[range].prefix { $0.isNumber })
+            }
+        }
+        return nil
+    }
+
     func scan(_ app: AppModel) {
         error = nil
         stage = .scanning
@@ -176,7 +198,7 @@ private struct PerformanceReview: View {
         let report = model.report
         return ModuleScene(module: module, leading: .back { showAll = false }, orb: OrbAction(title: "Run", action: { model.run(app) })) {
             VStack(spacing: 16) {
-                StepHeader(module: module, title: "All tasks", subtitle: report?.summary.joined(separator: " · "))
+                StepHeader(module: module, title: "All tasks", subtitle: model.headerSummary)
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
                         ForEach(report?.tasks ?? []) { task in taskCard(task) }

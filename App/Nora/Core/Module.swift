@@ -82,18 +82,18 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
 
     var palette: ScenePalette {
         switch self {
-        case .smartCare: ScenePalette(0xFF3EA5, 0x6B22D9, 0x17062F)
-        case .cleanup: ScenePalette(0x1FE6A2, 0x0D7D63, 0x04201F)
-        case .applications: ScenePalette(0x38C8FF, 0x2F3FE0, 0x0B0A40)
-        case .performance: ScenePalette(0xFFA53A, 0xE2491D, 0x360B0C)
-        case .spaceMap: ScenePalette(0xB34DFF, 0x5214CF, 0x14053C)
-        case .status: ScenePalette(0xFF3D7F, 0x3D1FB0, 0x0C0A2C)
-        case .projects: ScenePalette(0xFFC23A, 0xE8662A, 0x38110A)
-        case .installers: ScenePalette(0x27ECD2, 0x1572B3, 0x061F3A)
-        case .protection: ScenePalette(0x36E2C2, 0x13708A, 0x071D2D)
-        case .security: ScenePalette(0xFF3D6E, 0x8A1FB8, 0x1A0620)
-        case .history: ScenePalette(0x6A5CFF, 0x2B1C86, 0x0D0A27)
-        case .tools: ScenePalette(0xA35CFF, 0x3F1A8C, 0x13072A)
+        case .smartCare: ScenePalette(0xFF3EA5, 0x6B22D9, 0x17062F, cardScrim: 0.35)
+        case .cleanup: ScenePalette(0x1FE6A2, 0x0D7D63, 0x04201F, cardScrim: 0.60)
+        case .applications: ScenePalette(0x38C8FF, 0x2F3FE0, 0x0B0A40, cardScrim: 0.50)
+        case .performance: ScenePalette(0xFFA53A, 0xE2491D, 0x360B0C, cardScrim: 0.55)
+        case .spaceMap: ScenePalette(0xB34DFF, 0x5214CF, 0x14053C, cardScrim: 0.30)
+        case .status: ScenePalette(0xFF3D7F, 0x3D1FB0, 0x0C0A2C, cardScrim: 0.30)
+        case .projects: ScenePalette(0xFFC23A, 0xE8662A, 0x38110A, cardScrim: 0.60)
+        case .installers: ScenePalette(0x27ECD2, 0x1572B3, 0x061F3A, cardScrim: 0.65)
+        case .protection: ScenePalette(0x36E2C2, 0x13708A, 0x071D2D, cardScrim: 0.60)
+        case .security: ScenePalette(0xFF3D6E, 0x8A1FB8, 0x1A0620, cardScrim: 0.35)
+        case .history: ScenePalette(0x6A5CFF, 0x2B1C86, 0x0D0A27, cardScrim: 0.10)
+        case .tools: ScenePalette(0xA35CFF, 0x3F1A8C, 0x13072A, cardScrim: 0.20)
         }
     }
 

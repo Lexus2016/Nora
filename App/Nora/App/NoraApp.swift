@@ -12,7 +12,7 @@ struct NoraApp: App {
                 .frame(minWidth: 1040, minHeight: 680)
         }
         .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 1240, height: 800)
+        .defaultSize(Self.defaultWindowSize)
         .commands {
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") { Updater.shared.checkForUpdates() }
@@ -25,6 +25,13 @@ struct NoraApp: App {
                 .preferredColorScheme(.dark)
         }
     }
+
+    /// 1240 × 800 where it fits; on smaller screens the window starts inside the visible area
+    /// (menu bar and Dock excluded) instead of running under the Dock.
+    static var defaultWindowSize: CGSize {
+        let visible = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1440, height: 875)
+        return CGSize(width: min(1240, (visible.width * 0.92).rounded()), height: min(800, (visible.height * 0.9).rounded()))
+    }
 }
 
 @MainActor
@@ -32,6 +39,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let app = AppModel()
     private var menuBar: MenuBarController?
     private var scheduler: Timer?
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Launching Nora always shows its window. With the system's "keep windows when quitting"
+        // on, a window closed before quitting would otherwise stay closed and leave only the menu
+        // bar item. Set in Nora's own domain, so other apps keep the system setting.
+        UserDefaults.standard.set(false, forKey: "NSQuitAlwaysKeepsWindows")
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         app.prepare()

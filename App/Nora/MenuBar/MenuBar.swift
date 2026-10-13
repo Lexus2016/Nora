@@ -203,7 +203,7 @@ struct QuickMenu: View {
             Sparkline(values: series, color: color, maxValue: maxValue).frame(height: 22)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.1)))
+        .background(VolumeFill(radius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 1))
     }
 
@@ -257,7 +257,7 @@ struct QuickMenu: View {
             }
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white.opacity(0.08)))
+        .background(VolumeFill(radius: 12))
     }
 
     private var reclaim: some View {

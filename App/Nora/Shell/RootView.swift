@@ -29,6 +29,7 @@ struct MainView: View {
             HStack(spacing: 0) {
                 Rail(selection: $app.selection).zIndex(2)
                 ModuleDetail(module: app.selection)
+                    .environment(\.scenePalette, app.selection.palette)
                     .id(app.selection)
                     .transition(.opacity)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -79,13 +80,29 @@ struct Rail: View {
     @State private var tooltip: Module?
     @State private var hoverTask: Task<Void, Never>?
 
+    /// Icons shrink from 52 to 36 pt tall so every module and Settings fit the window's height.
+    static func itemHeight(for height: CGFloat, count: Int) -> CGFloat {
+        let fixed: CGFloat = 50 + 50 + 16 + 6 * CGFloat(count + 2)
+        return min(52, max(36, (height - fixed) / CGFloat(max(count, 1))))
+    }
+
     var body: some View {
+        GeometryReader { geo in
+            rail(itemHeight: Self.itemHeight(for: geo.size.height, count: Module.available.count))
+        }
+        .frame(width: Self.width)
+        .frame(maxHeight: .infinity)
+        .background(Color.black.opacity(0.22))
+        .overlay(alignment: .trailing) { Rectangle().fill(.white.opacity(0.06)).frame(width: 0.5) }
+    }
+
+    private func rail(itemHeight: CGFloat) -> some View {
         VStack(spacing: 6) {
             Color.clear.frame(height: 50)
             ForEach(Module.available) { module in
-                button(module)
+                button(module, height: itemHeight)
             }
-            Spacer()
+            Spacer(minLength: 0)
             SettingsLink {
                 Image(systemName: "gearshape").font(.system(size: 19, weight: .medium)).frame(width: 56, height: 50)
             }
@@ -95,12 +112,9 @@ struct Rail: View {
             .padding(.bottom, 16)
         }
         .frame(width: Self.width)
-        .frame(maxHeight: .infinity)
-        .background(Color.black.opacity(0.22))
-        .overlay(alignment: .trailing) { Rectangle().fill(.white.opacity(0.06)).frame(width: 0.5) }
     }
 
-    private func button(_ module: Module) -> some View {
+    private func button(_ module: Module, height: CGFloat) -> some View {
         let isSelected = module == selection
         return Button { selection = module } label: {
             ZStack(alignment: .topTrailing) {
@@ -108,7 +122,7 @@ struct Rail: View {
                     .font(.system(size: 21, weight: .medium))
                     .foregroundStyle(.white.opacity(isSelected ? 1 : 0.9))
                     .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
-                    .frame(width: 56, height: 52)
+                    .frame(width: 56, height: height)
                     .background {
                         if isSelected {
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -182,13 +196,16 @@ struct BusyRing: View {
     @State private var spin = false
 
     var body: some View {
+        // A spinner, not a status dot: a white arc running over a faint track on a dark chip.
         ZStack {
-            Circle().fill(.white.opacity(0.9))
-            Circle().trim(from: 0, to: 0.3).stroke(Palette.ink, style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
-                .padding(3)
+            Circle().fill(Palette.ink.opacity(0.92))
+            Circle().stroke(.white.opacity(0.22), lineWidth: 2).padding(3.5)
+            Circle().trim(from: 0, to: 0.28).stroke(.white, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .padding(3.5)
                 .rotationEffect(.degrees(spin ? 360 : 0))
-                .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: spin)
+                .animation(.linear(duration: 0.9).repeatForever(autoreverses: false), value: spin)
         }
+        .overlay(Circle().strokeBorder(.white.opacity(0.3), lineWidth: 0.5))
         .onAppear { spin = true }
     }
 }
