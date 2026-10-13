@@ -95,13 +95,16 @@ final class CleanupModel {
                 if partial {
                     // Some items stay: check again right before the run, so junk that appeared
                     // since the review is protected too instead of riding along unseen.
+                    let started = Date()
                     let check = try await app.run(["clean", "--dry-run"])
-                    let list = (try? String(contentsOf: app.home.appendingPathComponent(".config/mole/clean-list.txt"), encoding: .utf8)) ?? ""
-                    let fresh = CleanPreview.parse(cleanList: list, stdout: check.stdout)
-                    guard check.succeeded, fresh.potentialSize != nil else {
+                    let listURL = app.home.appendingPathComponent(".config/mole/clean-list.txt")
+                    let modified = (try? listURL.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+                    guard check.succeeded,
+                          let fresh = Self.freshPaths(stdout: check.stdout, list: try? String(contentsOf: listURL, encoding: .utf8),
+                                                      listModified: modified, since: started) else {
                         throw NoraError.commandFailed(String(localized: "Mole could not check the junk again before cleaning, so nothing was removed. Scan again."))
                     }
-                    protected += fresh.items.map(\.path).filter { !chosen.contains($0) && !allPaths.contains($0) }
+                    protected += fresh.filter { !chosen.contains($0) && !allPaths.contains($0) }
                 }
                 if !protected.isEmpty {
                     let defaults = try mole.installation.cleanWhitelistDefaults(home: app.home)
@@ -192,6 +195,17 @@ final class CleanupModel {
         guard !picked.isEmpty else { return false }
         selected = picked
         return true
+    }
+
+    /// The paths of a fresh `mo clean --dry-run`, or nil when it is not a complete, readable
+    /// answer. Mole says "Dry run complete" only when it finished; it writes clean-list.txt and
+    /// prints "Detailed file list:" only when it found something, so a list must then be fresh.
+    static func freshPaths(stdout: String, list: String?, listModified: Date?, since started: Date) -> [String]? {
+        let text = ANSI.strip(stdout)
+        guard text.contains("Dry run complete") else { return nil }
+        guard text.contains("Detailed file list:") else { return [] }
+        guard let list, let listModified, listModified >= started.addingTimeInterval(-2) else { return nil }
+        return CleanPreview.parse(cleanList: list, stdout: stdout).items.map(\.path)
     }
 
     /// Every previewed path that is not ticked: Mole must not touch these in this run.

@@ -60,13 +60,15 @@ public enum ChildProcesses {
 
     /// A PTY child leads its own session, so it is signalled as a process group: sudo, askpass
     /// and Mole's helpers stop with it.
-    /// The group stays registered after its leader exits: a background helper may still run in
-    /// it. Groups that are empty by now are dropped here.
+    /// The group stays registered after its leader exits, while a helper may still run in it,
+    /// and is dropped once empty: a process group id cannot be reused while any member lives, so
+    /// a registered id never points at someone else's processes.
     public static func registerGroup(_ leader: pid_t) {
-        lock.withLock {
-            groups = groups.filter(groupAlive)
-            groups.insert(leader)
-        }
+        lock.withLock { _ = groups.insert(leader) }
+    }
+
+    public static func unregisterGroup(_ leader: pid_t) {
+        lock.withLock { _ = groups.remove(leader) }
     }
 
     /// True while any process is left in the group (ESRCH means it is empty).

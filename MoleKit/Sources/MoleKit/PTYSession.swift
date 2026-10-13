@@ -188,6 +188,9 @@ public final class PTYSession: @unchecked Sendable {
         while waitpid(pid, &raw, 0) < 0, errno == EINTR {}
         let exit = ExitStatus(waitStatus: raw)
         locked { status = exit }
+        // Out of the registry only when the whole group is gone (see registerGroup).
+        while ChildProcesses.groupAlive(pid) { usleep(200_000) }
+        ChildProcesses.unregisterGroup(pid)
     }
 
     private func locked<T>(_ body: () throws -> T) rethrows -> T {

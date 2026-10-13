@@ -28,6 +28,20 @@ final class CleanupScopeTests: XCTestCase {
         XCTAssertEqual(Set(model.protectedPaths), ["/Users/u/Library/Caches/ExampleCache", "/Users/u/Library/Logs/Example Logs"])
     }
 
+    /// The re-check before a partial clean counts only when Mole finished and, if it found
+    /// anything, wrote a list during this check that Nora could read.
+    func testFreshCheckMustBeCompleteAndReadable() {
+        let now = Date()
+        let found = "Dry run complete - no changes made\nPotential space: 1GB | Items: 3\nDetailed file list: ~/.config/mole/clean-list.txt"
+        XCTAssertEqual(CleanupModel.freshPaths(stdout: found, list: list, listModified: now, since: now)?.count, 3)
+        XCTAssertNil(CleanupModel.freshPaths(stdout: found, list: nil, listModified: now, since: now), "an unreadable list protects nothing")
+        XCTAssertNil(CleanupModel.freshPaths(stdout: found, list: list, listModified: now.addingTimeInterval(-600), since: now), "a list from an earlier run")
+        XCTAssertNil(CleanupModel.freshPaths(stdout: "Dry run incomplete\nDetailed file list: x", list: list, listModified: now, since: now))
+        XCTAssertNil(CleanupModel.freshPaths(stdout: "", list: list, listModified: now, since: now))
+        XCTAssertEqual(CleanupModel.freshPaths(stdout: "Dry run complete - no changes made\nNo significant reclaimable space detected, system already clean.",
+                                               list: nil, listModified: nil, since: now), [], "nothing found: nothing new to protect")
+    }
+
     func testClearedCategoryIsNeverTickedBack() {
         let model = scanned()
         model.selected.subtract(model.items(in: "Browsers").map(\.path))

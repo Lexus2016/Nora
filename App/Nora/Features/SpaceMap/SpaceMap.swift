@@ -111,6 +111,8 @@ final class SpaceMapModel {
     /// late may still fill the cache, but it never touches what the screen shows now.
     @discardableResult
     private func load(_ url: URL, _ app: AppModel, request: UUID) async -> Bool {
+        // A task cancelled while queued never takes the spinner it could not hand back.
+        guard requestID == request, !Task.isCancelled else { return false }
         loading = true
         defer { if requestID == request { loading = false } }
         do {
