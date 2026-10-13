@@ -101,7 +101,7 @@ private struct GeneralSettings: View {
                 }
                 .disabled(!showMenuBar)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Tiles in the quick menu (pick four)")
+                    Text("Tiles in the quick menu (one to four)")
                     HStack {
                         ForEach(MenuTile.allCases) { tile in
                             Toggle(isOn: Binding(get: { tiles.contains(tile) }, set: { on in toggle(tile, on) })) { Text(tile.title) }
@@ -121,12 +121,17 @@ private struct GeneralSettings: View {
         .formStyle(.grouped)
     }
 
-    private var tiles: [MenuTile] { tilesRaw.split(separator: ",").compactMap { MenuTile(rawValue: String($0)) } }
+    /// What the menu shows: the defaults until the user picks their own.
+    private var tiles: [MenuTile] {
+        let picked = tilesRaw.split(separator: ",").compactMap { MenuTile(rawValue: String($0)) }
+        return picked.isEmpty ? MenuTile.defaults : picked
+    }
 
+    /// One to four tiles: the last one cannot be switched off.
     private func toggle(_ tile: MenuTile, _ on: Bool) {
         var list = tiles
         if on, !list.contains(tile), list.count < 4 { list.append(tile) }
-        if !on { list.removeAll { $0 == tile } }
+        if !on, list.count > 1 { list.removeAll { $0 == tile } }
         tilesRaw = list.map(\.rawValue).joined(separator: ",")
     }
 }

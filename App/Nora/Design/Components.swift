@@ -129,6 +129,14 @@ struct CommandPreview: View {
                 atCommandStart = false
                 continue
             }
+            // ShellCommand writes an apostrophe as '\'': outside quotes a backslash escapes the next
+            // character, which then neither opens nor closes a quote.
+            if !quoted, character == "\\", rest.count > 1 {
+                out.append(contentsOf: rest.prefix(2))
+                rest = rest.dropFirst(2)
+                atCommandStart = false
+                continue
+            }
             if character == "'" { quoted.toggle() }
             out.append(character)
             rest = rest.dropFirst()

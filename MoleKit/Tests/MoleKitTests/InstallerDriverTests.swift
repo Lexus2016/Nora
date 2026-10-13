@@ -213,4 +213,17 @@ struct InstallerReviewMatchTests {
         let twin = InstallerTarget(name: cut, sources: ["Desktop"])
         #expect(!InstallerDriver.review([long], matches: [target, twin]))
     }
+
+    /// A different file behind the same cut name in the same folder must not stand in for the one
+    /// the user saw: the size is part of what was reviewed.
+    @Test func cutNameRowMustKeepTheReviewedSize() {
+        let cut = "Some-Very-Long-Installer-Name-For-Tes..."
+        let target = InstallerTarget(name: cut, sources: ["Downloads"], size: "1.5GB")
+        let same = InstallerRow(isCursor: false, isSelected: false, name: cut, size: "1.5GB", source: "Downloads")
+        let swapped = InstallerRow(isCursor: false, isSelected: false, name: cut, size: "1.6GB", source: "Downloads")
+        let elsewhere = InstallerRow(isCursor: false, isSelected: false, name: cut, size: "1.5GB", source: "Desktop")
+        #expect(InstallerDriver.row(same, is: target))
+        #expect(!InstallerDriver.row(swapped, is: target))
+        #expect(!InstallerDriver.row(elsewhere, is: target))
+    }
 }

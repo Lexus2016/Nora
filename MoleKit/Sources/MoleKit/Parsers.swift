@@ -100,7 +100,11 @@ public struct PurgePreview: Sendable {
         var items: [Item] = []
         var warnings: [String] = []
         var total: Int64?
-        var complete = true
+        // Complete only on Mole's own success line, never by default: an empty or broken run must
+        // not read as "nothing else exists".
+        var finished = false
+        var incomplete = false
+        var counted: Int?
         for raw in stdout.split(separator: "\n") {
             let line = ANSIText.strip(String(raw)).trimmingCharacters(in: .whitespaces)
             if let r = line.range(of: "[DRY RUN] ") {
@@ -113,10 +117,14 @@ public struct PurgePreview: Sendable {
                 warnings.append(String(line.dropFirst(2)))
             } else if let r = line.range(of: "Would free approximately: ") {
                 total = MoleSize.parse(String(line[r.upperBound...].prefix { $0 != " " && $0 != "|" }))
-            } else if line.hasPrefix("Dry run incomplete") {
-                complete = false
+                if let i = line.range(of: "Items: ") { counted = Int(line[i.upperBound...].prefix(while: \.isNumber)) }
+            } else if line.contains("Dry run incomplete") || line.contains("No artifacts found in the completed project scans") {
+                incomplete = true
+            } else if line.contains("Dry run complete") || line.contains("No old project artifacts to clean") {
+                finished = true
             }
         }
+        let complete = finished && !incomplete && (counted ?? items.count) == items.count
         return PurgePreview(items: items, totalSize: total, warnings: warnings, isComplete: complete)
     }
 }

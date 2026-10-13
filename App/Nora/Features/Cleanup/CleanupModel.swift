@@ -74,8 +74,8 @@ final class CleanupModel {
     }
 
     func clean(_ app: AppModel) {
-        guard let preview, let mole = app.mole else { return }
-        let protected = preview.items.filter { !selected.contains($0.path) }.map(\.path)
+        guard preview != nil, let mole = app.mole else { return }
+        let protected = protectedPaths
         stage = .running
         task = Task {
             let runID = "clean-\(UUID().uuidString)"
@@ -140,13 +140,10 @@ final class CleanupModel {
 
     func sectionSize(_ section: String) -> Int64 { items(in: section).reduce(0) { $0 + $1.size } }
 
-    /// Categories other than `section` that still have ticked items, and their ticked size.
-    /// Clean always cleans every ticked item, so the one-category review names the others.
-    func otherSelected(than section: String) -> (titles: [String], size: Int64) {
-        let others = rankedSections.filter { $0 != section }
-            .map { ($0, items(in: $0).filter { selected.contains($0.path) }.reduce(0) { $0 + $1.size }) }
-            .filter { $0.1 > 0 }
-        return (others.map { String(localized: String.LocalizationValue(CleanSection($0.0).title)) }, others.reduce(0) { $0 + $1.1 })
+    /// The ticked items of one section and their size.
+    func selected(in section: String) -> (paths: Set<String>, size: Int64) {
+        let picked = items(in: section).filter { selected.contains($0.path) }
+        return (Set(picked.map(\.path)), picked.reduce(0) { $0 + $1.size })
     }
 
     /// Sections, largest first, without empty ones.
@@ -154,12 +151,23 @@ final class CleanupModel {
         (preview?.sections ?? []).filter { sectionSize($0) > 0 }.sorted { sectionSize($0) > sectionSize($1) }
     }
 
-    /// One-click clean of one section: everything outside it is protected for this run.
+    /// Cleans only what is ticked in one section; everything outside it is protected for this run.
+    /// A section with nothing ticked is never ticked back on the user's behalf: its list opens.
     func clean(section: String, _ app: AppModel) {
-        let inSection = Set(items(in: section).map(\.path))
-        selected = selected.intersection(inSection).isEmpty ? inSection : selected.intersection(inSection)
+        guard scope(to: section) else { return openList(section) }
         clean(app)
     }
+
+    /// Narrows the selection to what is ticked in `section`; false when nothing there is ticked.
+    func scope(to section: String) -> Bool {
+        let picked = selected(in: section).paths
+        guard !picked.isEmpty else { return false }
+        selected = picked
+        return true
+    }
+
+    /// Every previewed path that is not ticked: Mole must not touch these in this run.
+    var protectedPaths: [String] { preview?.items.filter { !selected.contains($0.path) }.map(\.path) ?? [] }
 
     func openList(_ section: String?) {
         listSection = section

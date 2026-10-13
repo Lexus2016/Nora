@@ -9,13 +9,24 @@ final class ToolsModel {
     var touchIDBusy = false
     var latestMole: String?
     var updateBusy = false
-    /// A preview belongs to one drive: choosing another drive clears it, and Clean only runs for
-    /// the drive that was previewed.
-    var externalVolume: URL? { didSet { if externalVolume != oldValue { externalPreview = []; previewedVolume = nil } } }
+    /// A preview belongs to one drive as it was mounted then: choosing another drive, or
+    /// unplugging and remounting it, voids it, and Clean only runs for the drive that was previewed.
+    var externalVolume: URL? {
+        didSet {
+            guard externalVolume != oldValue else { return }
+            externalGeneration = UUID()
+            externalPreview = []
+            previewedVolume = nil
+            externalBusy = false
+        }
+    }
     private(set) var previewedVolume: URL?
+    @ObservationIgnored private var previewedIdentity: String?
     @ObservationIgnored private var externalGeneration = UUID()
     var externalPreview: [String] = []
     var externalBusy = false
+    /// While a drive is being cleaned the picker and Preview wait, so nothing overlaps the run.
+    var externalCleaning = false
     var completionPreview: [String] = []
     var removePreview: [String] = []
     var message: String?
@@ -65,27 +76,45 @@ final class ToolsModel {
         externalGeneration = generation
         previewedVolume = nil
         externalBusy = true
+        let identity = Self.identity(of: volume)
         Task {
             defer { if externalGeneration == generation { externalBusy = false } }
             let result = try? await app.run(["clean", "--external", volume.path, "--dry-run"])
             // A newer preview or another drive took over meanwhile: this result is stale.
             guard externalGeneration == generation, externalVolume == volume else { return }
             externalPreview = Self.meaningful(result?.stdout ?? "")
-            previewedVolume = result?.succeeded == true ? volume : nil
+            let valid = result?.succeeded == true && identity != nil && Self.identity(of: volume) == identity
+            previewedVolume = valid ? volume : nil
+            previewedIdentity = valid ? identity : nil
         }
     }
 
     func cleanExternal(_ app: AppModel) {
         guard let volume = externalVolume, previewedVolume == volume else { return }
+        guard let identity = previewedIdentity, Self.identity(of: volume) == identity else {
+            previewedVolume = nil
+            externalPreview = [String(localized: "The drive was unplugged or changed since the preview. Preview it again.")]
+            return
+        }
         let generation = UUID()
         externalGeneration = generation
-        externalBusy = true
+        externalCleaning = true
         Task {
-            defer { if externalGeneration == generation { externalBusy = false } }
+            defer { externalCleaning = false }
             let result = try? await app.run(["clean", "--external", volume.path])
+            // Only this run's own screen state is written; a newer preview stays as it is.
+            guard externalGeneration == generation, externalVolume == volume else { return }
             externalPreview = MoleSummary.lines(result?.stdout ?? "")
             previewedVolume = nil
+            previewedIdentity = nil
         }
+    }
+
+    /// The mounted drive as it is now: unmounting, remounting or swapping it gives a new value.
+    static func identity(of volume: URL) -> String? {
+        guard let values = try? volume.resourceValues(forKeys: [.volumeIdentifierKey, .volumeUUIDStringKey]),
+              let id = values.volumeIdentifier else { return nil }
+        return "\(values.volumeUUIDString ?? "")|\(id)"
     }
 
     func previewCompletion(_ app: AppModel) {
@@ -196,14 +225,17 @@ struct ToolsView: View {
                 ForEach(model.volumes, id: \.self) { Text($0.lastPathComponent).tag(URL?.some($0)) }
             }
             .labelsHidden()
+            .disabled(model.externalCleaning)
             ForEach(Array(model.externalPreview.suffix(4).enumerated()), id: \.offset) { _, line in
                 Text(line).font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(1)
             }
             HStack {
                 Spacer()
-                if model.externalBusy { ProgressView().controlSize(.small) }
-                Button("Preview") { model.previewExternal(app) }.buttonStyle(GlassButtonStyle()).disabled(model.externalVolume == nil)
-                Button("Clean") { model.cleanExternal(app) }.buttonStyle(PrimaryButtonStyle()).disabled(model.externalVolume == nil || model.previewedVolume != model.externalVolume || model.externalBusy)
+                if model.externalBusy || model.externalCleaning { ProgressView().controlSize(.small) }
+                Button("Preview") { model.previewExternal(app) }.buttonStyle(GlassButtonStyle())
+                    .disabled(model.externalVolume == nil || model.externalCleaning)
+                Button("Clean") { model.cleanExternal(app) }.buttonStyle(PrimaryButtonStyle())
+                    .disabled(model.externalVolume == nil || model.previewedVolume != model.externalVolume || model.externalBusy || model.externalCleaning)
             }
         }
     }

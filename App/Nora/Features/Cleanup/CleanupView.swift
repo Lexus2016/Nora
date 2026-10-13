@@ -126,20 +126,19 @@ private struct CleanupList: View {
 
     var body: some View {
         let sections = model.listSection.map { [$0] } ?? model.rankedSections
+        // One category on screen cleans that category only; hidden ticks never ride along.
+        let scoped = model.listSection.map { model.selected(in: $0) }
+        let size = scoped?.size ?? model.selectedSize
+        let canClean = scoped.map { !$0.paths.isEmpty } ?? !model.selected.isEmpty
         ModuleScene(module: module, leading: .back { model.showList = false },
-                    orb: model.selected.isEmpty ? nil : OrbAction(title: "Clean", action: { model.clean(app) })) {
+                    orb: canClean ? OrbAction(title: "Clean", action: {
+                        if let section = model.listSection { model.clean(section: section, app) } else { model.clean(app) }
+                    }) : nil) {
             VStack(alignment: .leading, spacing: 14) {
                 StepHeader(module: module,
                            title: model.listSection.map { LocalizedStringKey(CleanSection($0).title) } ?? "All junk",
-                           subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected")) {
+                           subtitle: String(localized: "\(Format.bytes(size)) selected")) {
                     SelectAllButton(ids: sections.flatMap { model.items(in: $0).map(\.path) }, selection: $model.selected)
-                }
-                if let section = model.listSection {
-                    let others = model.otherSelected(than: section)
-                    if !others.titles.isEmpty {
-                        Notice(text: String(localized: "Clean also cleans the other ticked categories: \(others.titles.joined(separator: ", ")) (\(Format.bytes(others.size)))."),
-                               symbol: "exclamationmark.triangle")
-                    }
                 }
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {

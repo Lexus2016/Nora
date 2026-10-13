@@ -289,7 +289,9 @@ final class AppsModel {
             apps.removeAll { removedPaths.contains($0.path) }
             unusedPaths.subtract(removedPaths)
             failed = !problems.isEmpty
+            let total = removed.count + problems.count
             resultHeadline = removed.isEmpty ? String(localized: "No app was removed")
+                : failed ? String(localized: "Removed: \(removed.count) of \(total)")
                 : permanent ? String(localized: "\(removed.count) apps removed") : String(localized: "\(removed.count) apps moved to the Trash")
             resultLines = removed.map { "✓ \($0)" } + problems.map { "✕ \($0)" }
             selected = []

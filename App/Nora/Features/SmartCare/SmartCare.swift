@@ -19,10 +19,12 @@ final class SmartCareModel {
 
     func scan(_ app: AppModel) {
         phase = .scanning
-        app.cleanup.scan(app)
-        app.performance.scan(app)
-        app.projects.scan(app)
-        app.installers.scan(app)
+        // A module that is still removing keeps its run: scanning it again would replace its task.
+        let idle = { (module: Module) in self.stage(of: module, app) != .running }
+        if idle(.cleanup) { app.cleanup.scan(app) }
+        if idle(.performance) { app.performance.scan(app) }
+        if idle(.projects) { app.projects.scan(app) }
+        if idle(.installers) { app.installers.scan(app) }
         task = Task {
             while Self.tiles.contains(where: { stage(of: $0, app) == .scanning }) {
                 try? await Task.sleep(nanoseconds: 300_000_000)

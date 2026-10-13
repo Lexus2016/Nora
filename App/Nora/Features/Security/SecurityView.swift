@@ -127,9 +127,11 @@ private struct SecurityResults: View {
     }
 
     private var headline: String {
-        model.findings.isEmpty
-            ? String(localized: "Nothing to review in this scan.")
-            : String(localized: "\(model.findings.count) signals to review.")
+        if !model.findings.isEmpty { return String(localized: "\(model.findings.count) signals to review.") }
+        // An unfinished antivirus pass found nothing only in the files it could read.
+        return model.clamavIncomplete
+            ? String(localized: "The antivirus scan did not finish, so this result is incomplete.")
+            : String(localized: "Nothing to review in this scan.")
     }
 
     private var reviewAll: (LocalizedStringKey, () -> Void)? {
@@ -193,7 +195,7 @@ private struct SecurityResults: View {
             action = { model.updateDatabase(app) }
         } else {
             value = "\(model.clamavSignals)"
-            detail = String(localized: "ClamAV signatures matched.")
+            detail = model.clamavIncomplete ? String(localized: "The ClamAV scan did not finish.") : String(localized: "ClamAV signatures matched.")
         }
         return CategoryCard(value: value, caption: String(localized: "ClamAV signals"), detail: detail,
                             symbol: "ladybug", tint: module.palette.glow,

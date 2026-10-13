@@ -24,11 +24,14 @@ final class StatusStore {
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var demand = 0
     @ObservationIgnored private var stopTask: Task<Void, Never>?
+    /// Bumped on every start, so a cancelled loop that is still finishing cannot write samples
+    /// (or clear the error) over the current one.
+    @ObservationIgnored private var generation = 0
 
     func attach(_ mole: Mole) {
         // A different Mole (updated, reinstalled, chosen in Settings): the running stream still
         // points at the old executable, so it restarts.
-        let changed = self.mole?.executable != mole.executable
+        let changed = self.mole?.executable != mole.executable || self.mole?.version != mole.version
         self.mole = mole
         if changed, task != nil {
             task?.cancel()
@@ -58,16 +61,23 @@ final class StatusStore {
     private func start() {
         guard let mole, task == nil else { return }
         isStreaming = true
+        generation += 1
+        let current = generation
         task = Task { [weak self] in
             var delay: UInt64 = 1
             while !Task.isCancelled {
                 do {
                     for try await snapshot in StatusStream.snapshots(mole) {
+                        guard self?.generation == current else { return }
                         self?.ingest(snapshot)
                         delay = 1
                     }
+                    // Mole closed the stream without an error: the numbers on screen are old now.
+                    if !Task.isCancelled, self?.generation == current {
+                        self?.lastError = String(localized: "Mole stopped sending system status. Nora is reconnecting.")
+                    }
                 } catch {
-                    self?.lastError = error.localizedDescription
+                    if self?.generation == current { self?.lastError = error.localizedDescription }
                 }
                 guard !Task.isCancelled else { break }
                 try? await Task.sleep(nanoseconds: delay * 1_000_000_000)

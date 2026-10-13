@@ -50,8 +50,9 @@ final class InstallersModel {
 
     func remove(_ app: AppModel) {
         let chosen = files.filter { selected.contains($0.id) }
-        // Each file with the source it was listed from, so a same-named file elsewhere never stands in.
-        let targets = chosen.map { InstallerTarget(name: $0.name, sources: [$0.source]) }
+        // Each file with the folder and size it was listed with, so a same-named file elsewhere, or
+        // a different file behind the same cut name, never stands in.
+        let targets = chosen.map { InstallerTarget(name: $0.name, sources: [$0.source], size: $0.sizeText) }
         stage = .running
         task = Task {
             do {

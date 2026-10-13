@@ -66,7 +66,7 @@ final class SpaceMapModel {
         forward = []
         selected = []
         task = Task {
-            let ok = await load(root, app)
+            let ok = await load(root, app, request: id)
             guard requestID == id else { return }
             if ok { path = [root]; stage = .review } else { stage = .start }
         }
@@ -75,9 +75,10 @@ final class SpaceMapModel {
     func open(_ url: URL, _ app: AppModel) {
         let id = newRequest()
         forward = []
+        error = nil
         task = Task {
             if cache[url] == nil {
-                let ok = await load(url, app)
+                let ok = await load(url, app, request: id)
                 guard requestID == id, ok else { return }
             }
             guard requestID == id else { return }
@@ -104,10 +105,12 @@ final class SpaceMapModel {
         path = Array(path[...index])
     }
 
+    /// Loads one level. The spinner and the error belong to `request`: an older load that ends
+    /// late may still fill the cache, but it never touches what the screen shows now.
     @discardableResult
-    private func load(_ url: URL, _ app: AppModel) async -> Bool {
+    private func load(_ url: URL, _ app: AppModel, request: UUID) async -> Bool {
         loading = true
-        defer { loading = false }
+        defer { if requestID == request { loading = false } }
         do {
             let result = try await app.run(["analyze", "--json", url.path])
             guard let data = result.stdout.data(using: .utf8), result.succeeded || !result.stdout.isEmpty else {
@@ -118,7 +121,7 @@ final class SpaceMapModel {
         } catch is CancellationError {
             return false
         } catch {
-            self.error = error.localizedDescription
+            if requestID == request { self.error = error.localizedDescription }
             return false
         }
     }
@@ -144,7 +147,7 @@ final class SpaceMapModel {
         stage = .done
     }
 
-    func stop() { task?.cancel() }
+    func stop() { _ = newRequest(); loading = false; if stage == .scanning { stage = .start } }
     func reset() { _ = newRequest(); stage = .start; path = []; cache = [:]; selected = []; forward = [] }
 }
 
@@ -200,6 +203,8 @@ private struct SpaceLens: View {
                     orb: model.selected.isEmpty ? nil : OrbAction(title: "Remove", destructive: true, action: { model.trashSelected() })) {
             VStack(spacing: 14) {
                 breadcrumb
+                // A folder that could not be opened says why instead of doing nothing.
+                if let error = model.error { Notice(text: error, color: Palette.crit) }
                 HStack(alignment: .top, spacing: 18) {
                     listPanel.frame(width: 380)
                     ZStack {

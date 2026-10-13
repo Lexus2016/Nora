@@ -628,5 +628,12 @@
   "waiting for update": "ожидаю обновления",
   "yara is not installed, so Apple's XProtect rules do not run.": "yara не установлен, поэтому правила Apple XProtect не запускаются.",
   "yara stopped.": "yara остановился.",
-  "your app caches and logs": "кэши и журналы ваших программ"
+  "your app caches and logs": "кэши и журналы ваших программ",
+  "Mole stopped sending system status. Nora is reconnecting.": "Mole перестал присылать состояние системы. Nora подключается заново.",
+  "Removed: %lld of %lld": "Удалено: %lld из %lld",
+  "The ClamAV scan did not finish.": "Проверка ClamAV не завершилась.",
+  "The antivirus scan did not finish, so this result is incomplete.": "Антивирусная проверка не завершилась, поэтому результат неполный.",
+  "The drive was unplugged or changed since the preview. Preview it again.": "После просмотра диск отключили или заменили. Просмотрите его ещё раз.",
+  "The folders you chose are already gone, so nothing was removed.": "Выбранных папок уже нет, поэтому ничего не удалено.",
+  "Tiles in the quick menu (one to four)": "Плитки в быстром меню (от одной до четырёх)"
 }

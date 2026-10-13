@@ -61,6 +61,25 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(p.warnings.count, 1)
     }
 
+    /// A purge preview is complete only on Mole's own success line with a matching item count.
+    /// Empty or broken output must never read as complete: Nora would then protect nothing.
+    func testPurgePreviewCompletenessIsPositive() {
+        let home = URL(fileURLWithPath: "/Users/u")
+        XCTAssertFalse(PurgePreview.parse("", home: home).isComplete)
+        XCTAssertFalse(PurgePreview.parse("zsh: command not found: mo", home: home).isComplete)
+        let done = """
+        ✓ [DRY RUN] /Users/u/Code/app/node_modules, 132.5MB
+        ✓ [DRY RUN] /Users/u/Code/b/target, 4KB
+        Dry run complete - no changes made
+        Would free approximately: 132.5MB | Items: 2 | Free: 508.57GB
+        """
+        XCTAssertTrue(PurgePreview.parse(done, home: home).isComplete)
+        XCTAssertFalse(PurgePreview.parse(done.replacingOccurrences(of: "Items: 2", with: "Items: 3"), home: home).isComplete,
+                       "an item Nora could not read must make the preview incomplete")
+        XCTAssertTrue(PurgePreview.parse("✓ Great! No old project artifacts to clean", home: home).isComplete)
+        XCTAssertFalse(PurgePreview.parse("No artifacts found in the completed project scans", home: home).isComplete)
+    }
+
     func testOptimizeReport() {
         let out = """
         Optimize

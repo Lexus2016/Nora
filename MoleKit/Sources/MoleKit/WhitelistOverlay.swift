@@ -106,6 +106,16 @@ public struct WhitelistOverlay: Sendable {
         Self.syncDirectory(journalURL.deletingLastPathComponent())
     }
 
+    /// The whitelist as the user keeps it: while a run's overlay is applied, the copy saved in
+    /// the journal, otherwise the file. Nil when the user has no whitelist file. Editors read
+    /// this, so a run's temporary entries never turn into permanent rules.
+    public func userWhitelist() -> String? {
+        if let data = try? read(journalURL), let journal = try? JSONDecoder().decode(Journal.self, from: data) {
+            return journal.originalContents.map { String(decoding: $0, as: UTF8.self) }
+        }
+        return try? String(contentsOf: whitelistURL, encoding: .utf8)
+    }
+
     private func read(_ url: URL) throws -> Data {
         do {
             return try Data(contentsOf: url)

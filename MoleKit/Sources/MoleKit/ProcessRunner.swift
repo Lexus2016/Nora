@@ -48,6 +48,7 @@ public enum ChildProcesses {
     private static let lock = NSLock()
     nonisolated(unsafe) private static var running: [ObjectIdentifier: Process] = [:]
     nonisolated(unsafe) private static var shuttingDown = false
+    nonisolated(unsafe) private static var groups: Set<pid_t> = []
 
     public static func register(_ process: Process) {
         lock.withLock { running[ObjectIdentifier(process)] = process }
@@ -57,17 +58,48 @@ public enum ChildProcesses {
         lock.withLock { _ = running.removeValue(forKey: ObjectIdentifier(process)) }
     }
 
+    /// A PTY child leads its own session, so it is signalled as a process group: sudo, askpass
+    /// and Mole's helpers stop with it.
+    public static func registerGroup(_ leader: pid_t) {
+        lock.withLock { _ = groups.insert(leader) }
+    }
+
+    public static func unregisterGroup(_ leader: pid_t) {
+        lock.withLock { _ = groups.remove(leader) }
+    }
+
     /// True once Nora is quitting: a child that starts after the sweep is stopped right away.
     public static var isShuttingDown: Bool { lock.withLock { shuttingDown } }
 
     /// Sends SIGTERM to every child that is still running. The list is taken under the lock and
     /// the signals are sent after it is released, because termination handlers take the same lock.
     public static func terminateAll() {
-        let children = lock.withLock { () -> [Process] in
+        let (children, leaders) = lock.withLock { () -> ([Process], [pid_t]) in
             shuttingDown = true
-            return Array(running.values)
+            return (Array(running.values), Array(groups))
         }
         for child in children where child.isRunning { child.terminate() }
+        for leader in leaders { kill(-leader, SIGTERM) }
+    }
+
+    /// The quit barrier: stops every child and returns only once they are gone (SIGKILL after
+    /// `grace`), so nothing Nora started still reads the whitelist when the overlay is put back.
+    public static func terminateAllAndWait(grace: TimeInterval = 3) {
+        terminateAll()
+        guard !waitUntilGone(Date().addingTimeInterval(grace)) else { return }
+        let (children, leaders) = lock.withLock { (Array(running.values), Array(groups)) }
+        for child in children where child.isRunning { kill(child.processIdentifier, SIGKILL) }
+        for leader in leaders { kill(-leader, SIGKILL) }
+        _ = waitUntilGone(Date().addingTimeInterval(1))
+    }
+
+    private static func waitUntilGone(_ deadline: Date) -> Bool {
+        while Date() < deadline {
+            let (children, leaders) = lock.withLock { (Array(running.values), Array(groups)) }
+            if !children.contains(where: \.isRunning) && !leaders.contains(where: { kill($0, 0) == 0 }) { return true }
+            usleep(50_000)
+        }
+        return false
     }
 
     /// Call right after `run()`: stops a child that was launched after Nora began quitting or
@@ -108,7 +140,7 @@ public enum ProcessRunner {
                     outBuffer.append(out.fileHandleForReading.readDataToEndOfFile())
                     errBuffer.append(err.fileHandleForReading.readDataToEndOfFile())
                     continuation.resume(returning: CommandResult(
-                        status: finished.terminationStatus,
+                        status: ProcessFailure.status(of: finished),
                         stdout: outBuffer.string,
                         stderr: errBuffer.string
                     ))
@@ -164,8 +196,9 @@ public enum ProcessRunner {
                 errSplitter.feed(err.fileHandleForReading.readDataToEndOfFile())
                 outSplitter.flush()
                 errSplitter.flush()
-                if finished.terminationReason == .exit, finished.terminationStatus != 0 {
-                    continuation.finish(throwing: ProcessFailure(status: finished.terminationStatus))
+                let status = ProcessFailure.status(of: finished)
+                if status != 0 {
+                    continuation.finish(throwing: ProcessFailure(status: status))
                 } else {
                     continuation.finish()
                 }
@@ -213,6 +246,12 @@ public struct OutputLine: Sendable, Equatable {
 public struct ProcessFailure: Error, CustomStringConvertible, Equatable {
     public let status: Int32
     public var description: String { "exited with status \(status)" }
+
+    /// The exit code, or 128 + the signal number for a child killed by a signal (the shell's
+    /// convention), so a killed run never reads as a success.
+    static func status(of process: Process) -> Int32 {
+        process.terminationReason == .uncaughtSignal ? 128 + process.terminationStatus : process.terminationStatus
+    }
 }
 
 /// Thread-safe byte accumulator for pipe readability handlers.

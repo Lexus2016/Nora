@@ -2751,22 +2751,6 @@
         }
       }
     },
-    "Clean also cleans the other ticked categories: %@ (%@).": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "«Очистить» также очистит другие отмеченные категории: %@ (%@)."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "«Очистити» також очистить інші позначені категорії: %@ (%@)."
-          }
-        }
-      }
-    },
     "Cleaning…": {
       "localizations": {
         "ru": {
@@ -4975,6 +4959,22 @@
         }
       }
     },
+    "Mole stopped sending system status. Nora is reconnecting.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole перестал присылать состояние системы. Nora подключается заново."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole перестав надсилати стан системи. Nora підключається знову."
+          }
+        }
+      }
+    },
     "Mole's built-in safety rules (system fonts, Spotlight, iCloud and more) always apply on top of this list.": {
       "localizations": {
         "ru": {
@@ -6691,6 +6691,22 @@
         }
       }
     },
+    "Removed: %lld of %lld": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалено: %lld из %lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалено: %lld з %lld"
+          }
+        }
+      }
+    },
     "Removes an app together with its helpers, caches and settings. Personal data stays.": {
       "localizations": {
         "ru": {
@@ -8053,6 +8069,22 @@
         }
       }
     },
+    "The ClamAV scan did not finish.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка ClamAV не завершилась."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка ClamAV не завершилася."
+          }
+        }
+      }
+    },
     "The Downloads watch keeps ClamAV's virus database in memory: about 1 GB, and up to 2.4 GB during the daily reload. Turn it off to free that memory.": {
       "localizations": {
         "ru": {
@@ -8097,6 +8129,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Екран «Історія» читає журнал операцій, тож поки цей пункт увімкнено, він порожній."
+          }
+        }
+      }
+    },
+    "The antivirus scan did not finish, so this result is incomplete.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Антивирусная проверка не завершилась, поэтому результат неполный."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Антивірусна перевірка не завершилася, тому результат неповний."
           }
         }
       }
@@ -8213,6 +8261,22 @@
         }
       }
     },
+    "The drive was unplugged or changed since the preview. Preview it again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "После просмотра диск отключили или заменили. Просмотрите его ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Після перегляду диск від’єднали або замінили. Перегляньте його ще раз."
+          }
+        }
+      }
+    },
     "The file is removed from disk and cannot be restored.": {
       "localizations": {
         "ru": {
@@ -8225,6 +8289,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Файл видаляється з диска, і його не можна відновити."
+          }
+        }
+      }
+    },
+    "The folders you chose are already gone, so nothing was removed.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбранных папок уже нет, поэтому ничего не удалено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибраних тек уже немає, тож нічого не видалено."
           }
         }
       }
@@ -8369,6 +8449,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Позначте знахідки, щоб помістити їх у карантин"
+          }
+        }
+      }
+    },
+    "Tiles in the quick menu (one to four)": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Плитки в быстром меню (от одной до четырёх)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Плитки в швидкому меню (від однієї до чотирьох)"
           }
         }
       }

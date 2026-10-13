@@ -10,16 +10,22 @@ final class HistoryModel {
     var sessions: [MoleHistory.Session] = []
     var loaded = false
     var error: String?
+    @ObservationIgnored private var task: Task<Void, Never>?
 
+    /// Each load replaces the previous one, so a slow older read never overwrites a newer list.
     func load(_ app: AppModel) {
         error = nil
-        Task {
+        task?.cancel()
+        task = Task {
             do {
                 let result = try await app.run(["history", "--json", "--limit", "200"])
-                guard let data = result.stdout.data(using: .utf8) else { return }
+                guard !Task.isCancelled, let data = result.stdout.data(using: .utf8) else { return }
                 sessions = try JSONDecoder().decode(MoleHistory.self, from: data).sessions
                 loaded = true
+            } catch is CancellationError {
+                return
             } catch {
+                guard !Task.isCancelled else { return }
                 self.error = error.localizedDescription
                 loaded = true
             }

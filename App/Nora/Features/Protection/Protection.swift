@@ -38,7 +38,9 @@ final class ProtectionModel {
     func load(_ app: AppModel) {
         guard let mole = app.mole else { return }
         defaults = (try? mole.installation.cleanWhitelistDefaults(home: app.home)) ?? []
-        let cleanLines = Self.lines(cleanURL)
+        // During a Cleanup or Projects run the file holds that run's temporary entries; read the
+        // user's own list from the journal instead.
+        let cleanLines = Self.lines(text: app.overlay.userWhitelist())
         cleanFileExists = cleanLines != nil
         let home = app.home.path
         let expand: (String) -> String = { $0.hasPrefix("~/") ? home + $0.dropFirst(1) : $0 }
@@ -58,7 +60,11 @@ final class ProtectionModel {
 
     /// Non-empty, non-comment lines, or nil when the file is absent.
     static func lines(_ url: URL) -> [String]? {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        lines(text: try? String(contentsOf: url, encoding: .utf8))
+    }
+
+    static func lines(text: String?) -> [String]? {
+        guard let text else { return nil }
         return text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && !$0.hasPrefix("#") }
     }
 

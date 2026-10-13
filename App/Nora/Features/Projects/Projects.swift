@@ -59,9 +59,15 @@ final class ProjectsModel {
             let runID = "purge-\(UUID().uuidString)"
             defer { try? app.overlay.recover(runID: runID) }
             do {
-                let fresh = PurgePreview.parse(try await app.run(["purge", "--dry-run"]).stdout, home: app.home)
-                guard fresh.isComplete else {
+                let check = try await app.run(["purge", "--dry-run"])
+                let fresh = PurgePreview.parse(check.stdout, home: app.home)
+                guard check.succeeded, fresh.isComplete else {
                     throw NoraError.commandFailed(String(localized: "Some project folders could not be scanned completely, so nothing was removed. Scan again, or limit the folders in Protection."))
+                }
+                // Nothing the user ticked is left, so there is nothing to purge. Running anyway would
+                // let Mole take whatever appears between this check and its own scan.
+                guard fresh.items.contains(where: { chosen.contains($0.path) }) else {
+                    throw NoraError.commandFailed(String(localized: "The folders you chose are already gone, so nothing was removed."))
                 }
                 let protected = fresh.items.map(\.path).filter { !chosen.contains($0) }
                 if !protected.isEmpty {

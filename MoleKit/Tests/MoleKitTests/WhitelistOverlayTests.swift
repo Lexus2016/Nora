@@ -11,6 +11,27 @@ struct WhitelistOverlayTests {
         (try? Data(contentsOf: url)).map { String(decoding: $0, as: UTF8.self) }
     }
 
+    /// While a run's overlay is applied, editors must see the user's own list, never the run's
+    /// temporary entries (they would be saved back as permanent rules).
+    @Test func userWhitelistIgnoresTheActiveOverlay() throws {
+        let home = try TestSandbox.make("wl-user")
+        defer { try? FileManager.default.removeItem(at: home) }
+        let o = overlay(home)
+        try TestSandbox.write("~/Keep\n", to: o.whitelistURL)
+        try o.apply(protecting: ["/tmp/run-only"], defaults: [], runID: "r1")
+        #expect(contents(o.whitelistURL)?.contains("/tmp/run-only") == true)
+        #expect(o.userWhitelist() == "~/Keep\n")
+        try o.recover(runID: "r1")
+        #expect(o.userWhitelist() == "~/Keep\n")
+
+        let bare = try TestSandbox.make("wl-user-absent")
+        defer { try? FileManager.default.removeItem(at: bare) }
+        let none = overlay(bare)
+        try none.apply(protecting: ["/tmp/run-only"], defaults: ["~/Default"], runID: "r2")
+        #expect(none.userWhitelist() == nil, "no whitelist file before the run means none for the editor")
+        try none.recover(runID: "r2")
+    }
+
     @Test func absentOriginalMaterializesDefaultsAndIsDeletedOnRestore() throws {
         let home = try TestSandbox.make("wl-absent")
         defer { try? FileManager.default.removeItem(at: home) }

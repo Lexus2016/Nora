@@ -50,6 +50,10 @@ struct UninstallParsingTests {
         #expect(RemovalList(noPrompt) == nil)
         let stray = ["Files to be removed:", "◎ App , 1MB", "Warning: something", "  ✓ ~/x , 1KB", "➤ Remove"]
         #expect(RemovalList(stray) == nil)
+        // A file name with a carriage return can draw its own "➤" over its row; the entries
+        // after it must not disappear behind that fake prompt.
+        let spoofed = ["Files to be removed:", "◎ App , 1MB", "➤ Remove 1 app", "  ✓ ~/hidden , 9GB", "➤ Remove 1 app, 1MB  Enter confirm, ESC cancel:"]
+        #expect(RemovalList(spoofed) == nil)
     }
 }
 

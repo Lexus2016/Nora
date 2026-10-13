@@ -32,6 +32,7 @@ final class PurgeOverlayTests: XCTestCase {
         let parsed = PurgePreview.parse(preview.stdout, home: home)
         let found = Set(parsed.items.map(\.path))
         XCTAssertEqual(found, [alpha.path, beta.path, gamma.path], preview.stdout)
+        XCTAssertTrue(parsed.isComplete, "real Mole output must pass the strict completeness check\n" + preview.stdout)
 
         let installation = try MoleInstallation(executable: mo)
         let overlay = WhitelistOverlay(home: home, journalURL: home.appendingPathComponent("journal.json"))

@@ -80,6 +80,8 @@ final class SecurityModel {
     var xprotect: XProtectState = .notRun
     var skippedICloud = 0
     var unreadableCount = 0
+    /// clamscan exited with 2 or more (errors, unread files, killed): no match then proves nothing.
+    var clamavIncomplete = false
     var quarantine: [QuarantineEntry] = []
     var watchActive = false
     /// clamd is loading its database (several seconds); Settings shows the switch as on meanwhile.
@@ -103,6 +105,9 @@ final class SecurityModel {
     @ObservationIgnored private var watchStart: Task<Void, Never>?
     @ObservationIgnored private var watchGeneration: UUID?
     @ObservationIgnored private var scheduledRun = false
+    /// When an update was last tried, whatever the outcome. A failing download is retried hourly
+    /// and never holds back a due scan that the existing database can run.
+    @ObservationIgnored private var lastUpdateAttempt: Date?
 
     private static let systemPrefixes = ["/System/", "/usr/", "/bin/", "/sbin/", "/Library/Apple/"]
 
@@ -167,6 +172,7 @@ final class SecurityModel {
         scanFindings = []
         xprotect = .notRun
         unreadableCount = 0
+        clamavIncomplete = false
         progress = String(localized: "Reading launch items")
         let scope = self.scope
         let home = self.home
@@ -256,6 +262,7 @@ final class SecurityModel {
         unreadableCount += output.errors
         // Exit 2 or more: errors or unread files. Zero findings then does not mean a clean scan.
         if status >= 2 {
+            clamavIncomplete = true
             let message = String(localized: "ClamAV stopped with an error or could not read some files, so this scan may be incomplete. The console shows the details.")
             notice = notice.map { $0 + "\n" + message } ?? message
         }
@@ -413,7 +420,9 @@ final class SecurityModel {
     func tick(_ app: AppModel, now: Date = .now) {
         guard task == nil, stage == .start || stage == .review, checked.isEmpty, clamav.isInstalled else { return }
         let needsDatabase = SecuritySettings.scheduleEnabled || SecuritySettings.watchEnabled
-        if needsDatabase, ScanSchedule.isUpdateDue(now: now, last: SecuritySettings.lastDatabaseUpdate) {
+        if needsDatabase, ScanSchedule.isUpdateDue(now: now, last: SecuritySettings.lastDatabaseUpdate),
+           lastUpdateAttempt.map({ now.timeIntervalSince($0) >= 3_600 }) ?? true {
+            lastUpdateAttempt = now
             updateDatabase(app)
             return
         }
@@ -523,6 +532,7 @@ final class SecurityModel {
         xprotect = .notRun
         skippedICloud = 0
         unreadableCount = 0
+        clamavIncomplete = false
     }
 
     // MARK: - Helpers

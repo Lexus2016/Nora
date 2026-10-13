@@ -9,15 +9,19 @@ public struct InstallerRow: Equatable, Sendable {
     public let source: String
 }
 
-/// One file to delete: its name as the menu shows it (possibly cut with "...") and the sources it
-/// may come from. The app passes the one source the user saw next to the name.
+/// One file to delete: its name as the menu shows it (possibly cut with "..."), the sources it
+/// may come from and, from the app, the size the user saw. The menu never shows a full path, so
+/// the visible name, folder and size together are the file's identity: a different file that
+/// shares a cut name must also share the folder and the size to stand in, or the run is refused.
 public struct InstallerTarget: Hashable, Sendable {
     public let name: String
     public let sources: Set<String>
+    public let size: String?
 
-    public init(name: String, sources: Set<String>) {
+    public init(name: String, sources: Set<String>, size: String? = nil) {
         self.name = name
         self.sources = sources
+        self.size = size
     }
 }
 
@@ -25,6 +29,8 @@ public enum InstallerDriverError: Error, Equatable {
     case targetNotListed(String)
     case targetListedTwice(String)
     case sourceNotAllowed(name: String, source: String)
+    /// The name is still listed but its size changed since the preview: another file now.
+    case targetChanged(String)
     case preselected([String])
     case paginated
     case selectionMismatch(expected: [String], onScreen: [String])
@@ -154,16 +160,23 @@ public struct InstallerDriver {
             guard !byName.isEmpty else { throw InstallerDriverError.targetNotListed(target.name) }
             // The name and the source together pick the row; the same name in another folder is
             // a different file and never stands in for the one the user saw.
-            let matches = byName.filter { target.sources.contains(rows[$0].source) }
-            guard let index = matches.first else {
+            let fromSource = byName.filter { target.sources.contains(rows[$0].source) }
+            guard !fromSource.isEmpty else {
                 throw InstallerDriverError.sourceNotAllowed(name: target.name, source: rows[byName[0]].source)
             }
+            let matches = fromSource.filter { Self.row(rows[$0], is: target) }
+            guard let index = matches.first else { throw InstallerDriverError.targetChanged(target.name) }
             // Two rows with the same visible name and source, or two targets behind one row: refuse.
             guard matches.count == 1, chosen.insert(index).inserted else {
                 throw InstallerDriverError.targetListedTwice(target.name)
             }
         }
         return chosen
+    }
+
+    /// Everything the user saw about the file: cut or full name, folder and size.
+    static func row(_ row: InstallerRow, is target: InstallerTarget) -> Bool {
+        Self.row(row, shows: target.name) && target.sources.contains(row.source) && (target.size.map { $0 == row.size } ?? true)
     }
 
     /// The menu cuts names to its column (20–40 cells) and appends "..."; the review list

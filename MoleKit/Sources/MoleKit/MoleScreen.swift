@@ -46,21 +46,21 @@ struct RemovalList: Equatable {
     }
 
     init?(_ lines: [String]) {
-        guard let start = lines.firstIndex(of: "Files to be removed:") else { return nil }
-        var reachedPrompt = false
-        for line in lines[(start + 1)...] {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.isEmpty { continue }
-            if trimmed.hasPrefix("➤") { reachedPrompt = true; break }
-            if trimmed.hasPrefix("◎ ") {
-                groups.append(Self.stripSize(trimmed.dropFirst(2)))
-            } else if trimmed.hasPrefix("✓ ") {
-                entries.append(Self.stripSize(trimmed.dropFirst(2)))
+        guard let start = lines.firstIndex(of: "Files to be removed:"),
+              lines.lastIndex(of: "Files to be removed:") == start else { return nil }
+        let rest = lines[(start + 1)...].map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        // The prompt is the one "➤" line and the last thing on screen. A file name that draws its
+        // own "➤" (a carriage return inside it) cannot end the list early and hide what follows.
+        guard let prompt = rest.last, prompt.hasPrefix("➤"), rest.filter({ $0.hasPrefix("➤") }).count == 1 else { return nil }
+        for line in rest.dropLast() {
+            if line.hasPrefix("◎ ") {
+                groups.append(Self.stripSize(line.dropFirst(2)))
+            } else if line.hasPrefix("✓ ") {
+                entries.append(Self.stripSize(line.dropFirst(2)))
             } else {
                 return nil
             }
         }
-        guard reachedPrompt else { return nil }
     }
 
     private static func stripSize(_ text: Substring) -> String {

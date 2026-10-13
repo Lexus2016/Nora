@@ -93,6 +93,9 @@ final class OrphanAndCopyTests: XCTestCase {
         XCTAssertEqual(CommandPreview.terminalForm("sudo -A -v && mo clean"), "sudo -v && mo clean")
         XCTAssertEqual(CommandPreview.terminalForm("mo clean; sudo -A -v && mo optimize"), "mo clean; sudo -v && mo optimize")
         XCTAssertEqual(CommandPreview.terminalForm("mo uninstall 'Example sudo -A App'"), "mo uninstall 'Example sudo -A App'")
+        // ShellCommand's escaped apostrophe must not flip the quote state for what follows.
+        XCTAssertEqual(CommandPreview.terminalForm("mo uninstall 'O'\\''Brien'; sudo -A -v && mo optimize"),
+                       "mo uninstall 'O'\\''Brien'; sudo -v && mo optimize")
         XCTAssertEqual(CommandPreview.terminalForm("mo uninstall 'Example; sudo -A App'"), "mo uninstall 'Example; sudo -A App'")
         XCTAssertEqual(CommandPreview.terminalForm("sudo -A -v && mo uninstall 'A && sudo -A B'"), "sudo -v && mo uninstall 'A && sudo -A B'")
     }

@@ -72,6 +72,7 @@ public final class PTYSession: @unchecked Sendable {
         }
         pid = child
         master = fd
+        ChildProcesses.registerGroup(child)
 
         DispatchQueue.global().async { [self] in readLoop() }
         DispatchQueue.global().async { [self] in reap() }
@@ -139,12 +140,13 @@ public final class PTYSession: @unchecked Sendable {
         throw PTYError(description: "process \(pid) still running after \(timeout)s\n\(dump(lines))")
     }
 
-    /// SIGTERM, then SIGKILL if the child is still alive after `grace` seconds.
+    /// SIGTERM, then SIGKILL if the child is still alive after `grace` seconds. The child leads
+    /// its own session, so the whole group gets the signal: a pending sudo or askpass included.
     public func terminate(grace: TimeInterval = 2) {
         guard exitStatus == nil else { return }
-        kill(pid, SIGTERM)
+        kill(-pid, SIGTERM)
         if (try? waitForExit(timeout: grace)) == nil {
-            kill(pid, SIGKILL)
+            kill(-pid, SIGKILL)
         }
     }
 
@@ -184,6 +186,7 @@ public final class PTYSession: @unchecked Sendable {
         while waitpid(pid, &raw, 0) < 0, errno == EINTR {}
         let exit = ExitStatus(waitStatus: raw)
         locked { status = exit }
+        ChildProcesses.unregisterGroup(pid)
     }
 
     private func locked<T>(_ body: () throws -> T) rethrows -> T {
