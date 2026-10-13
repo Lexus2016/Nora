@@ -53,10 +53,23 @@ final class StatusEnergyModeTests: XCTestCase {
 
     // MARK: command builder
 
+    func testPowerModeValuesMatchTheVerifiedMapping() {
+        // Verified against MangelSP/MoleUI: powermode 0 Automatic, 1 Low Power, 2 High Power.
+        XCTAssertEqual(EnergyModeParser.powerMode("0"), .automatic)
+        XCTAssertEqual(EnergyModeParser.powerMode("1"), .low)
+        XCTAssertEqual(EnergyModeParser.powerMode("2"), .high)
+        XCTAssertNil(EnergyModeParser.powerMode("3"))
+    }
+
     func testPowerModeArgumentsMatchTheSetting() {
-        XCTAssertEqual(EnergyModeCommand.pmsetArguments(for: .low, key: .powerMode), ["-a", "powermode", "0"])
-        XCTAssertEqual(EnergyModeCommand.pmsetArguments(for: .automatic, key: .powerMode), ["-a", "powermode", "1"])
+        XCTAssertEqual(EnergyModeCommand.pmsetArguments(for: .automatic, key: .powerMode), ["-a", "powermode", "0"])
+        XCTAssertEqual(EnergyModeCommand.pmsetArguments(for: .low, key: .powerMode), ["-a", "powermode", "1"])
         XCTAssertEqual(EnergyModeCommand.pmsetArguments(for: .high, key: .powerMode), ["-a", "powermode", "2"])
+    }
+
+    func testPowerModeOneIsLowPowerInTheParsedState() {
+        XCTAssertEqual(EnergyModeParser.parse(pmset(" powermode           1"))?.current, .low)
+        XCTAssertEqual(EnergyModeParser.parse(pmset(" powermode           0"))?.current, .automatic)
     }
 
     func testLowPowerKeyHasNoHighPower() {
@@ -65,11 +78,11 @@ final class StatusEnergyModeTests: XCTestCase {
         XCTAssertNil(EnergyModeCommand.displayed(for: .high, key: .lowPowerMode))
     }
 
-    func testDisplayedCommandIsTheShellFormWithSudo() {
+    func testDisplayedCommandIsExactlyWhatRuns() {
         XCTAssertEqual(EnergyModeCommand.displayed(for: .automatic, key: .lowPowerMode),
-                       "sudo /usr/bin/pmset -a lowpowermode 0")
+                       "sudo -A /usr/bin/pmset -a lowpowermode 0")
         XCTAssertEqual(EnergyModeCommand.displayed(for: .high, key: .powerMode),
-                       "sudo /usr/bin/pmset -a powermode 2")
+                       "sudo -A /usr/bin/pmset -a powermode 2")
     }
 
     func testInvocationRunsPrivilegedPmsetThroughSudoAskpass() {

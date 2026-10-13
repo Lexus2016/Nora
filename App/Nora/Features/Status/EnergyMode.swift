@@ -51,11 +51,12 @@ enum EnergyModeParser {
         return found
     }
 
-    /// powermode: 0 Low Power, 1 Automatic, 2 High Power.
+    /// powermode: 0 Automatic, 1 Low Power, 2 High Power. Checked against MangelSP/MoleUI
+    /// (Services/PowerModeService.swift): `powermode 1` is its "Silent" (Low Power) and `powermode 0` its "Auto".
     static func powerMode(_ raw: String) -> EnergyMode? {
         switch raw {
-        case "0": return .low
-        case "1": return .automatic
+        case "0": return .automatic
+        case "1": return .low
         case "2": return .high
         default: return nil
         }
@@ -78,8 +79,8 @@ enum EnergyModeCommand {
     /// The `pmset` arguments that set `mode` for the given key, or nil if that mode does not exist for it.
     static func pmsetArguments(for mode: EnergyMode, key: EnergyModeState.Key) -> [String]? {
         switch (key, mode) {
-        case (.powerMode, .low): return ["-a", "powermode", "0"]
-        case (.powerMode, .automatic): return ["-a", "powermode", "1"]
+        case (.powerMode, .automatic): return ["-a", "powermode", "0"]
+        case (.powerMode, .low): return ["-a", "powermode", "1"]
         case (.powerMode, .high): return ["-a", "powermode", "2"]
         case (.lowPowerMode, .low): return ["-a", "lowpowermode", "1"]
         case (.lowPowerMode, .automatic): return ["-a", "lowpowermode", "0"]
@@ -87,10 +88,10 @@ enum EnergyModeCommand {
         }
     }
 
-    /// The command the user sees, as typed in a shell.
+    /// The command the user sees. It matches what runs: `sudo -A` is the askpass form of sudo.
     static func displayed(for mode: EnergyMode, key: EnergyModeState.Key) -> String? {
         guard let args = pmsetArguments(for: mode, key: key) else { return nil }
-        return (["sudo", pmset] + args).joined(separator: " ")
+        return (["sudo", "-A", pmset] + args).joined(separator: " ")
     }
 
     /// What `PTYRun` executes. `pmset` writes need root, and `PrivilegeBroker.wrap` only validates

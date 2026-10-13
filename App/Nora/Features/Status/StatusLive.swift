@@ -57,7 +57,7 @@ final class LiveStatus {
                     let power = await self.powerSampler.read()
                     let temps = await self.temperatureSampler.read()
                     guard !Task.isCancelled else { return }
-                    self.power = power.hasAny ? .value(power) : .unavailable
+                    self.power = power.supported ? .value(power) : .unavailable
                     self.temperatures = temps.hasAny ? .value(temps) : .unavailable
                     try? await Task.sleep(for: Self.sensorInterval)
                 }
@@ -76,9 +76,8 @@ final class LiveStatus {
                 }
             }
         }
-        if case .pending = energy {
-            Task { await refreshEnergy() }
-        }
+        // Read once per appearance, not on a timer: the mode only changes on Apply or in System Settings.
+        Task { await refreshEnergy() }
     }
 
     func stop() {

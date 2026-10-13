@@ -2,6 +2,8 @@ import XCTest
 @testable import Nora
 
 final class StatusSensorMathTests: XCTestCase {
+    private let second: UInt64 = 1_000_000_000
+
     func testEnergyUnitsConvertToJoules() {
         XCTAssertEqual(SensorMath.joules(1_000_000_000, unit: "nJ") ?? -1, 1, accuracy: 1e-12)
         XCTAssertEqual(SensorMath.joules(1_000_000, unit: "uJ") ?? -1, 1, accuracy: 1e-12)
@@ -29,40 +31,77 @@ final class StatusSensorMathTests: XCTestCase {
         XCTAssertNil(SensorMath.powerComponent(for: "GPU0"))
     }
 
-    func testStuckCPUCounterIsUnavailableButZeroGPUAndANEAreNumbers() {
-        let reading = PowerSampler.reading(from: [
-            EnergyChannel(name: "CPU Energy", unit: "mJ", value: 0),
-            EnergyChannel(name: "GPU Energy", unit: "nJ", value: 500_000_000),
-            EnergyChannel(name: "ANE0", unit: "mJ", value: 0),
-        ], seconds: 1)
-        XCTAssertNil(reading.cpu)
-        XCTAssertEqual(reading.gpu ?? -1, 0.5, accuracy: 1e-9)
-        XCTAssertEqual(reading.ane, 0)
-        XCTAssertNil(reading.total, "a total without the CPU would understate the power")
-    }
+    // MARK: energy totals
 
-    func testCPUWattsAndTotalWhenAllComponentsAreKnown() {
-        let reading = PowerSampler.reading(from: [
+    func testTotalsSumChannelsPerComponentInJoules() {
+        let totals = PowerSampler.energyTotals([
             EnergyChannel(name: "CPU Energy", unit: "mJ", value: 2_000),
-            EnergyChannel(name: "GPU Energy", unit: "mJ", value: 1_000),
-            EnergyChannel(name: "ANE0", unit: "mJ", value: 500),
-        ], seconds: 2)
-        XCTAssertEqual(reading.cpu ?? -1, 1, accuracy: 1e-9)
-        XCTAssertEqual(reading.gpu ?? -1, 0.5, accuracy: 1e-9)
-        XCTAssertEqual(reading.ane ?? -1, 0.25, accuracy: 1e-9)
-        XCTAssertEqual(reading.total ?? -1, 1.75, accuracy: 1e-9)
+            EnergyChannel(name: "GPU Energy", unit: "nJ", value: 500_000_000),
+            EnergyChannel(name: "ANE0", unit: "mJ", value: 300),
+            EnergyChannel(name: "ANE1", unit: "mJ", value: 200),
+        ])
+        XCTAssertEqual(totals[.cpu] ?? -1, 2, accuracy: 1e-12)
+        XCTAssertEqual(totals[.gpu] ?? -1, 0.5, accuracy: 1e-12)
+        XCTAssertEqual(totals[.ane] ?? -1, 0.5, accuracy: 1e-12)
     }
 
-    func testComponentWithAnUnknownUnitIsDroppedNotGuessed() {
-        let reading = PowerSampler.reading(from: [
+    func testComponentWithAnUnknownUnitIsLeftOutNotGuessed() {
+        let totals = PowerSampler.energyTotals([
             EnergyChannel(name: "GPU Energy", unit: "bogus", value: 1_000),
             EnergyChannel(name: "CPU Energy", unit: "mJ", value: 1_000),
-        ], seconds: 1)
-        XCTAssertNil(reading.gpu)
-        XCTAssertEqual(reading.cpu ?? -1, 1, accuracy: 1e-9)
+        ])
+        XCTAssertNil(totals[.gpu])
+        XCTAssertEqual(totals[.cpu] ?? -1, 1, accuracy: 1e-12)
     }
 
-    func testTemperatureSensorsGroupIntoCPUAndGPU() {
+    // MARK: step counter
+
+    func testFirstStepGivesNoWatts() {
+        var counter = StepCounterPower()
+        counter.observe(joules: 100, uptime: 0)
+        counter.observe(joules: 150, uptime: 10 * second)  // first step: no start time for its window
+        XCTAssertNil(counter.current(at: 10 * second, maxAge: 600 * second))
+    }
+
+    func testWattsAppearAtTheSecondStepAndUseTheWindowBetweenSteps() {
+        var counter = StepCounterPower()
+        counter.observe(joules: 100, uptime: 0)
+        counter.observe(joules: 150, uptime: 10 * second)     // first step
+        counter.observe(joules: 350, uptime: 30 * second)     // second step: +200 J over 20 s
+        XCTAssertEqual(counter.current(at: 30 * second, maxAge: 600 * second) ?? -1, 10, accuracy: 1e-9)
+    }
+
+    func testPollsWithoutAStepKeepTheLastWattsUntilTheMaxAge() {
+        var counter = StepCounterPower()
+        counter.observe(joules: 0, uptime: 0)
+        counter.observe(joules: 10, uptime: 1 * second)
+        counter.observe(joules: 20, uptime: 2 * second)       // 10 W
+        counter.observe(joules: 20, uptime: 5 * second)       // no step
+        XCTAssertEqual(counter.current(at: 5 * second, maxAge: 600 * second) ?? -1, 10, accuracy: 1e-9)
+        XCTAssertNil(counter.current(at: 700 * second, maxAge: 600 * second), "older than the max age is unavailable")
+    }
+
+    /// A big jump after a long quiet period must not be divided by the short poll interval.
+    func testLargeStepAfterALongGapIsAveragedOverTheGap() {
+        var counter = StepCounterPower()
+        counter.observe(joules: 0, uptime: 0)
+        counter.observe(joules: 100, uptime: 60 * second)     // first step, no watts yet
+        counter.observe(joules: 100 + 600, uptime: 120 * second)  // 600 J over 60 s = 10 W, not 600 J over 2 s
+        XCTAssertEqual(counter.current(at: 120 * second, maxAge: 600 * second) ?? -1, 10, accuracy: 1e-9)
+    }
+
+    func testCounterResetStartsOver() {
+        var counter = StepCounterPower()
+        counter.observe(joules: 100, uptime: 0)
+        counter.observe(joules: 200, uptime: 10 * second)
+        counter.observe(joules: 300, uptime: 20 * second)     // 10 W
+        counter.observe(joules: 5, uptime: 30 * second)       // went backwards
+        XCTAssertNil(counter.current(at: 30 * second, maxAge: 600 * second))
+    }
+
+    // MARK: temperatures
+
+    func testTemperatureTestsCoverTheGroupRules() {
         XCTAssertEqual(SensorMath.temperatureKind(for: "PMU tdie3"), .cpu)
         XCTAssertEqual(SensorMath.temperatureKind(for: "PMU pACC0"), .cpu)
         XCTAssertEqual(SensorMath.temperatureKind(for: "GPU die"), .gpu)
@@ -77,11 +116,12 @@ final class StatusSensorMathTests: XCTestCase {
         XCTAssertFalse(SensorMath.isPlausibleCelsius(.nan))
     }
 
-    func testTemperatureGroupAverageMaxAndCount() {
-        let group = SensorMath.group([50, 60, 70])
-        XCTAssertEqual(group?.average ?? -1, 60, accuracy: 1e-9)
-        XCTAssertEqual(group?.max, 70)
+    func testGroupAverageUsesNamesButMaxUsesRawReadings() {
+        // Three names, one of them read twice; the raw max (71) is hotter than any name mean.
+        let group = SensorMath.group(means: [50, 60, 55], rawMax: 71)
+        XCTAssertEqual(group?.average ?? -1, 55, accuracy: 1e-9)
+        XCTAssertEqual(group?.max, 71)
         XCTAssertEqual(group?.sensors, 3)
-        XCTAssertNil(SensorMath.group([]))
+        XCTAssertNil(SensorMath.group(means: [], rawMax: nil))
     }
 }

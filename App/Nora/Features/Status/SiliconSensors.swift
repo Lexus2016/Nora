@@ -8,8 +8,11 @@ struct PowerReading: Sendable, Equatable {
     var cpu: Double?
     var gpu: Double?
     var ane: Double?
+    /// False when the IOReport API or its subscription is missing. A nil component on a supported
+    /// reading only means that its counter has not stepped yet.
+    var supported = true
 
-    static let unavailable = PowerReading(cpu: nil, gpu: nil, ane: nil)
+    static let unavailable = PowerReading(cpu: nil, gpu: nil, ane: nil, supported: false)
 
     var hasAny: Bool { cpu != nil || gpu != nil || ane != nil }
 
@@ -88,11 +91,12 @@ enum SensorMath {
         value.isFinite && value > 0 && value <= 150
     }
 
-    static func group(_ values: [Double]) -> TemperatureGroup? {
-        guard !values.isEmpty else { return nil }
-        return TemperatureGroup(average: values.reduce(0, +) / Double(values.count),
-                                max: values.max() ?? 0,
-                                sensors: values.count)
+    /// `means` holds one value per sensor name. `rawMax` is the hottest raw reading of the group.
+    static func group(means: [Double], rawMax: Double?) -> TemperatureGroup? {
+        guard !means.isEmpty, let rawMax else { return nil }
+        return TemperatureGroup(average: means.reduce(0, +) / Double(means.count),
+                                max: rawMax,
+                                sensors: means.count)
     }
 }
 
@@ -124,14 +128,12 @@ private struct IOReportAPI {
     typealias CopyChannelsInGroup = @convention(c) (UnsafeRawPointer?, UnsafeRawPointer?, UInt64, UInt64, UInt64) -> UnsafeRawPointer?
     typealias CreateSubscription = @convention(c) (UnsafeRawPointer?, UnsafeRawPointer, UnsafeMutablePointer<UnsafeRawPointer?>?, UInt64, UnsafeRawPointer?) -> UnsafeRawPointer?
     typealias CreateSamples = @convention(c) (UnsafeRawPointer, UnsafeRawPointer, UnsafeRawPointer?) -> UnsafeRawPointer?
-    typealias CreateSamplesDelta = @convention(c) (UnsafeRawPointer, UnsafeRawPointer, UnsafeRawPointer?) -> UnsafeRawPointer?
     typealias ChannelString = @convention(c) (UnsafeRawPointer) -> UnsafeRawPointer?
     typealias SimpleInteger = @convention(c) (UnsafeRawPointer, Int32) -> Int64
 
     let copyChannelsInGroup: CopyChannelsInGroup
     let createSubscription: CreateSubscription
     let createSamples: CreateSamples
-    let createSamplesDelta: CreateSamplesDelta
     let channelName: ChannelString
     let unitLabel: ChannelString
     let simpleInteger: SimpleInteger
@@ -141,13 +143,12 @@ private struct IOReportAPI {
         guard let copy = resolve(handle, "IOReportCopyChannelsInGroup", CopyChannelsInGroup.self),
               let subscribe = resolve(handle, "IOReportCreateSubscription", CreateSubscription.self),
               let samples = resolve(handle, "IOReportCreateSamples", CreateSamples.self),
-              let delta = resolve(handle, "IOReportCreateSamplesDelta", CreateSamplesDelta.self),
               let name = resolve(handle, "IOReportChannelGetChannelName", ChannelString.self),
               let unit = resolve(handle, "IOReportChannelGetUnitLabel", ChannelString.self),
               let integer = resolve(handle, "IOReportSimpleGetIntegerValue", SimpleInteger.self)
         else { return nil }
         return IOReportAPI(copyChannelsInGroup: copy, createSubscription: subscribe, createSamples: samples,
-                           createSamplesDelta: delta, channelName: name, unitLabel: unit, simpleInteger: integer)
+                           channelName: name, unitLabel: unit, simpleInteger: integer)
     }
 }
 
@@ -183,48 +184,81 @@ private struct HIDAPI {
 
 // MARK: - Power
 
-/// Two IOReport samples turned into CPU, GPU and ANE watts. Keeps its subscription and the
-/// last sample between polls, so a poll costs one sample.
+/// Power from one cumulative energy counter that updates in steps, not continuously.
+/// Watts are the energy added between two observed steps, divided by the time between them.
+/// The first step has no start time, so it gives nil; the first watts appear at the second step.
+struct StepCounterPower: Sendable, Equatable {
+    private struct Point: Sendable, Equatable {
+        let joules: Double
+        let uptime: UInt64
+    }
+
+    private var last: Point?
+    private var hasPriorStep = false
+    private var watts: Double?
+    private var stepAt: UInt64?
+
+    mutating func observe(joules: Double, uptime: UInt64) {
+        guard let previous = last, joules >= previous.joules else {
+            // First sample, or the counter went backwards: start over from this sample.
+            self = StepCounterPower()
+            last = Point(joules: joules, uptime: uptime)
+            return
+        }
+        guard joules > previous.joules else { return } // no step since the last poll
+        if hasPriorStep, uptime > previous.uptime {
+            watts = SensorMath.watts(joules: joules - previous.joules,
+                                     seconds: Double(uptime - previous.uptime) / 1_000_000_000)
+        } else {
+            watts = nil
+        }
+        hasPriorStep = true
+        stepAt = uptime
+        last = Point(joules: joules, uptime: uptime)
+    }
+
+    /// The watts from the latest step pair, or nil when that step is older than `maxAge` (nanoseconds).
+    func current(at uptime: UInt64, maxAge: UInt64) -> Double? {
+        guard let watts, let stepAt, uptime >= stepAt, uptime - stepAt <= maxAge else { return nil }
+        return watts
+    }
+}
+
+/// Reads the IOReport "Energy Model" counters on every poll. The subscription is kept for the
+/// life of the sampler. Each component's counter is tracked by `StepCounterPower`.
 actor PowerSampler {
     private let api: IOReportAPI?
     private var subscription: UnsafeRawPointer?
     private var channels: UnsafeRawPointer?
-    private var previous: (sample: NSDictionary, uptime: UInt64)?
+    private var counters: [SensorMath.PowerComponent: StepCounterPower] = [:]
 
-    /// A baseline older than this is discarded, so the watts never average over a long gap.
-    private static let maxGap: UInt64 = 5_000_000_000
+    /// Watts from a counter that has not stepped for this long are reported as unavailable.
+    /// On the Mac where this was measured, CPU Energy stepped once in about 200 s of sampling and
+    /// its step covered about 3.7 kJ, so the window is long on purpose.
+    static let maxStepAge: UInt64 = 900_000_000_000
 
     init() {
         api = IOReportAPI.load()
     }
 
-    func read() async -> PowerReading {
-        guard let api, ensureSubscription(api) else { return .unavailable }
-        let now = DispatchTime.now().uptimeNanoseconds
-        if let previous, now &- previous.uptime <= Self.maxGap {
-            // Baseline from the last poll.
-        } else {
-            guard let first = takeSample(api) else { return .unavailable }
-            previous = first
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+    func read() -> PowerReading {
+        guard let api, ensureSubscription(api), let sample = takeSample(api) else { return .unavailable }
+        for (component, joules) in Self.energyTotals(channelList(api, sample.sample)) {
+            var counter = counters[component] ?? StepCounterPower()
+            counter.observe(joules: joules, uptime: sample.uptime)
+            counters[component] = counter
         }
-        guard let base = previous, let current = takeSample(api) else {
-            previous = nil
-            return .unavailable
-        }
-        previous = current
-        guard let delta = owned(api.createSamplesDelta(rawPointer(base.sample), rawPointer(current.sample), nil), NSDictionary.self) else {
-            return .unavailable
-        }
-        let seconds = Double(current.uptime &- base.uptime) / 1_000_000_000
-        return Self.reading(from: channelList(api, delta), seconds: seconds)
+        return PowerReading(
+            cpu: counters[.cpu]?.current(at: sample.uptime, maxAge: Self.maxStepAge),
+            gpu: counters[.gpu]?.current(at: sample.uptime, maxAge: Self.maxStepAge),
+            ane: counters[.ane]?.current(at: sample.uptime, maxAge: Self.maxStepAge),
+            supported: true
+        )
     }
 
-    /// Pure, so it can be tested: sums per component and drops a component if any of its channels is unreadable.
-    /// CPU counters that do not move at all over the window are reported as unavailable: a powered
-    /// CPU always draws some power, so zero joules means a stuck counter, not an idle chip.
-    /// GPU and ANE can legitimately be 0 W, so zero stays a number for them.
-    static func reading(from channels: [EnergyChannel], seconds: Double) -> PowerReading {
+    /// Cumulative joules per component. A component with any unreadable channel is left out,
+    /// so its counter is not advanced with a partial sum.
+    static func energyTotals(_ channels: [EnergyChannel]) -> [SensorMath.PowerComponent: Double] {
         var joules: [SensorMath.PowerComponent: Double] = [:]
         var broken: Set<SensorMath.PowerComponent> = []
         for channel in channels {
@@ -235,12 +269,7 @@ actor PowerSampler {
             }
             joules[component, default: 0] += j
         }
-        func watts(_ component: SensorMath.PowerComponent) -> Double? {
-            guard !broken.contains(component), let j = joules[component] else { return nil }
-            if component == .cpu, j == 0 { return nil }
-            return SensorMath.watts(joules: j, seconds: seconds)
-        }
-        return PowerReading(cpu: watts(.cpu), gpu: watts(.gpu), ane: watts(.ane))
+        return joules.filter { !broken.contains($0.key) }
     }
 
     private func ensureSubscription(_ api: IOReportAPI) -> Bool {
@@ -261,8 +290,8 @@ actor PowerSampler {
         return (sample, DispatchTime.now().uptimeNanoseconds)
     }
 
-    private func channelList(_ api: IOReportAPI, _ delta: NSDictionary) -> [EnergyChannel] {
-        guard let items = delta["IOReportChannels"] as? NSArray else { return [] }
+    private func channelList(_ api: IOReportAPI, _ sample: NSDictionary) -> [EnergyChannel] {
+        guard let items = sample["IOReportChannels"] as? NSArray else { return [] }
         var result: [EnergyChannel] = []
         for index in 0..<items.count {
             guard let item = items[index] as? NSDictionary else { continue }
@@ -289,10 +318,11 @@ actor TemperatureSampler {
     func read() -> TemperatureReading {
         guard let api, let client = ensureClient(api) else { return .unavailable }
         guard let services = owned(api.copyServices(client), NSArray.self) else { return .unavailable }
-        // The same sensor name is published by more than one service; average its readings
-        // first, so a duplicate does not count twice in the group average.
+        // The same sensor name is published by more than one service. Averages are taken per name,
+        // so a duplicate does not count twice; the max is over every raw reading, so no peak is lost.
         var perName: [String: [Double]] = [:]
         var kinds: [String: SensorMath.TemperatureKind] = [:]
+        var rawMax: [SensorMath.TemperatureKind: Double] = [:]
         for index in 0..<services.count {
             let service = services[index] as AnyObject
             let pointer = rawPointer(service)
@@ -301,18 +331,22 @@ actor TemperatureSampler {
                   let value = temperature(api, pointer), SensorMath.isPlausibleCelsius(value) else { continue }
             perName[name, default: []].append(value)
             kinds[name] = kind
+            rawMax[kind] = max(rawMax[kind] ?? value, value)
         }
-        var cpu: [Double] = []
-        var gpu: [Double] = []
+        var cpuMeans: [Double] = []
+        var gpuMeans: [Double] = []
         for (name, values) in perName {
             let mean = values.reduce(0, +) / Double(values.count)
             switch kinds[name] {
-            case .cpu: cpu.append(mean)
-            case .gpu: gpu.append(mean)
+            case .cpu: cpuMeans.append(mean)
+            case .gpu: gpuMeans.append(mean)
             case nil: continue
             }
         }
-        return TemperatureReading(cpu: SensorMath.group(cpu), gpu: SensorMath.group(gpu))
+        return TemperatureReading(
+            cpu: SensorMath.group(means: cpuMeans, rawMax: rawMax[.cpu]),
+            gpu: SensorMath.group(means: gpuMeans, rawMax: rawMax[.gpu])
+        )
     }
 
     private func ensureClient(_ api: HIDAPI) -> UnsafeRawPointer? {

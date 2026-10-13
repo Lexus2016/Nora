@@ -185,16 +185,15 @@ struct StatusView: View {
 
     private func powerLiveCard() -> some View {
         Card(title: "Power", symbol: "bolt") {
-            let reading = live.power.reading
             HStack(alignment: .lastTextBaseline) {
-                Text(watts(reading?.total, loaded: live.power.isLoaded)).font(.numberMedium).monospacedDigit()
+                Text(powerText { $0.total }).font(.numberMedium).monospacedDigit()
                 Spacer()
                 Text("total").font(.system(size: 12)).foregroundStyle(Palette.fg2)
             }
-            InfoRow(label: "CPU", value: watts(reading?.cpu, loaded: live.power.isLoaded))
-            InfoRow(label: "GPU", value: watts(reading?.gpu, loaded: live.power.isLoaded))
-            InfoRow(label: "Neural Engine", value: watts(reading?.ane, loaded: live.power.isLoaded))
-            Text("Read from the power counters, no password needed.")
+            InfoRow(label: "CPU", value: powerText { $0.cpu })
+            InfoRow(label: "GPU", value: powerText { $0.gpu })
+            InfoRow(label: "Neural Engine", value: powerText { $0.ane })
+            Text("Read from the power counters, no password needed. CPU energy updates rarely, so CPU watts are an average over the gap between updates.")
                 .font(.system(size: 11)).foregroundStyle(Palette.muted)
         }
     }
@@ -339,10 +338,17 @@ struct StatusView: View {
         }
     }
 
-    private func watts(_ value: Double?, loaded: Bool) -> String {
-        guard loaded else { return "…" }
-        guard let value else { return String(localized: "unavailable") }
-        return "\(Format.number(value, digits: 2)) W"
+    /// Unsupported API: "unavailable". Supported but no counter step yet: "waiting for update".
+    private func powerText(_ pick: (PowerReading) -> Double?) -> String {
+        switch live.power {
+        case .pending:
+            return "…"
+        case .unavailable:
+            return String(localized: "unavailable")
+        case .value(let reading):
+            guard let value = pick(reading) else { return String(localized: "waiting for update") }
+            return "\(Format.number(value, digits: 2)) W"
+        }
     }
 
     private func celsius(_ value: Double?, loaded: Bool) -> String {
