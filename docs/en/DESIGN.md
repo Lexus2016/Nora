@@ -277,7 +277,7 @@ Every action is at most three clicks from opening Nora or the menu bar, and ever
 `prototype/index.html` + `app.js` + `assets/glass/`. Online: https://lexus2016.github.io/Nora/prototype/. Locally: `cd prototype && python3 -m http.server 8000` → http://localhost:8000.
 - All 12 screens and complete flows (scan → review → run → *Work done!*) for Smart Care, Cleanup, Applications, Performance, Projects, Installers and Security.
 - *Scenarios* in the top bar: Mole missing / outdated, no Full Disk Access, an active sudo session.
-- **Language:** English, Ukrainian or Russian, picked automatically from the system (browser) language; any other language falls back to English. There is no language switch. `?lang=en|uk|ru` exists only for taking screenshots. Ukrainian is the source copy; `prototype/i18n-en.js` and `i18n-ru.js` hold the translations and double as the source for the app's strings. `python3 scripts/i18n_check.py` lists copy that has no translation yet.
+- **Language:** the app shows English, Ukrainian or Russian, picked automatically from the system language; any other language falls back to English. There is no language switch. The browser prototype opens in English; `?lang=uk|ru` shows the other two (the README screenshots use it). The app's strings live in `App/Localization` (English keys, `uk.json` and `ru.json`) and `python3 scripts/l10n.py extract` lists any that lack a translation. The prototype's copy is Ukrainian with `prototype/i18n-en.js` and `i18n-ru.js`; `python3 scripts/i18n_check.py` checks it.
 
 ## 8. Milestones
 

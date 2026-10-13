@@ -29,7 +29,7 @@
 > [!NOTE]
 > **Project status.** The native SwiftUI app is built, and `scripts/build-dmg.sh` makes a signed and notarized DMG. The first public release is not out yet. It will appear on the [Releases](https://github.com/Lexus2016/Nora/releases) page. Watch the repo to get notified.
 >
-> Nora and the prototype follow your Mac's language: English, Ukrainian or Russian. Any other language gets English. The screenshots show the approved browser prototype in English. The app keeps its design, with an icon rail in place of the labelled sidebar.
+> Nora follows your Mac's language: English, Ukrainian or Russian. Any other language gets English. The browser prototype opens in English; add `?lang=uk` or `?lang=ru` to see the other two. The screenshots show the approved browser prototype in English. The app keeps its design, with an icon rail in place of the labelled sidebar.
 
 ## Why Nora
 

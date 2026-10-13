@@ -1,6 +1,6 @@
-// Prototype localization: English, Ukrainian, Russian. There is no language switch: the language
-// follows the system (the browser's preferred languages), and anything else falls back to English.
-// `?lang=uk|ru|en` exists only so screenshots can be taken in each language; it is not stored.
+// Prototype localization: English, Ukrainian, Russian. The public prototype opens in English;
+// `?lang=uk` or `?lang=ru` shows the other two (the README screenshots use them). Not stored.
+// The app itself follows the system language.
 // Ukrainian is the source copy; English and Russian come from i18n-en.js / i18n-ru.js. The source
 // strings stay untouched (app.js compares some of them); rendered text and labels are translated
 // after every DOM change.
@@ -8,10 +8,7 @@
   const SUPPORTED = ['en', 'uk', 'ru'];
   const LOCALES = { en: 'en-US', uk: 'uk-UA', ru: 'ru-RU' };
   const param = new URLSearchParams(location.search).get('lang');
-  const preferred = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''])
-    .map(l => String(l).toLowerCase().split('-')[0])
-    .find(l => SUPPORTED.includes(l));
-  const lang = SUPPORTED.includes(param) ? param : preferred || 'en';
+  const lang = SUPPORTED.includes(param) ? param : 'en';
 
   window.NORA_LANG = lang;
   window.NORA_LOCALE = LOCALES[lang];

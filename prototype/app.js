@@ -302,19 +302,19 @@ function setDrawer(open) { S.drawer.open = open; $('#drawer').hidden = !open; $(
 
 // ---------- modules: neon scenes ----------
 const MODS = {
-  overview: { n: 'Розумний догляд', hero: 'vessel', c: ['#ff3ea5', '#6b22d9', '#17062f'], ic: 'i-overview' },
-  clean: { n: 'Очищення', hero: 'clean', c: ['#1fe6a2', '#0d7d63', '#04201f'], ic: 'i-clean' },
-  uninstall: { n: 'Програми', hero: 'uninstall', c: ['#38c8ff', '#2f3fe0', '#0b0a40'], ic: 'i-uninstall' },
-  optimize: { n: 'Швидкодія', hero: 'optimize', c: ['#ffa53a', '#e2491d', '#360b0c'], ic: 'i-optimize' },
-  analyze: { n: 'Аналіз диска', hero: 'analyze', c: ['#b34dff', '#5214cf', '#14053c'], ic: 'i-analyze' },
-  status: { n: 'Стан системи', hero: 'status', c: ['#ff3d7f', '#3d1fb0', '#0c0a2c'], ic: 'i-status' },
-  purge: { n: 'Проєкти', hero: 'purge', c: ['#ffc23a', '#e8662a', '#38110a'], ic: 'i-purge' },
-  installer: { n: 'Інсталятори', hero: 'installer', c: ['#27ecd2', '#1572b3', '#061f3a'], ic: 'i-installer' },
-  protect: { n: 'Захист', hero: 'protect', c: ['#36e2c2', '#13708a', '#071d2d'], ic: 'i-shield' },
-  tools: { n: 'Інструменти', hero: 'settings', c: ['#a35cff', '#3f1a8c', '#13072a'], ic: 'i-tools' },
-  history: { n: 'Історія', hero: 'history', c: ['#6a5cff', '#2b1c86', '#0d0a27'], ic: 'i-history' },
-  security: { n: 'Безпека', hero: 'security', c: ['#ff3d6e', '#8a1fb8', '#1a0620'], ic: 'i-shield' },
-  settings: { n: 'Налаштування', hero: 'settings', c: ['#8e86ff', '#35296f', '#110d29'], ic: 'i-settings' },
+  overview: { n: 'Розумний догляд', hero: 'vessel', c: ['#ff3ea5', '#6b22d9', '#17062f'], s: 35, ic: 'i-overview' },
+  clean: { n: 'Очищення', hero: 'clean', c: ['#1fe6a2', '#0d7d63', '#04201f'], s: 60, ic: 'i-clean' },
+  uninstall: { n: 'Програми', hero: 'uninstall', c: ['#38c8ff', '#2f3fe0', '#0b0a40'], s: 50, ic: 'i-uninstall' },
+  optimize: { n: 'Швидкодія', hero: 'optimize', c: ['#ffa53a', '#e2491d', '#360b0c'], s: 55, ic: 'i-optimize' },
+  analyze: { n: 'Аналіз диска', hero: 'analyze', c: ['#b34dff', '#5214cf', '#14053c'], s: 30, ic: 'i-analyze' },
+  status: { n: 'Стан системи', hero: 'status', c: ['#ff3d7f', '#3d1fb0', '#0c0a2c'], s: 30, ic: 'i-status' },
+  purge: { n: 'Проєкти', hero: 'purge', c: ['#ffc23a', '#e8662a', '#38110a'], s: 60, ic: 'i-purge' },
+  installer: { n: 'Інсталятори', hero: 'installer', c: ['#27ecd2', '#1572b3', '#061f3a'], s: 65, ic: 'i-installer' },
+  protect: { n: 'Захист', hero: 'protect', c: ['#36e2c2', '#13708a', '#071d2d'], s: 60, ic: 'i-shield' },
+  tools: { n: 'Інструменти', hero: 'settings', c: ['#a35cff', '#3f1a8c', '#13072a'], s: 20, ic: 'i-tools' },
+  history: { n: 'Історія', hero: 'history', c: ['#6a5cff', '#2b1c86', '#0d0a27'], s: 10, ic: 'i-history' },
+  security: { n: 'Безпека', hero: 'security', c: ['#ff3d6e', '#8a1fb8', '#1a0620'], s: 35, ic: 'i-shield' },
+  settings: { n: 'Налаштування', hero: 'settings', c: ['#8e86ff', '#35296f', '#110d29'], s: 30, ic: 'i-settings' },
 };
 const RAIL = ['overview', 'clean', 'uninstall', 'optimize', 'analyze', 'status', 'security', null, 'tools', 'history'];
 const LAND = {
@@ -752,7 +752,7 @@ function renderRail() {
 }
 function renderChrome() {
   const m = MODS[S.view];
-  [['--m1', m.c[0]], ['--m2', m.c[1]], ['--m3', m.c[2]]].forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+  [['--m1', m.c[0]], ['--m2', m.c[1]], ['--m3', m.c[2]], ['--scrim', m.s + '%']].forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
   document.querySelectorAll('.rail-btn').forEach(b => { const on = b.dataset.v === S.view || (b.dataset.v === 'tools' && ['purge', 'installer', 'protect', 'settings'].includes(S.view)); on ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'); });
   $('#where').textContent = S.view === 'status' ? m.n.toUpperCase() : '';
   $('#adminPill').innerHTML = S.scen.admin ? `<button class="pillbtn on" data-a="auth" data-v="info">${ic('i-touch')}Адмін · 4:58</button>` : `<button class="pillbtn" data-a="auth" data-v="info">${ic('i-lock')}Без прав адміністратора</button>`;
