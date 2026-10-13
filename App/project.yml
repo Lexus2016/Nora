@@ -78,6 +78,7 @@ targets:
         CODE_SIGN_IDENTITY: "Developer ID Application"
         BUNDLE_LOADER: $(TEST_HOST)
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/Nora.app/Contents/MacOS/Nora
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   Nora:
     build:
