@@ -35,24 +35,49 @@ struct Glass3D: View {
             frame(angle: 0, tilt: 0, lift: 0)
                 .background(VisibilityProbe(visible: $windowVisible))
         } else {
-            // 30 fps is smooth for a slow swing and halves the cost of 60.
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: activeState == .inactive && amplitude < 15)) { context in
-                let t = context.date.timeIntervalSinceReferenceDate
-                let phase = sin(t * 2 * .pi / period)
-                frame(angle: amplitude * phase,
-                      tilt: 5 * sin(t * 2 * .pi / (period * 1.7)),
-                      lift: 6 * sin(t * 2 * .pi / (period * 1.3)))
+            // The shadow and glow are drawn once under the animation: blurring them again on every
+            // frame was most of the cost. A slow idle swing runs at 24 fps, a busy one at 30.
+            ZStack {
+                shadows
+                TimelineView(.animation(minimumInterval: amplitude < 15 ? 1.0 / 24.0 : 1.0 / 30.0,
+                                        paused: activeState == .inactive && amplitude < 15)) { context in
+                    let t = context.date.timeIntervalSinceReferenceDate
+                    let phase = sin(t * 2 * .pi / period)
+                    frame(angle: amplitude * phase,
+                          tilt: 5 * sin(t * 2 * .pi / (period * 1.7)),
+                          lift: 6 * sin(t * 2 * .pi / (period * 1.3)),
+                          withShadows: false)
+                }
             }
             .background(VisibilityProbe(visible: $windowVisible))
         }
     }
 
-    private func frame(angle: Double, tilt: Double, lift: CGFloat) -> some View {
+    /// The object's drop shadow and coloured glow as one static layer.
+    private var shadows: some View {
+        ZStack {
+            if let image = GlassLibrary.image(name) {
+                Image(nsImage: image).resizable().renderingMode(.template).aspectRatio(contentMode: .fit)
+                    .foregroundStyle(glow.opacity(0.4))
+                    .blur(radius: size * 0.12)
+                Image(nsImage: image).resizable().renderingMode(.template).aspectRatio(contentMode: .fit)
+                    .foregroundStyle(.black.opacity(0.45))
+                    .blur(radius: size * 0.07)
+                    .offset(y: size * 0.06)
+            }
+        }
+        .frame(width: size, height: size)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func frame(angle: Double, tilt: Double, lift: CGFloat, withShadows: Bool = true) -> some View {
         let image = GlassLibrary.image(name)
         let radians = angle * .pi / 180
         let wall = size * depth
-        // A slow idle swing shows little side wall, so it needs fewer layers.
-        let layers = amplitude >= 15 ? 12 : 4
+        // At a slow idle swing (under 15°) the side wall moves about 3 pt and is not visible,
+        // so it is not drawn; a busy swing shows it with 12 layers.
+        let layers = amplitude >= 15 ? 12 : 0
         return ZStack {
             if let image {
                 // Side wall: copies receding along the depth axis, darker the deeper they go.
@@ -86,9 +111,26 @@ struct Glass3D: View {
         .rotation3DEffect(.degrees(tilt), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
         .offset(y: lift)
         .drawingGroup()
-        .shadow(color: .black.opacity(0.45), radius: size * 0.07, x: -CGFloat(sin(radians)) * size * 0.06, y: size * 0.06)
-        .shadow(color: glow.opacity(0.4), radius: size * 0.12)
+        .modifier(GlassShadows(on: withShadows, size: size, glow: glow))
         .accessibilityHidden(true)
+    }
+}
+
+/// Drop shadow and glow for a still object. The animated object gets none: its shadows are a
+/// separate static layer, so they are not blurred again on every frame.
+private struct GlassShadows: ViewModifier {
+    let on: Bool
+    let size: CGFloat
+    let glow: Color
+
+    func body(content: Content) -> some View {
+        if on {
+            content
+                .shadow(color: .black.opacity(0.45), radius: size * 0.07, x: 0, y: size * 0.06)
+                .shadow(color: glow.opacity(0.4), radius: size * 0.12)
+        } else {
+            content
+        }
     }
 }
 

@@ -72,3 +72,24 @@ final class BrewEnvironmentTests: XCTestCase {
         XCTAssertEqual(ClamAVTools.locate().clamd?.path, "/opt/homebrew/sbin/clamd")
     }
 }
+
+final class OrphanAndCopyTests: XCTestCase {
+    /// Only scanners whose parent is launchd and whose arguments name Nora's ClamAV folder.
+    func testOrphanedScannersAreOnlyNorasOwn() {
+        let root = "/Users/u/Library/Application Support/Nora/clamav"
+        let ps = [
+            "  101     1 /opt/homebrew/bin/clamscan -r --infected --no-summary -d \(root)/database /Applications",
+            "  102   500 /opt/homebrew/bin/clamscan -r -d \(root)/database /Users/u",
+            "  103     1 /opt/homebrew/bin/clamscan -r /Users/u/Downloads",
+            "  104     1 /opt/homebrew/sbin/clamd --foreground --config-file \(root)/clamd.conf",
+            "  105     1 /usr/bin/vim \(root)/clamd.conf",
+        ].joined(separator: "\n")
+        XCTAssertEqual(ClamAVOrphans.orphans(in: ps, root: root), [101, 104])
+    }
+
+    @MainActor func testCopiedCommandDropsAskpassOnlyWhereSudoStarts() {
+        XCTAssertEqual(CommandPreview.terminalForm("sudo -A -v && mo clean"), "sudo -v && mo clean")
+        XCTAssertEqual(CommandPreview.terminalForm("mo clean; sudo -A -v && mo optimize"), "mo clean; sudo -v && mo optimize")
+        XCTAssertEqual(CommandPreview.terminalForm("mo uninstall 'Example sudo -A App'"), "mo uninstall 'Example sudo -A App'")
+    }
+}

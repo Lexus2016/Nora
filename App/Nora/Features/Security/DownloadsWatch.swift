@@ -140,6 +140,8 @@ final class ClamdSession {
         process.arguments = ["--foreground", "--config-file", layout.clamdConfig.path]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
+        process.qualityOfService = .utility
+        ChildProcesses.register(process)
         try process.run()
         self.process = process
         for _ in 0..<300 {
@@ -158,7 +160,10 @@ final class ClamdSession {
     }
 
     func stop() {
-        process?.terminate()
+        if let process {
+            if process.isRunning { process.terminate() }
+            ChildProcesses.unregister(process)
+        }
         process = nil
     }
 }

@@ -101,6 +101,7 @@ final class SecurityModel {
     @ObservationIgnored private var watch: DownloadsWatch?
     @ObservationIgnored private var clamd: ClamdSession?
     @ObservationIgnored private var watchStart: Task<Void, Never>?
+    @ObservationIgnored private var watchGeneration: UUID?
     @ObservationIgnored private var scheduledRun = false
 
     private static let systemPrefixes = ["/System/", "/usr/", "/bin/", "/sbin/", "/Library/Apple/"]
@@ -136,6 +137,10 @@ final class SecurityModel {
         let labels = findings.filter { checked.contains($0.id) }.compactMap(\.launchLabel)
         guard !labels.isEmpty else { return nil }
         return labels.map { ShellCommand("/bin/launchctl", ["bootout", "gui/\(getuid())/\($0)"]).description }.joined(separator: "; ")
+    }
+
+    func reapOrphanedScanners() async {
+        await ClamAVOrphans.reap(root: layout.root)
     }
 
     func loadPreviewLaunchPaths() async {
@@ -205,7 +210,7 @@ final class SecurityModel {
         for root in roots {
             try Task.checkCancellation()
             progress = String(localized: "XProtect rules: \(Self.shortPath(root))")
-            let result = try await runLogged(ShellCommand(yara.path, XProtect.arguments(rules: rules, root: root)), app)
+            let result = try await runLogged(ShellCommand(yara.path, XProtect.arguments(rules: rules, root: root)), app, qos: .utility)
             if result.status != 0 && result.stdout.isEmpty {
                 xprotect = .failed(Self.lastLine(result.stderr, fallback: String(localized: "yara stopped.")))
                 return
@@ -233,7 +238,7 @@ final class SecurityModel {
         var lines: [String] = []
         var status: Int32 = 0
         do {
-            for try await line in ProcessRunner.lines(clamscan, arguments, environment: BrewTools.environment) {
+            for try await line in ProcessRunner.lines(clamscan, arguments, environment: BrewTools.environment, qos: .utility) {
                 lines.append(line.text)
                 app.console.append(id, [line.text])
             }
@@ -251,11 +256,11 @@ final class SecurityModel {
         unreadableCount += output.errors
     }
 
-    private func runLogged(_ command: ShellCommand, _ app: AppModel) async throws -> CommandResult {
+    private func runLogged(_ command: ShellCommand, _ app: AppModel, qos: QualityOfService = .default) async throws -> CommandResult {
         let id = app.console.begin(command)
         do {
             let result = try await ProcessRunner.run(URL(fileURLWithPath: command.executable), command.arguments,
-                                                     environment: BrewTools.environment)
+                                                     environment: BrewTools.environment, qos: qos)
             app.console.finish(id, result: result)
             return result
         } catch {
@@ -439,13 +444,21 @@ final class SecurityModel {
         self.watch = watch
         SecurityNotifier.requestAuthorization()
         watchStarting = true
+        let generation = UUID()
+        watchGeneration = generation
         watchStart = Task {
-            defer { self.watchStarting = false }
+            defer { if self.watchGeneration == generation { self.watchStarting = false } }
             do {
                 try await session.start()
+                try Task.checkCancellation()
                 try watch.start()
                 self.watchActive = true
+            } catch is CancellationError {
+                // Turned off or quitting while clamd was loading: not an error, and the setting
+                // stays as the user left it so the watch resumes at the next launch.
+                session.stop()
             } catch {
+                guard self.watchGeneration == generation else { return }
                 self.shutdown()
                 self.watchError = error.localizedDescription
                 self.notice = self.watchError

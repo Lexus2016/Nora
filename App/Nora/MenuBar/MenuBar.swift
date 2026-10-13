@@ -136,7 +136,6 @@ final class MenuBarController: NSObject {
 struct QuickMenu: View {
     let close: () -> Void
     @Environment(AppModel.self) private var app
-    @Environment(\.openSettings) private var openSettings
     @State private var tab = 0
 
     var body: some View {
@@ -167,7 +166,7 @@ struct QuickMenu: View {
                 }
             }
             HStack {
-                Button("Settings…") { close(); NSApp.activate(); openSettings() }
+                Button("Settings…") { close(); app.showSettings() }
                 Spacer()
                 Button("Quit Nora") { NSApp.terminate(nil) }
             }

@@ -41,7 +41,7 @@ struct AppsList: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .glassPanel()
-            ReviewFooter(command: "mo uninstall " + model.chosen.map { ShellQuote.word($0.uninstallName) }.joined(separator: " "),
+            ReviewFooter(command: model.uninstallCommand(for: model.chosen),
                          note: model.selected.isEmpty ? nil : String(localized: "\(model.selected.count) selected, \(Format.bytes(model.selectedSize))"))
         }
         .padding(.horizontal, 34).padding(.top, 8)
@@ -118,6 +118,7 @@ struct AppsReview: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             VStack(alignment: .leading, spacing: 4) {
+                CommandPreview(command: model.uninstallCommand(for: model.plans.map(\.app))).frame(maxWidth: 620)
                 Toggle("Delete permanently instead of moving to the Trash", isOn: $model.permanent).toggleStyle(.switch).controlSize(.small)
                 Text("Nora answers Mole only if its list matches this preview.").font(.system(size: 11)).foregroundStyle(Palette.muted)
             }

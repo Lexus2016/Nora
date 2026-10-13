@@ -1,3 +1,4 @@
+import MoleKit
 import SwiftUI
 
 @main
@@ -9,7 +10,7 @@ struct NoraApp: App {
             RootView()
                 .environment(delegate.app)
                 .preferredColorScheme(.dark)
-                .frame(minWidth: 1040, minHeight: 680)
+                .frame(minWidth: 1040, minHeight: 620)
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(Self.defaultWindowSize)
@@ -27,10 +28,10 @@ struct NoraApp: App {
     }
 
     /// 1240 × 800 where it fits; on smaller screens the window starts inside the visible area
-    /// (menu bar and Dock excluded) instead of running under the Dock.
+    /// (menu bar and Dock excluded) instead of running under the Dock. Never below the 620 pt minimum.
     static var defaultWindowSize: CGSize {
         let visible = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1440, height: 875)
-        return CGSize(width: min(1240, (visible.width * 0.92).rounded()), height: min(800, (visible.height * 0.9).rounded()))
+        return CGSize(width: min(1240, max(1040, (visible.width * 0.92).rounded())), height: min(800, max(620, (visible.height * 0.9).rounded())))
     }
 }
 
@@ -39,6 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let app = AppModel()
     private var menuBar: MenuBarController?
     private var scheduler: Timer?
+    private var terminationSignal: DispatchSourceSignal?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         // Launching Nora always shows its window. With the system's "keep windows when quitting"
@@ -48,9 +50,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // SIGTERM (Activity Monitor's Quit, logout, pkill) goes through the normal quit, so
+        // applicationWillTerminate stops Nora's child processes instead of orphaning them.
+        signal(SIGTERM, SIG_IGN)
+        let term = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        term.setEventHandler { NSApp.terminate(nil) }
+        term.resume()
+        terminationSignal = term
         app.prepare()
         _ = Updater.shared
         Task {
+            await app.security.reapOrphanedScanners()
             await app.locate()
             menuBar = MenuBarController(app: app)
             app.security.resumeWatchIfEnabled(app)
@@ -94,6 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         app.security.shutdown()
+        ChildProcesses.terminateAll()
         try? app.overlay.recoverIfNeeded()
     }
 }

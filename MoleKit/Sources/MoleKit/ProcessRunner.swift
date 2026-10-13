@@ -42,16 +42,39 @@ public struct ShellCommand: Sendable, Hashable, CustomStringConvertible {
     }
 }
 
+/// Every child started without a terminal, so quitting Nora can stop them. A scanner left
+/// running after Nora is gone keeps a core busy for hours and nobody reads its result.
+public enum ChildProcesses {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var running: [ObjectIdentifier: Process] = [:]
+
+    public static func register(_ process: Process) {
+        lock.withLock { running[ObjectIdentifier(process)] = process }
+    }
+
+    public static func unregister(_ process: Process) {
+        lock.withLock { _ = running.removeValue(forKey: ObjectIdentifier(process)) }
+    }
+
+    /// Sends SIGTERM to every child that is still running.
+    public static func terminateAll() {
+        lock.withLock { running.values.filter(\.isRunning).forEach { $0.terminate() } }
+    }
+}
+
 /// Runs commands without a terminal. Prompting commands go through `PTYSession` instead.
 public enum ProcessRunner {
-    /// Runs to completion. Cancelling the task sends SIGTERM to the child.
+    /// Runs to completion. Cancelling the task sends SIGTERM to the child. Long scans pass
+    /// `.utility` so they yield the CPU to whatever the user is doing.
     public static func run(
         _ executable: URL,
         _ arguments: [String],
         environment: [String: String],
-        currentDirectory: URL? = nil
+        currentDirectory: URL? = nil,
+        qos: QualityOfService = .default
     ) async throws -> CommandResult {
         let process = makeProcess(executable, arguments, environment, currentDirectory)
+        process.qualityOfService = qos
         let out = Pipe(), err = Pipe()
         process.standardOutput = out
         process.standardError = err
@@ -64,6 +87,7 @@ public enum ProcessRunner {
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CommandResult, Error>) in
                 process.terminationHandler = { finished in
+                    ChildProcesses.unregister(finished)
                     out.fileHandleForReading.readabilityHandler = nil
                     err.fileHandleForReading.readabilityHandler = nil
                     outBuffer.append(out.fileHandleForReading.readDataToEndOfFile())
@@ -74,7 +98,10 @@ public enum ProcessRunner {
                         stderr: errBuffer.string
                     ))
                 }
+                // Registered before run, so a child that exits at once is still removed.
+                ChildProcesses.register(process)
                 do { try process.run() } catch {
+                    ChildProcesses.unregister(process)
                     process.terminationHandler = nil
                     continuation.resume(throwing: error)
                 }
@@ -89,10 +116,12 @@ public enum ProcessRunner {
     public static func lines(
         _ executable: URL,
         _ arguments: [String],
-        environment: [String: String]
+        environment: [String: String],
+        qos: QualityOfService = .default
     ) -> AsyncThrowingStream<OutputLine, Error> {
         AsyncThrowingStream { continuation in
             let process = makeProcess(executable, arguments, environment, nil)
+            process.qualityOfService = qos
             let out = Pipe(), err = Pipe()
             process.standardOutput = out
             process.standardError = err
@@ -104,6 +133,7 @@ public enum ProcessRunner {
             err.fileHandleForReading.readabilityHandler = { errSplitter.feed($0.availableData) }
 
             process.terminationHandler = { finished in
+                ChildProcesses.unregister(finished)
                 out.fileHandleForReading.readabilityHandler = nil
                 err.fileHandleForReading.readabilityHandler = nil
                 outSplitter.feed(out.fileHandleForReading.readDataToEndOfFile())
@@ -119,7 +149,11 @@ public enum ProcessRunner {
             continuation.onTermination = { _ in
                 if process.isRunning { process.terminate() }
             }
-            do { try process.run() } catch { continuation.finish(throwing: error) }
+            ChildProcesses.register(process)
+            do { try process.run() } catch {
+                ChildProcesses.unregister(process)
+                continuation.finish(throwing: error)
+            }
         }
     }
 

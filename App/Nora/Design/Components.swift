@@ -111,6 +111,12 @@ struct CommandPreview: View {
     /// Dark enough for the command text to keep 4.5:1 on the brightest scene (SceneContrastTests).
     static let chipOpacity = 0.5
 
+    /// The command as it runs in Terminal: a `sudo -A` that starts a command becomes `sudo`.
+    /// Text inside arguments is left alone.
+    static func terminalForm(_ command: String) -> String {
+        command.replacingOccurrences(of: "(^|; |&& )sudo -A ", with: "$1sudo ", options: .regularExpression)
+    }
+
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "terminal").font(.system(size: 11))
@@ -118,7 +124,7 @@ struct CommandPreview: View {
             Spacer(minLength: 0)
             Button {
                 NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(command.replacingOccurrences(of: "sudo -A ", with: "sudo "), forType: .string)
+                NSPasteboard.general.setString(Self.terminalForm(command), forType: .string)
             } label: { Image(systemName: "doc.on.doc") }
             .buttonStyle(.plain)
             .help(Text("Copy command"))

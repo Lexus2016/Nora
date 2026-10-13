@@ -24,6 +24,10 @@ final class OrbController {
     /// Space a scene keeps free above the bottom edge: the orb's radius, its progress ring
     /// (9 pt out, 5 pt wide) and a gap, so the busy orb never covers a card.
     static let clearance: CGFloat = lift + diameter / 2 + 12 + 14
+    /// In full screen the orb rises fully into the window, so scenes keep more room.
+    static let fullScreenLift: CGFloat = diameter / 2 + 16
+    /// The space the current scene must keep free; larger in full screen.
+    private(set) var bottomClearance: CGFloat = OrbController.clearance
 
     func publish(_ action: OrbAction?, palette: ScenePalette, owner: UUID) {
         self.owner = owner
@@ -83,11 +87,14 @@ final class OrbController {
     func reposition() {
         guard let parent, let panel else { return }
         let frame = parent.frame
-        let contentMidX = frame.minX + Rail.width + (frame.width - Rail.width) / 2
         let inFullScreen = parent.styleMask.contains(.fullScreen)
         // In full screen there is no outside, so the orb rises fully into the window.
-        let centerY = frame.minY + (inFullScreen ? Self.diameter / 2 + 16 : Self.lift)
-        panel.setFrameOrigin(NSPoint(x: contentMidX - Self.panelSize / 2, y: centerY - Self.panelSize / 2))
+        let lift = inFullScreen ? Self.fullScreenLift : Self.lift
+        let clearance = Self.clearance + lift - Self.lift
+        if bottomClearance != clearance { bottomClearance = clearance }
+        panel.setFrameOrigin(NSPoint(x: frame.minX + Rail.width + (frame.width - Rail.width) / 2 - Self.panelSize / 2,
+                                     y: frame.minY + lift - Self.panelSize / 2))
+        updateHitArea()
     }
 }
 

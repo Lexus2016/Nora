@@ -16,7 +16,9 @@ enum Palette {
     static let desk = Color(hex: 0x0A0612)
     static let ink = Color(hex: 0x1B1033)
     static let fg2 = Color.white.opacity(0.82)
-    static let muted = Color.white.opacity(0.62)
+    /// Hints and small captions. Bright enough for 4.5:1 on every card (SceneContrastTests).
+    static let mutedOpacity = 0.78
+    static let muted = Color.white.opacity(mutedOpacity)
     static let surface = Color.white.opacity(0.09)
     static let surface2 = Color.white.opacity(0.06)
     static let line = Color.white.opacity(0.13)

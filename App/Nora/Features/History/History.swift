@@ -109,7 +109,6 @@ struct HistoryView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(Self.healthWord(s?.healthScore)).font(.system(size: 34, weight: .medium)).foregroundStyle(Palette.cyan)
                     Text(s?.hardware?.model ?? "Mac").font(.system(size: 13)).foregroundStyle(Palette.fg2)
-                    if s?.healthScore != nil { Text(HistoryView.healthWord(s?.healthScore)).font(.system(size: 12)).foregroundStyle(Palette.muted) }
                 }
                 Spacer()
                 HealthRing(score: s?.healthScore, size: 86)

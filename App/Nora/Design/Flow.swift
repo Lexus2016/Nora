@@ -26,7 +26,7 @@ struct ModuleScene<Content: View>: View {
         VStack(spacing: 0) {
             TopBar(title: module.title, leading: leading)
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
-            Color.clear.frame(height: orb == nil ? 16 : OrbController.clearance)
+            Color.clear.frame(height: orb == nil ? 16 : app.orb.bottomClearance)
         }
         .background(alignment: .top) { HeaderShade(palette: module.palette) }
         .onAppear { app.orb.publish(orb, palette: module.palette, owner: owner) }

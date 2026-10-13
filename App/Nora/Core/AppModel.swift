@@ -28,7 +28,10 @@ final class AppModel {
         #endif
         if !selection.isAvailable { selection = Module.available.first ?? .status }
     }
-    var showConsole = false
+    var showConsole = false {
+        // The console covers the orb; an invisible orb must not take clicks meant for it.
+        didSet { orb.hidden = showConsole; orb.updateHitArea() }
+    }
     let console = ConsoleLog()
     let status = StatusStore()
     let orb = OrbController()

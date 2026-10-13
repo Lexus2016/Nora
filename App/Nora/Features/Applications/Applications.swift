@@ -71,7 +71,7 @@ final class AppsModel {
             parts.append(Homebrew.command(path, Homebrew.outdatedArguments()).description)
             parts.append(Homebrew.command(path, Homebrew.infoArguments()).description)
         }
-        return parts.joined(separator: "  ·  ")
+        return parts.joined(separator: "; ")
     }
 
     // MARK: - Scan
@@ -199,11 +199,11 @@ final class AppsModel {
                 let left = tokens.filter { remaining.contains($0) }
                 failed = done.isEmpty
                 resultHeadline = done.isEmpty ? String(localized: "No app was updated") : String(localized: "\(done.count) apps updated")
-                resultLines = done.map { "✓ \($0)" } + left.map { "✕ \($0) is still outdated" }
+                resultLines = done.map { "✓ \($0)" } + left.map { "✕ " + String(localized: "\($0) is still outdated") }
             } else {
                 failed = true
                 resultHeadline = String(localized: "Could not check the result")
-                resultLines = ["Homebrew did not answer the check. See the console."]
+                resultLines = [String(localized: "Homebrew did not answer the check. See the console.")]
             }
             selectedUpdates = []
             if let remaining { updates.removeAll { tokens.contains($0.token) && !remaining.contains($0.token) } }
@@ -234,6 +234,16 @@ final class AppsModel {
             screen = .plans
             stage = .review
         }
+    }
+
+    /// What the removal runs, one command per app, as the review footers show it.
+    func uninstallCommand(for apps: [InstalledApp]) -> String {
+        apps.map { item in
+            let admin = !FileManager.default.isDeletableFile(atPath: item.path)
+            let args = ["uninstall", item.uninstallName] + (permanent ? ["--permanent"] : [])
+            return (admin ? "sudo -A -v && " : "") + ShellCommand("mo", args).description
+        }
+        .joined(separator: "; ")
     }
 
     func uninstall(_ app: AppModel) {

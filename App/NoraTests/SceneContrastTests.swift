@@ -6,17 +6,17 @@ import XCTest
 /// over its whole area; the brightest point under the cards is the worst case for white text.
 @MainActor
 final class SceneContrastTests: XCTestCase {
-    /// WCAG AA: 4.5:1 for body text (details, notes), 3:1 for large or bold titles.
+    /// WCAG AA 4.5:1 for every small text on a card: details (fg2) and hints (muted) alike.
     func testCardTextContrastOnEveryScene() throws {
         var report: [String] = []
         for module in Module.allCases {
             let worst = try brightestCardPixel(module.palette)
             let title = Contrast.ratio(.white, over: worst)
             let body = Contrast.ratio(Contrast.blend(.white, alpha: 0.82, over: worst), over: worst)
-            let muted = Contrast.ratio(Contrast.blend(.white, alpha: 0.62, over: worst), over: worst)
+            let muted = Contrast.ratio(Contrast.blend(.white, alpha: Palette.mutedOpacity, over: worst), over: worst)
             report.append("\(module): title \(Self.fmt(title)) body \(Self.fmt(body)) muted \(Self.fmt(muted))")
             XCTAssertGreaterThanOrEqual(body, 4.5, "\(module) body text on cards")
-            XCTAssertGreaterThanOrEqual(muted, 3.0, "\(module) muted text on cards")
+            XCTAssertGreaterThanOrEqual(muted, 4.5, "\(module) muted text on cards")
         }
         print(report.joined(separator: "\n"))
     }
@@ -127,13 +127,13 @@ enum Contrast {
 }
 
 final class RailLayoutTests: XCTestCase {
-    /// Every module and Settings fit the window's minimum height (680 pt).
+    /// Every module and Settings fit the window's minimum height (620 pt).
     @MainActor func testRailFitsMinimumWindowHeight() {
         let count = 12
-        let item = Rail.itemHeight(for: 680, count: count)
-        XCTAssertGreaterThanOrEqual(item, 36)
+        let item = Rail.itemHeight(for: 620, count: count)
+        XCTAssertGreaterThanOrEqual(item, 32)
         let used = 50 + 50 + 16 + 6 * CGFloat(count + 2) + item * CGFloat(count)
-        XCTAssertLessThanOrEqual(used, 680)
+        XCTAssertLessThanOrEqual(used, 620)
         XCTAssertEqual(Rail.itemHeight(for: 1000, count: count), 52)
     }
 }

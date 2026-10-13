@@ -81,6 +81,22 @@
         }
       }
     },
+    "%@ is still outdated": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ всё ещё не обновлено"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ досі не оновлено"
+          }
+        }
+      }
+    },
     "%@ login items": {
       "localizations": {
         "ru": {
@@ -3707,6 +3723,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевірка Homebrew не вдалася. Деталі в консолі."
+          }
+        }
+      }
+    },
+    "Homebrew did not answer the check. See the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не ответил на проверку. Подробности в консоли."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не відповів на перевірку. Подробиці в консолі."
           }
         }
       }

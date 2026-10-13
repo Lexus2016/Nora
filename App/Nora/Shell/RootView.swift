@@ -84,10 +84,10 @@ struct Rail: View {
     @State private var tooltip: Module?
     @State private var hoverTask: Task<Void, Never>?
 
-    /// Icons shrink from 52 to 36 pt tall so every module and Settings fit the window's height.
+    /// Icons shrink from 52 to 32 pt tall so every module and Settings fit the window's height.
     static func itemHeight(for height: CGFloat, count: Int) -> CGFloat {
         let fixed: CGFloat = 50 + 50 + 16 + 6 * CGFloat(count + 2)
-        return min(52, max(36, (height - fixed) / CGFloat(max(count, 1))))
+        return min(52, max(32, (height - fixed) / CGFloat(max(count, 1))))
     }
 
     var body: some View {

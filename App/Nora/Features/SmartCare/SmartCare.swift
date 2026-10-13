@@ -165,9 +165,27 @@ struct SmartCareView: View {
                     GridRow { tile(.cleanup); tile(.performance) }
                     GridRow { tile(.projects); tile(.installers) }
                 }
+                if model.phase == .results, !runCommand.isEmpty {
+                    CommandPreview(command: runCommand).frame(maxWidth: 640)
+                }
             }
             .padding(.horizontal, 34).padding(.top, 14)
         }
+    }
+
+    /// Every command Run starts, in order, for the ticked tiles that have something to do.
+    private var runCommand: String {
+        [Module.cleanup, .performance, .projects, .installers]
+            .filter { model.enabled.contains($0) && model.finding($0, app) != nil }
+            .map { module -> String in
+                switch module {
+                case .cleanup: app.cleanup.command
+                case .performance: "sudo -A -v && mo optimize"
+                case .projects: "mo purge --yes"
+                default: "MOLE_DELETE_MODE=trash mo installer"
+                }
+            }
+            .joined(separator: "; ")
     }
 
     private func tile(_ tileModule: Module) -> some View {

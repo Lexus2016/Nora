@@ -1,4 +1,5 @@
 import Foundation
+import MoleKit
 
 /// Homebrew binaries. Nora never installs anything itself; installs run only on the user's click.
 enum BrewTools {
@@ -35,6 +36,31 @@ struct ClamAVTools: Equatable, Sendable {
     }
 
     var isInstalled: Bool { clamscan != nil && freshclam != nil }
+}
+
+/// Scanners that Nora started and then lost because it crashed or was force quit: their parent
+/// is launchd and their command line names Nora's own ClamAV folder. Left alone, such a scan
+/// keeps a core busy for hours and nobody reads its result. Nora ends them at launch.
+enum ClamAVOrphans {
+    static let names: Set<String> = ["clamscan", "clamd", "clamdscan", "freshclam"]
+
+    static func reap(root: URL) async {
+        guard let result = try? await ProcessRunner.run(URL(fileURLWithPath: "/bin/ps"), ["-axo", "pid=,ppid=,command="],
+                                                        environment: ["PATH": "/bin:/usr/bin", "LC_ALL": "C"]) else { return }
+        for pid in orphans(in: result.stdout, root: root.path) { kill(pid, SIGTERM) }
+    }
+
+    /// `ps -axo pid=,ppid=,command=` lines whose parent is launchd (1), whose program is a ClamAV
+    /// tool and whose arguments name `root`.
+    static func orphans(in ps: String, root: String) -> [pid_t] {
+        ps.split(separator: "\n").compactMap { line in
+            let parts = line.split(separator: " ", maxSplits: 2, omittingEmptySubsequences: true)
+            guard parts.count == 3, let pid = pid_t(parts[0]), parts[1] == "1" else { return nil }
+            let command = parts[2]
+            let program = command.split(separator: " ").first.map { String($0.split(separator: "/").last ?? "") } ?? ""
+            return names.contains(program) && command.contains(root) ? pid : nil
+        }
+    }
 }
 
 /// Nora's own ClamAV folder under Application Support: configs and the virus database.

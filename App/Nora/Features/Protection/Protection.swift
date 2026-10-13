@@ -70,6 +70,12 @@ final class ProtectionModel {
         cleanFileExists = true
     }
 
+    /// One write for a bulk change instead of one per task.
+    func setAllTasks(included: Set<String>) {
+        excludedTasks = Set(tasks.map(\.id)).subtracting(included)
+        write(optimizeURL, header: "# Tasks mo optimize skips. Written by Nora.", lines: tasks.map(\.id).filter(excludedTasks.contains))
+    }
+
     func setTask(_ id: String, excluded: Bool) {
         if excluded { excludedTasks.insert(id) } else { excludedTasks.remove(id) }
         write(optimizeURL, header: "# Tasks mo optimize skips. Written by Nora.", lines: tasks.map(\.id).filter(excludedTasks.contains))
@@ -171,6 +177,15 @@ struct ProtectionView: View {
     }
 
     private var maintenance: some View {
+        VStack(alignment: .trailing, spacing: 10) {
+            SelectAllButton(ids: model.tasks.map(\.id), selection: Binding(
+                get: { Set(model.tasks.map(\.id)).subtracting(model.excludedTasks) },
+                set: { included in model.setAllTasks(included: included) }))
+            maintenanceList
+        }
+    }
+
+    private var maintenanceList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(model.tasks, id: \.id) { task in
