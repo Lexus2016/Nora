@@ -157,6 +157,10 @@ struct SmartCareView: View {
                 Text(model.phase == .results ? String(localized: "Tasks are ready. Here is what we found:")
                      : model.phase == .running ? String(localized: "Working on it…") : String(localized: "Scanning your Mac…"))
                     .font(.system(size: 30, weight: .semibold))
+                if model.phase == .results {
+                    SelectAllButton(ids: [Module.cleanup, .performance, .projects, .installers].filter { model.finding($0, app) != nil },
+                                    selection: Bindable(model).enabled)
+                }
                 Grid(horizontalSpacing: 18, verticalSpacing: 18) {
                     GridRow { tile(.cleanup); tile(.performance) }
                     GridRow { tile(.projects); tile(.installers) }
