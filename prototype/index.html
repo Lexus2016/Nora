@@ -83,6 +83,9 @@ select option{background:#1b1033;color:#fff}
 .qm-row:hover{background:rgba(255,255,255,.12)}
 .qm-row img{width:24px;height:24px;flex:none}
 .qm-foot{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-2)}
+.iconbtn.back-btn{flex:none;color:#fff;align-self:center;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);margin-right:4px;transition:background .15s}
+.iconbtn.back-btn:hover{background:rgba(255,255,255,.22)}
+.iconbtn.back-btn .ic{width:18px;height:18px;stroke-width:2.2}
 .qm-top{display:grid;gap:7px;margin-top:10px}
 .seg-sm button{padding:3px 9px;font-size:11.5px}
 .qm-meter{display:flex;height:8px;border-radius:5px;overflow:hidden;background:rgba(255,255,255,.08)}
@@ -490,6 +493,7 @@ body{font-size:14px;letter-spacing:-.005em;text-rendering:optimizeLegibility;fon
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
   <symbol id="i-touch" viewBox="0 0 24 24"><path d="M7.4 18.6c-.8-1.8-1.2-3.8-1.2-6.1a5.8 5.8 0 0 1 11.6 0v.8"/><path d="M12 12.5c0 3 .7 5.5 2 7.6"/><path d="M9.2 12.5a2.8 2.8 0 0 1 5.6 0c0 1.1.1 2.1.3 3.1"/><path d="M17.7 16.4c-.2 1-.2 2 0 3.1"/><path d="M5 9.2A7.6 7.6 0 0 1 12 4.8c2.6 0 4.9 1.3 6.3 3.3"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></symbol>
@@ -557,6 +561,9 @@ body{font-size:14px;letter-spacing:-.005em;text-rendering:optimizeLegibility;fon
   <div class="mbpop" id="mbMenu" hidden style="width:240px!important;padding:6px;gap:0"></div>
   <div class="toast" id="toast" hidden></div>
 </div>
+<script src="i18n-en.js"></script>
+<script src="i18n-ru.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

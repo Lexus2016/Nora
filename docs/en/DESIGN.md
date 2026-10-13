@@ -246,11 +246,31 @@ Tests: parser tests on fixtures recorded from real runs (CI matrix with `brew in
 - **Languages:** English, Ukrainian and Russian. The language follows the system (`Bundle.preferredLocalizations` among `en`/`uk`/`ru`); any other system language falls back to English. There is no in-app language picker; macOS's per-app language setting (*System Settings → General → Language & Region → Applications*) works on its own. Strings live in a String Catalog (`.xcstrings`), sizes and numbers use `ByteCountFormatter`/`Measurement`, with correct plural forms for uk/ru. The prototype is shown in Ukrainian; English and Russian copy is produced in M3.
 - **Simplicity:** a module screen has 3–4 bullets and one button. Dense data appears only in review. The console stays closed until opened.
 
+### 6.1. Navigation: three clicks at most
+
+Every action is at most three clicks from opening Nora or the menu bar, and every step has an obvious way back (owner decision, 2026-10-13).
+
+- **The review screen is the confirmation.** Its *Clean / Remove* button acts at once, with no second "Are you sure?" dialog. The list, sizes, command and any permanent-deletion warning are already on screen, and *Stop* and the console stay available while it runs.
+- **Applications** opens straight on the list: `mo uninstall --list` is read-only and fast.
+- **Smart Care tiles** open the module's review directly, without a second scan.
+- **Back:** a ← arrow in the header of every step after the start screen, plus Esc and ⌘[. A step opened from elsewhere (a tile, the menu bar) returns there. The sidebar is always one click away.
+
+| Action | Path | Clicks |
+|---|---|---|
+| Clean everything safe | Scan → Run | 2 |
+| The same from the menu bar | icon → Clean → Run | 3 |
+| Cleanup with selection | Cleanup → Scan → Clean | 3 |
+| Uninstall an app | Applications → ☑ app → Uninstall | 3 |
+| Installers / project artifacts | Scan → tile → Remove | 3 |
+| Maintenance | Performance → Scan → Run | 3 |
+| Space Map item to Trash | Space Map → Scan → item → Move to Trash | 3 + folder depth |
+
 ## 7. Prototype
 
 `prototype/index.html` + `app.js` + `assets/glass/`. Online: https://lexus2016.github.io/Nora/prototype/. Locally: `cd prototype && python3 -m http.server 8000` → http://localhost:8000.
 - All 12 screens and complete flows (scan → review → run → *Work done!*) for Smart Care, Cleanup, Applications, Performance, Projects, Installers and Security.
 - *Scenarios* in the top bar: Mole missing / outdated, no Full Disk Access, an active sudo session.
+- **Language:** English, Ukrainian or Russian, picked automatically from the system (browser) language; any other language falls back to English. There is no language switch. `?lang=en|uk|ru` exists only for taking screenshots. Ukrainian is the source copy; `prototype/i18n-en.js` and `i18n-ru.js` hold the translations and double as the source for the app's strings. `python3 scripts/i18n_check.py` lists copy that has no translation yet.
 
 ## 8. Milestones
 

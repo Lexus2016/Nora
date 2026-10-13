@@ -4,8 +4,8 @@
 // ---------- helpers ----------
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const nf1 = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const nf0 = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 });
+const nf1 = new Intl.NumberFormat((window.NORA_LOCALE || 'uk-UA'), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const nf0 = new Intl.NumberFormat((window.NORA_LOCALE || 'uk-UA'), { maximumFractionDigits: 0 });
 function mb(v) {
   if (v == null || isNaN(v)) return '—';
   if (v >= 1000) return (v >= 100000 ? nf0.format(v / 1000) : nf1.format(v / 1000)) + ' ГБ';
@@ -198,7 +198,7 @@ const S = {
   smart: { phase: 'landing', freed: 0 },
   prog: { pct: 0, status: '', step: 0 },
   clean: { phase: 'idle', sel: new Set(CLEAN_ITEMS.filter(selectable).map(i => i.id)), open: new Set(['dev', 'user']), progress: 0, result: null },
-  un: { phase: 'landing', q: '', sort: 'size', src: 'Усі', sel: new Set(['ps', 'zoom']), focus: 'ps', perm: false, done: null },
+  un: { phase: 'list', q: '', sort: 'size', src: 'Усі', sel: new Set(['ps', 'zoom']), focus: 'ps', perm: false, done: null },
   purge: { phase: 'landing', sel: new Set(ARTS.filter(artDefault).map(a => a.id)), empty: false },
   inst: { phase: 'landing', sel: new Set(INST.filter(i => i.id !== 'i7').map(i => i.id)) },
   an: { phase: 'landing', path: [], vol: 'hd', mode: 'sun' },
@@ -342,7 +342,15 @@ function landing(key, o = {}) {
       ${busy ? '' : o.extra || ''}</div></section>
     ${scanBtn(busy ? 'Стоп' : o.label || 'Сканувати', busy ? 'stopRun' : o.action, busy, S.prog.pct, busy ? `${Math.round(S.prog.pct)} %` : o.sub || '')}`;
 }
-const resHead = (key, title, sub, right = '', st = 'idle') => `<div class="res-head fade-in">${hero(MODS[key].hero, st)}<div class="sp"><h1 class="res-title">${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>${right}</div>`;
+// Steps after a module's start screen get a back arrow; Esc and ⌘[ do the same.
+const BACK = { overview: () => S.smart, clean: () => S.clean, purge: () => S.purge, installer: () => S.inst, optimize: () => S.opt, security: () => S.sec };
+const START = { clean: 'idle' };
+function canBack(key) {
+  if (S.ret && S.ret.to === key) return true;
+  const st = BACK[key] && BACK[key]();
+  return !!st && st.phase !== (START[key] || 'landing') && !['run', 'runall', 'scan'].includes(st.phase);
+}
+const resHead = (key, title, sub, right = '', st = 'idle') => `<div class="res-head fade-in">${canBack(key) ? `<button class="iconbtn back-btn" data-a="back" data-v="${key}" title="Назад · Esc" aria-label="Назад">${ic('i-back')}</button>` : ''}${hero(MODS[key].hero, st)}<div class="sp"><h1 class="res-title">${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>${right}</div>`;
 const donePanel = (key, big, sub, extra = '') => `<div class="panel done fade-in">${hero(MODS[key].hero, 'done')}<div>
   <h1 class="title" style="font-size:36px">Роботу виконано!</h1><div class="bigstat">${big}</div><div class="dim" style="margin-top:8px;font-size:15px">${sub}</div>${extra}
   <div class="row" style="margin-top:28px;flex-wrap:wrap"><button class="btn ghost" data-a="drawer">${ic('i-term')}Переглянути лог</button><span class="sp"></span><button class="btn primary" data-a="doneOk" data-v="${key}">OK</button></div></div></div>`;
@@ -404,7 +412,7 @@ function vOverview() {
   <div class="panel" style="padding:18px;margin-bottom:14px"><div class="row" style="margin-bottom:10px"><b>Macintosh HD</b><span class="sp"></span><span class="dim num">${mb(total - free)} з ${mb(total)} використано</span></div>
     <div class="catbar" style="height:16px;border-radius:8px">${segs.map(([n, v, c]) => `<i title="${n}: ${mb(v)}" style="flex:${v};background:${c}"></i>`).join('')}<i style="flex:${free};background:rgba(255,255,255,.12)" title="Вільно: ${mb(free)}"></i></div>
     <div class="row" style="flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12px">${segs.map(([n, v, c]) => `<span class="row" style="gap:6px"><s style="width:9px;height:9px;border-radius:3px;background:${c}"></s>${n}</span>`).join('')}<span class="row muted" style="gap:6px"><s style="width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.2)"></s>Вільно ${mb(free)}</span></div></div>
-  <div class="tiles4">${tiles.map(([k, n, v]) => { const src = glassSrc(MODS[k].hero); return `<button class="tile" data-a="go" data-v="${k}">${src ? `<img src="${src}" alt="">` : `<span class="bico">${ic(MODS[k].ic)}</span>`}<small>${n}</small><b>${mb(v)}</b><span class="row dim" style="gap:4px;font-size:12px">Переглянути${ic('i-chev')}</span></button>`; }).join('')}</div>
+  <div class="tiles4">${tiles.map(([k, n, v]) => { const src = glassSrc(MODS[k].hero); return `<button class="tile" data-a="smartReview" data-v="${k}">${src ? `<img src="${src}" alt="">` : `<span class="bico">${ic(MODS[k].ic)}</span>`}<small>${n}</small><b>${mb(v)}</b><span class="row dim" style="gap:4px;font-size:12px">Переглянути${ic('i-chev')}</span></button>`; }).join('')}</div>
   ${scanBtn(sm.phase === 'runall' ? 'Стоп' : 'Запустити', sm.phase === 'runall' ? 'stopRun' : 'smartAll', sm.phase === 'runall', S.prog.pct, sm.phase === 'runall' ? `${Math.round(S.prog.pct)} %` : 'кеші, проєкти й інсталятори', true)}</div>`;
 }
 
@@ -438,7 +446,7 @@ function vClean() {
   <aside class="card sticky"><div class="eyebrow">Буде очищено</div><div class="bigstat" style="margin:8px 0 14px">${mb(selTotal)}</div>
     <div class="catbar">${cats.map((s, i) => `<i style="flex:${secTot(s)};background:${cols[i]}" title="${esc(s.name)}"></i>`).join('')}</div>
     <div class="legend" style="margin-top:12px">${cats.map((s, i) => `<div><s style="background:${cols[i]}"></s><span class="sp ell">${s.name}</span><span class="num dim">${mb(secTot(s))}</span></div>`).join('')}</div>
-    <div class="hr"></div><div class="note">${unchecked ? `${unchecked} знятих позицій буде тимчасово захищено на час запуску.` : 'Позначено все доступне.'}</div>
+    <div class="hr"></div><div class="note">${unchecked ? `${unchecked} знятих позицій буде тимчасово захищено на час запуску.` : 'Позначено все доступне.'} Кеші й журнали видаляються остаточно; програми створять їх знову.</div>
     <button class="btn primary" style="width:100%;margin-top:14px;height:40px" data-a="cleanConfirm" ${selTotal ? '' : 'disabled'}>${ic('i-clean')}Очистити ${mb(selTotal)}</button>
     <div style="margin-top:10px;text-align:center">${cmd(S.scen.admin ? 'sudo -A -v && mo clean' : 'mo clean')}</div></aside></div>`;
 }
@@ -790,14 +798,6 @@ function smartScan() {
     onDone: () => { sm.phase = 'results'; S.prog.pct = 0; if (S.view === 'overview') render(); },
     onStop: () => { sm.phase = 'landing'; render(); } });
 }
-function smartAll() {
-  sheet(`<h3>Очистити ${mb(smartSafe())}?</h3><div class="legend">
-    <div><s style="background:var(--c1)"></s><span class="sp">Кеші та журнали</span><span class="num dim">${mb(cleanAvail())}</span></div>
-    <div><s style="background:var(--c2)"></s><span class="sp">Артефакти проєктів (типовий вибір Mole)</span><span class="num dim">${mb(sum(ARTS.filter(artDefault), a => a.mb))}</span></div>
-    <div><s style="background:var(--c3)"></s><span class="sp">Інсталятори</span><span class="num dim">${mb(instTotal())}</span></div></div>
-  <div class="note">Nora виконає по черзі <span class="mono">mo clean</span>, <span class="mono">mo purge --yes</span> і <span class="mono">mo installer</span> (обрані файли Nora позначить у меню Mole й звірить список перед підтвердженням). Великі файли не чіпаються.</div>
-  <div class="foot"><button class="btn" data-a="closeSheet">Скасувати</button><button class="btn primary" data-a="smartAllRun">Запустити</button></div>`);
-}
 function smartAllRun() {
   closeSheet(); const sm = S.smart, total = smartSafe(); sm.phase = 'runall'; S.prog = { pct: 0 }; render();
   const lines = [L('a', '$ mo clean'), L('m', 'nora: whitelist overlay +13 defaults'), L('g', `  ✓ Cleanup complete · ${mb(cleanAvail())}`), L('a', '$ mo purge --yes'), L('g', `  ✓ Purge complete · ${mb(sum(ARTS.filter(artDefault), a => a.mb))}`), L('a', '$ mo installer'), L('g', `  ✓ Installers cleaned · ${mb(instTotal())}`), L('m', 'nora: whitelist restored')];
@@ -816,13 +816,6 @@ function cleanScan() {
     onLine: (i, ln) => { if (ln.s.startsWith('➤')) sec++; if (S.view === 'clean') progress(i, lines.length, `Сканую: ${CLEAN[Math.max(0, sec - 1)].name}`, Math.min(3, Math.floor(sec / 2.5))); },
     onDone: () => { c.phase = 'review'; if (S.view === 'clean') render(); },
     onStop: () => { c.phase = 'idle'; render(); } });
-}
-function cleanConfirm() {
-  const unchecked = CLEAN_ITEMS.filter(i => selectable(i) && !S.clean.sel.has(i.id)).length;
-  sheet(`<h3>Очистити ${mb(cleanTotal())}?</h3>
-  <div class="note">Mole не вміє видаляти окремі позиції, тому Nora тимчасово додасть ${unchecked} знятих позицій і 13 типових захистів у whitelist, запустить очищення і відновить файл — навіть після збою.</div>
-  <div class="note">Кеші й журнали видаляються остаточно; програми створять їх знову.</div>
-  <div class="foot"><span class="sp">${cmd(S.scen.admin ? 'sudo -A -v && mo clean' : 'mo clean')}</span><button class="btn" data-a="closeSheet">Скасувати</button><button class="btn primary" data-a="cleanRun">Очистити</button></div>`);
 }
 function cleanRun() {
   closeSheet();
@@ -856,12 +849,6 @@ function unRun() {
   const lines = [L('h', 'Files to be removed:'), ...sel.map(a => L('a', `✓ ${a.name}, ${mb(appFiles(a).total)}`)), L('m', 'Proceed with uninstallation? [y/N]  ← nora: preview matches, answering y'), ...sel.map(a => L('g', `  ✓ ${a.name} moved to Trash`)), L('g', `Removed ${sel.length} app(s), freed ${mb(total)}`)];
   run(unCmd(), lines, { speed: 140, onLine: i => { if (S.view === 'uninstall') progress(i, lines.length, i < sel.length + 2 ? 'Перевіряю файли…' : 'Видаляю…', Math.min(2, Math.floor(i / lines.length * 3))); },
     onDone: () => { u.phase = 'done'; u.done = { n: sel.length, mb: total, refs }; u.sel.clear(); if (S.view === 'uninstall') render(); }, onStop: () => { u.phase = 'list'; render(); } });
-}
-function purgeConfirm() {
-  const isDefault = ARTS.every(a => S.purge.sel.has(a.id) === artDefault(a));
-  sheet(`<h3>Видалити ${S.purge.sel.size} артефактів · ${mb(purgeTotal())}?</h3><div class="note">Вони відновлюються збиранням проєкту (npm install, cargo build…).</div>
-  <div class="note">${isDefault ? 'Вибір збігається з типовим набором Mole — Nora запустить <span class="mono">mo purge --yes</span>.' : 'Вибір відрізняється від типового — Nora позначить ті самі пункти в меню Mole, звірить список на екрані й лише тоді підтвердить.'}</div>
-  <div class="foot"><button class="btn" data-a="closeSheet">Скасувати</button><button class="btn danger" data-a="purgeRun">Видалити</button></div>`);
 }
 function purgeRun() {
   closeSheet(); const p = S.purge, isDefault = ARTS.every(a => p.sel.has(a.id) === artDefault(a)), total = purgeTotal(), n = p.sel.size; p.phase = 'run'; render();
@@ -936,7 +923,7 @@ function renderMb() {
 
 // ---------- actions ----------
 const A = {
-  go: v => go(v),
+  go: v => { S.ret = null; go(v); },
   toggleScen: () => { S.scenOpen = !S.scenOpen; $('#scen').hidden = !S.scenOpen; $('#scenBtn').setAttribute('aria-pressed', S.scenOpen); if (S.scenOpen) renderScen(); },
   scen: v => { const [k, raw] = v.split(':'); S.scen[k] = raw === 'true' ? true : raw === 'false' ? false : raw; if (k === 'cli' && raw !== 'missing') closeSheet(); renderScen(); render(); },
   toggleMb: () => { S.mb = !S.mb; $('#mbPop').hidden = !S.mb; $('#mbBtn').setAttribute('aria-pressed', S.mb); if (S.mb) renderMb(); },
@@ -956,12 +943,20 @@ const A = {
   secInstall: () => run('brew install clamav', [L('a', '==> Installing clamav 1.5.4 (+ yara 4.5.8)'), L('g', '🍺  /opt/homebrew/Cellar/clamav/1.5.4'), L('m', 'nora: config → ~/Library/Application Support/Nora/clamav'), L('a', '$ freshclam'), L('g', 'daily.cvd updated · main.cvd · bytecode.cvd')], { speed: 260, onDone: () => { S.sec.clam = true; render(true); toast('ClamAV встановлено, бази оновлено'); } }),
   secScan: () => quickScan('security', S.sec, 'nora security-scan', [L('m', 'audit: launch agents/daemons, login items, extensions … 64'), L('m', 'codesign + spctl: 212 apps'), L('a', '$ yara XProtect.yara ~/Downloads /Applications'), ...(S.sec.clam ? [L('a', '$ clamd --foreground (session) · clamdscan --fdpass'), L('w', '  ~/Downloads/Setup_Player_Pro.dmg: Osx.Adware.Bundlore FOUND')] : []), L('g', '5 findings to review')], 'list', 220),
   secCheck: (v, el) => { el.checked ? S.sec.sel.add(v) : S.sec.sel.delete(v); render(true); },
-  secMove: () => sheet(`<h3>Перемістити ${S.sec.sel.size} у карантин?</h3><div class="note">Агенти автозапуску спершу буде вивантажено. Файли переміщуються в карантин Nora разом із метаданими (шлях, власник, права, причина) і відновлюються одним кліком.</div><div class="foot"><button class="btn" data-a="closeSheet">Скасувати</button><button class="btn danger" data-a="secMoveRun">У карантин</button></div>`),
+  secMove: () => A.secMoveRun(),
   secMoveRun: () => { closeSheet(); const n = S.sec.sel.size; run('nora quarantine', [L('m', 'launchctl bootout gui/501/com.mac.updater.helper'), L('g', `moved ${n} item(s) → ~/Library/Application Support/Nora/Quarantine`)], { speed: 300, onDone: () => { S.sec.q.push(...S.sec.sel); S.sec.moved = n; S.sec.sel.clear(); S.sec.phase = 'done'; render(); } }); },
   secQuar: () => sheet(`<h3>Карантин</h3>${S.sec.q.length ? SEC_FIND.filter(f => S.sec.q.includes(f.id)).map(f => `<div class="opt-row"><span class="sp ell">${esc(f.t)}</span><button class="btn sm" data-a="secRestore" data-v="${f.id}">Відновити</button></div>`).join('') : '<div class="note">Карантин порожній.</div>'}<div class="foot"><button class="btn primary" data-a="closeSheet">Готово</button></div>`),
   secRestore: v => { S.sec.q = S.sec.q.filter(i => i !== v); closeSheet(); toast('Відновлено на попереднє місце'); render(true); },
-  smart: () => smartScan(), smartAll: () => smartAll(), smartAllRun: () => smartAllRun(),
-  cleanScan: () => cleanScan(), cleanConfirm: () => cleanConfirm(), cleanRun: () => cleanRun(),
+  smart: () => smartScan(), smartAll: () => smartAllRun(),
+  // A step opened from elsewhere (a Smart Care tile) remembers where to return.
+  smartReview: v => { const st = { clean: [S.clean, 'review'], purge: [S.purge, 'list'], installer: [S.inst, 'list'], analyze: [S.an, 'map'] }[v]; if (st) st[0].phase = st[1]; S.ret = { from: S.view, to: v }; go(v); },
+  back: v => {
+    if (S.ret && S.ret.to === v) { const from = S.ret.from; S.ret = null; go(from); return; }
+    if (v === 'analyze') { if (S.an.path.length) { S.an.path.pop(); render(); } else if (S.an.phase === 'map') A.anReset(); return; }
+    if (!canBack(v)) return;
+    BACK[v]().phase = START[v] || 'landing'; render();
+  }, smartAllRun: () => smartAllRun(),
+  cleanScan: () => cleanScan(), cleanConfirm: () => cleanRun(), cleanRun: () => cleanRun(),
   cleanOptSys: (v, el) => { if (el.checked && !S.scen.admin) { el.checked = false; authSheet('Системні кеші', null); } },
   cleanTrash: (v, el) => { el.checked ? S.clean.sel.add('u3') : S.clean.sel.delete('u3'); },
   secToggle: (v, el, e) => { if (e.target.closest('input')) return; S.clean.open.has(v) ? S.clean.open.delete(v) : S.clean.open.add(v); render(true); },
@@ -973,7 +968,7 @@ const A = {
   unSrc: v => { S.un.src = v; render(true); }, unSort: (v, el) => { S.un.sort = el.value; render(true); },
   unFocus: (v, el, e) => { if (e.target.closest('input')) return; S.un.focus = v; render(true); },
   unCheck: (v, el) => { el.checked ? S.un.sel.add(v) : S.un.sel.delete(v); S.un.focus = v; render(true); },
-  unPerm: v => { S.un.perm = v === '1'; render(true); }, unDry: () => unConfirm(true), unConfirm: () => unConfirm(false), unRun: () => unRun(),
+  unPerm: v => { S.un.perm = v === '1'; render(true); }, unDry: () => unConfirm(true), unConfirm: () => unRun(), unRun: () => unRun(),
   personalData: () => sheet(`<h3>Особисті дані</h3><p class="note" style="margin:0">У Mole вибір особистих даних (клавіша <span class="mono">D</span>) є лише в інтерактивному режимі. Nora відкриє його у вбудованому терміналі.</p><div class="foot"><button class="btn" data-a="closeSheet">Скасувати</button><button class="btn primary" data-a="pdTerm">${ic('i-term')}Відкрити в терміналі</button></div>`),
   pdTerm: () => { closeSheet(); run(unCmd(), [L('h', 'Files to be removed:'), L('m', 'Personal data kept: 2 paths'), L('w', 'D choose personal data   (інтерактивний режим)')], { speed: 120 }); },
   optScan: () => quickScan('optimize', S.opt, 'mo optimize --dry-run', [L('m', '⚙ System 18/32 GB RAM | 692/995 GB Disk | Uptime 6d'), L('g', '✓ No sustained high-CPU bottleneck detected'), ...OPT.slice(0, 8).map(([, n]) => L('m', `◎ ${n} · checked`))], 'list', 60),
@@ -982,14 +977,14 @@ const A = {
   anVolSel: (v, el) => { S.an.vol = el.value; S.an.path = []; },
   anIn: v => { S.an.path = [...S.an.path, +v]; render(true); }, anUp: v => { S.an.path = S.an.path.slice(0, +v); render(true); },
   anMode: v => { S.an.mode = v; render(true); }, anReset: () => { S.an.phase = 'landing'; S.an.path = []; render(); },
-  anTrash: () => sheet(`<h3>Перемістити «${esc(anNode().n)}» у Кошик?</h3><div class="note">Як і в <span class="mono">mo analyze</span>: елемент іде в Кошик після підтвердження, його можна відновити.</div><div class="foot"><button class="btn" data-a="closeSheet">Скасувати</button><button class="btn danger" data-a="closeSheet">У Кошик</button></div>`),
+  anTrash: () => toast(`${anNode().n} — у Кошику`),
   purgeScan: () => quickScan('purge', S.purge, 'mo purge --dry-run', [L('h', 'Purge Project Artifacts'), ...ARTS.map(a => L(a.recent ? 'w' : 'g', `  ${a.recent ? '○' : '✓'} ${a.proj}/${a.k}`))], 'list', 60),
   purgeCheck: (v, el) => { el.checked ? S.purge.sel.add(v) : S.purge.sel.delete(v); render(true); }, purgeEmpty: (v, el) => { S.purge.empty = el.checked; render(true); },
-  purgeConfirm: () => purgeConfirm(), purgeRun: () => purgeRun(),
+  purgeConfirm: () => purgeRun(), purgeRun: () => purgeRun(),
   instScan: () => quickScan('installer', S.inst, 'mo installer --dry-run', [L('h', 'Scanning Downloads, Desktop, Homebrew, iCloud, Mail, Telegram'), ...INST.map(i => L('m', `  ○ ${i.name}  ${mb(i.mb)}`))], 'list', 60),
   instCheck: (v, el) => { el.checked ? S.inst.sel.add(v) : S.inst.sel.delete(v); render(true); },
   instAll: v => { INST.forEach(i => { const on = v === '1' ? true : !S.inst.sel.has(i.id); on ? S.inst.sel.add(i.id) : S.inst.sel.delete(i.id); }); render(true); },
-  instConfirm: () => sheet(`<h3>Видалити ${S.inst.sel.size} інсталяторів · ${mb(instTotal())}?</h3><div class="note">Nora позначить ті самі файли в меню Mole і звірить список на екрані перед підтвердженням.</div><div class="foot"><button class="btn" data-a="closeSheet">Скасувати</button><button class="btn danger" data-a="instRun">Видалити</button></div>`),
+  instConfirm: () => instRun(),
   instRun: () => instRun(),
   extClean: () => sheet(`<h3>Зовнішній диск</h3><div class="note">Mole прибере лише метадані macOS (.DS_Store, ._*) з обраного тому.</div><select class="field" aria-label="Том"><option>/Volumes/USB-STICK</option><option>/Volumes/Archive</option></select><div class="foot"><button class="btn" data-a="closeSheet">Скасувати</button><button class="btn primary" data-a="extRun">Очистити</button></div>`),
   extRun: () => { closeSheet(); run('mo clean --external /Volumes/USB-STICK', [L('h', 'Clean External Volume'), L('g', '  ✓ .DS_Store · 214 files'), L('g', '  ✓ AppleDouble ._* · 1 380 files')], { speed: 160, onDone: () => toast('Метадані з USB-STICK прибрано') }); },
@@ -1020,7 +1015,8 @@ document.addEventListener('input', e => { const el = e.target; if (el.id === 'pa
 document.addEventListener('change', e => { const el = e.target; if (el.tagName === 'SELECT' && el.dataset.a && A[el.dataset.a]) A[el.dataset.a](el.value, el, e); });
 document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); palOpen($('#palette').hidden); return; }
-  if (e.key === 'Escape') { if (!$('#palette').hidden) palOpen(false); else if (!$('#sheet').hidden && S.scen.cli !== 'missing') closeSheet(); return; }
+  if (e.key === 'Escape') { if (!$('#palette').hidden) palOpen(false); else if (!$('#sheet').hidden) { if (S.scen.cli !== 'missing') closeSheet(); } else A.back(S.view); return; }
+  if (e.metaKey && e.key === '[') { e.preventDefault(); A.back(S.view); return; }
   if (!$('#palette').hidden && ['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) {
     e.preventDefault(); const list = palRender();
     if (e.key === 'Enter') { const p = list[S.palIdx]; if (p) { palOpen(false); p[2](); } return; }
@@ -1033,7 +1029,7 @@ document.addEventListener('pointermove', e => { const h = e.target.closest && e.
 renderRail(); render(); paintDrawer();
 setInterval(tick, 1000);
 (function menubarClock() {
-  const upd = () => { const d = new Date(); $('#clock').textContent = d.toLocaleDateString('uk-UA', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }); $('#mbCpu').innerHTML = mbLabel(); };
+  const upd = () => { const d = new Date(); $('#clock').textContent = d.toLocaleDateString((window.NORA_LOCALE || 'uk-UA'), { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString((window.NORA_LOCALE || 'uk-UA'), { hour: '2-digit', minute: '2-digit' }); $('#mbCpu').innerHTML = mbLabel(); };
   $('#mbIco').src = glassSrc('vessel');
   upd(); setInterval(upd, 1000);
 })();
