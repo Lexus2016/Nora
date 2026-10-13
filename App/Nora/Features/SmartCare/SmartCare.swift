@@ -129,7 +129,14 @@ struct SmartCareView: View {
                                    Feature(symbol: "hammer", text: "Old build folders"),
                                    Feature(symbol: "shippingbox", text: "Installers you no longer need")],
                         command: "mo clean --dry-run · mo optimize --dry-run · mo purge --dry-run · mo installer --dry-run",
-                        action: { model.scan(app) })
+                        action: { model.scan(app) }) {
+                if !app.hasFullDiskAccess {
+                    HStack(spacing: 10) {
+                        Notice(text: String(localized: "Give Nora Full Disk Access so Mole can also clean the Trash and app containers."), symbol: "lock.shield")
+                        Button("Open settings") { Permissions.openFullDiskAccess() }.buttonStyle(GlassButtonStyle()).fixedSize()
+                    }
+                }
+            }
                 .task { if app.autoScan { model.scan(app) } }
         case .scanning, .results, .running:
             tiles
