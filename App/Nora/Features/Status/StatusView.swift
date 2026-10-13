@@ -5,6 +5,8 @@ import SwiftUI
 struct StatusView: View {
     @Environment(AppModel.self) private var app
     private let module = Module.status
+    @State private var live = LiveStatus()
+    @State private var portsExpanded = false
 
     var body: some View {
         let store = app.status
@@ -19,9 +21,14 @@ struct StatusView: View {
                         memoryCard(s, store)
                         diskCard(s, store)
                         networkCard(s, store)
+                        powerLiveCard()
+                        temperatureCard(s)
+                        energyModeCard()
+                        trafficCard()
                         if !s.batteries.isEmpty || s.thermal != nil { powerCard(s) }
                         if !s.topProcesses.isEmpty { processCard(s) }
                         if !s.bluetooth.isEmpty { bluetoothCard(s) }
+                        portsCard()
                     }
                 } else if let error = store.lastError {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(Palette.warn)
@@ -35,8 +42,14 @@ struct StatusView: View {
         }
         .scrollContentBackground(.hidden)
         }
-        .onAppear { store.retain() }
-        .onDisappear { store.release() }
+        .onAppear {
+            store.retain()
+            live.start(home: app.home, askpass: app.askpassURL)
+        }
+        .onDisappear {
+            store.release()
+            live.stop()
+        }
     }
 
     private func header(_ s: StatusSnapshot?) -> some View {
@@ -162,13 +175,180 @@ struct StatusView: View {
                 if let cycles = b.cycleCount { InfoRow(label: "Cycles", value: "\(cycles)") }
             }
             if let t = s.thermal {
-                if let w = t.systemPower { InfoRow(label: "System power", value: "\(Format.number(w)) W") }
+                if let w = t.systemPower { InfoRow(label: "System power (Mole)", value: "\(Format.number(w)) W") }
                 if let w = t.adapterPower { InfoRow(label: "Adapter", value: "\(Format.number(w, digits: 0)) W") }
-                if let c = t.cpuTemp { InfoRow(label: "CPU temperature", value: "\(Format.number(c, digits: 0)) °C") }
-                if let c = t.gpuTemp { InfoRow(label: "GPU temperature", value: "\(Format.number(c, digits: 0)) °C") }
-                if let rpm = t.fanSpeed, rpm > 0 { InfoRow(label: "Fan", value: "\(rpm) rpm") }
             }
         }
+    }
+
+    // MARK: Live cards (IOReport, IOHID, pmset, lsof, nettop)
+
+    private func powerLiveCard() -> some View {
+        Card(title: "Power", symbol: "bolt") {
+            let reading = live.power.reading
+            HStack(alignment: .lastTextBaseline) {
+                Text(watts(reading?.total, loaded: live.power.isLoaded)).font(.numberMedium).monospacedDigit()
+                Spacer()
+                Text("total").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+            }
+            InfoRow(label: "CPU", value: watts(reading?.cpu, loaded: live.power.isLoaded))
+            InfoRow(label: "GPU", value: watts(reading?.gpu, loaded: live.power.isLoaded))
+            InfoRow(label: "Neural Engine", value: watts(reading?.ane, loaded: live.power.isLoaded))
+            Text("Read from the power counters, no password needed.")
+                .font(.system(size: 11)).foregroundStyle(Palette.muted)
+        }
+    }
+
+    private func temperatureCard(_ s: StatusSnapshot) -> some View {
+        Card(title: "Temperatures", symbol: "thermometer.medium") {
+            let reading = live.temperatures.reading
+            let loaded = live.temperatures.isLoaded
+            InfoRow(label: "CPU average", value: celsius(reading?.cpu?.average, loaded: loaded))
+            InfoRow(label: "CPU max", value: celsius(reading?.cpu?.max, loaded: loaded))
+            if let sensors = reading?.cpu?.sensors {
+                Text("\(sensors) CPU sensors").font(.system(size: 11)).foregroundStyle(Palette.muted)
+            }
+            InfoRow(label: "GPU", value: celsius(reading?.gpu?.average, loaded: loaded))
+            if let t = s.thermal {
+                if let c = t.cpuTemp { InfoRow(label: "CPU (Mole)", value: celsius(c, loaded: true)) }
+                if let c = t.gpuTemp { InfoRow(label: "GPU (Mole)", value: celsius(c, loaded: true)) }
+                if let rpm = t.fanSpeed, rpm > 0 { InfoRow(label: "Fan (Mole)", value: "\(rpm) rpm") }
+            }
+        }
+    }
+
+    private func energyModeCard() -> some View {
+        Card(title: "Energy mode", symbol: "leaf") {
+            switch live.energy {
+            case .pending:
+                ProgressView().controlSize(.small).tint(.white)
+            case .unavailable:
+                Text("Energy mode is not reported on this Mac.").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+            case .value(let state):
+                HStack(spacing: 6) {
+                    ForEach(state.offered, id: \.self) { mode in
+                        energySegment(mode, state: state)
+                    }
+                }
+                Text("Changing the mode asks for your Mac password.")
+                    .font(.system(size: 11)).foregroundStyle(Palette.muted)
+                if let command = live.pendingCommand, let mode = live.pendingMode {
+                    CommandPreview(command: command)
+                    HStack(spacing: 8) {
+                        Button(action: { Task { await live.apply() } }) {
+                            Text("Apply \(energyTitle(mode))")
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .disabled(live.isApplying)
+                        Button("Cancel") { live.cancelPending() }
+                            .buttonStyle(GlassButtonStyle())
+                            .disabled(live.isApplying)
+                        if live.isApplying { ProgressView().controlSize(.small).tint(.white) }
+                    }
+                }
+                if let message = live.applyMessage {
+                    Text(message).font(.system(size: 11)).foregroundStyle(Palette.warn)
+                }
+            }
+        }
+    }
+
+    private func energySegment(_ mode: EnergyMode, state: EnergyModeState) -> some View {
+        let isCurrent = state.current == mode
+        let isPending = live.pendingMode == mode
+        return Button { live.choose(mode) } label: {
+            Text(energyTitle(mode))
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(isCurrent ? Color.white : Palette.fg2)
+                .background(
+                    Capsule().fill(isCurrent ? Palette.cyan.opacity(0.28) : Palette.surface2)
+                )
+                .overlay(
+                    Capsule().stroke(isPending ? Palette.cyan : Palette.line, lineWidth: isPending ? 1.5 : 1)
+                )
+        }
+        .buttonStyle(.plain)
+        .disabled(isCurrent || live.isApplying)
+    }
+
+    private func energyTitle(_ mode: EnergyMode) -> String {
+        switch mode {
+        case .low: return String(localized: "Low Power")
+        case .automatic: return String(localized: "Automatic")
+        case .high: return String(localized: "High Power")
+        }
+    }
+
+    private func trafficCard() -> some View {
+        Card(title: "Network by app", symbol: "arrow.up.arrow.down") {
+            switch live.traffic {
+            case .pending:
+                ProgressView().controlSize(.small).tint(.white)
+            case .unavailable:
+                Text("nettop did not return data.").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+            case .value(let report):
+                if report.down.isEmpty && report.up.isEmpty {
+                    Text("No network traffic in the last second.").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+                }
+                if !report.down.isEmpty {
+                    Text("Download").font(.system(size: 11, weight: .semibold)).foregroundStyle(Palette.amber)
+                    ForEach(report.down) { entry in
+                        InfoRow(label: LocalizedStringKey(entry.name), value: Format.rate(entry.downBytesPerSecond / 1_048_576))
+                    }
+                }
+                if !report.up.isEmpty {
+                    Text("Upload").font(.system(size: 11, weight: .semibold)).foregroundStyle(Palette.cyan)
+                    ForEach(report.up) { entry in
+                        InfoRow(label: LocalizedStringKey(entry.name), value: Format.rate(entry.upBytesPerSecond / 1_048_576))
+                    }
+                }
+            }
+        }
+    }
+
+    private func portsCard() -> some View {
+        Card(title: "Listening ports", symbol: "point.3.connected.trianglepath.dotted") {
+            switch live.ports {
+            case .pending:
+                ProgressView().controlSize(.small).tint(.white)
+            case .unavailable:
+                Text("lsof did not return data.").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+            case .value(let ports):
+                if ports.isEmpty {
+                    Text("No listening TCP ports.").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+                } else {
+                    DisclosureGroup("\(ports.count) listening", isExpanded: $portsExpanded) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(ports.prefix(60)) { port in
+                                HStack {
+                                    Text(port.process).lineLimit(1).truncationMode(.middle)
+                                    Spacer(minLength: 8)
+                                    Text("\(port.address):\(port.port)").monospacedDigit().foregroundStyle(Palette.fg2)
+                                }
+                                .font(.system(size: 12))
+                            }
+                        }
+                        .padding(.top, 6)
+                    }
+                    .font(.system(size: 12))
+                }
+            }
+        }
+    }
+
+    private func watts(_ value: Double?, loaded: Bool) -> String {
+        guard loaded else { return "…" }
+        guard let value else { return String(localized: "unavailable") }
+        return "\(Format.number(value, digits: 2)) W"
+    }
+
+    private func celsius(_ value: Double?, loaded: Bool) -> String {
+        guard loaded else { return "…" }
+        guard let value else { return String(localized: "unavailable") }
+        return "\(Format.number(value, digits: 0)) °C"
     }
 
     private func processCard(_ s: StatusSnapshot) -> some View {
