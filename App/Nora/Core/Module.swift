@@ -102,7 +102,7 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
 
     var isAvailable: Bool { Module.ready.contains(self) }
 
-    static let ready: Set<Module> = [.smartCare, .status, .cleanup, .projects, .installers, .applications, .performance]
+    static let ready: Set<Module> = [.smartCare, .status, .cleanup, .projects, .installers, .applications, .performance, .spaceMap, .history]
 
     static var groups: [(LocalizedStringKey?, [Module])] { [
         (nil, [.smartCare]),

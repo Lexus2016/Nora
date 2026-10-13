@@ -55,6 +55,8 @@ struct ModuleDetail: View {
         case .applications: ApplicationsView()
         case .performance: PerformanceView()
         case .smartCare: SmartCareView()
+        case .spaceMap: SpaceMapView()
+        case .history: HistoryView()
         default: EmptyView()
         }
     }

@@ -37,6 +37,8 @@ final class AppModel {
     let apps = AppsModel()
     let performance = PerformanceModel()
     let smartCare = SmartCareModel()
+    let spaceMap = SpaceMapModel()
+    let history = HistoryModel()
 
     let home = FileManager.default.homeDirectoryForCurrentUser
 
@@ -78,6 +80,7 @@ final class AppModel {
         case .installers: installers.stage
         case .applications: apps.stage
         case .performance: performance.stage
+        case .spaceMap: spaceMap.loading ? .scanning : spaceMap.stage
         case .smartCare: smartCare.phase == .scanning || smartCare.phase == .running ? .running : nil
         default: nil
         }
