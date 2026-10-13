@@ -5,17 +5,41 @@ public struct MoleInstallation: Sendable {
     public let executable: URL
     public let root: URL
 
-    public init(executable: URL) throws {
+    public init(executable: URL, home: URL? = nil) throws {
         self.executable = executable
-        // Homebrew and install.sh both symlink `mo` to `<root>/mole` or `<root>/bin/mo`.
-        let resolved = executable.resolvingSymlinksInPath().deletingLastPathComponent()
-        let candidates = [resolved, resolved.deletingLastPathComponent()]
+        // Homebrew keeps lib/ next to `mole` or one level up. Mole's install.sh copies `mo` and `mole`
+        // into the prefix, puts lib/ in ~/.config/mole and pins that folder in the launcher.
+        let resolvedFile = executable.resolvingSymlinksInPath()
+        let resolved = resolvedFile.deletingLastPathComponent()
+        var candidates = [resolved, resolved.deletingLastPathComponent()]
+        for launcher in [resolvedFile, resolved.appendingPathComponent("mole")] {
+            if let pinned = Self.pinnedScriptDir(launcher) { candidates.append(pinned) }
+        }
+        if let home { candidates.append(home.appendingPathComponent(".config/mole", isDirectory: true)) }
         guard let root = candidates.first(where: {
             FileManager.default.fileExists(atPath: $0.appendingPathComponent("lib/core/base.sh").path)
         }) else {
             throw PTYError(description: "no lib/core/base.sh next to \(executable.path)")
         }
         self.root = root
+    }
+
+    /// The `SCRIPT_DIR=/path` line install.sh writes into the launcher (escaped with printf %q).
+    /// Nil for the stock `SCRIPT_DIR="$(dirname …)"` line or anything that is not a plain path.
+    static func pinnedScriptDir(_ launcher: URL) -> URL? {
+        guard let handle = try? FileHandle(forReadingFrom: launcher) else { return nil }
+        defer { try? handle.close() }
+        guard let data = try? handle.read(upToCount: 64 * 1024), let text = String(data: data, encoding: .utf8) else { return nil }
+        for line in text.split(separator: "\n") where line.hasPrefix("SCRIPT_DIR=") {
+            let value = line.dropFirst("SCRIPT_DIR=".count)
+            guard value.hasPrefix("/") else { continue }
+            var path = "", escaped = false
+            for character in value {
+                if escaped { path.append(character); escaped = false } else if character == "\\" { escaped = true } else { path.append(character) }
+            }
+            return URL(fileURLWithPath: path, isDirectory: true)
+        }
+        return nil
     }
 
     /// `mo --version` → "1.59.1".

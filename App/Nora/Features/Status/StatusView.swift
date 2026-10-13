@@ -15,6 +15,11 @@ struct StatusView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header(s)
+                if s != nil, let error = store.lastError {
+                    // The stream stopped after it had delivered data: the cards below are old.
+                    Notice(text: String(localized: "Live data stopped: \(error). The values below are from \((store.lastSampleAt ?? Date()).formatted(date: .omitted, time: .standard))."),
+                           symbol: "exclamationmark.triangle")
+                }
                 if let s {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 270), spacing: 14)], alignment: .leading, spacing: 14) {
                         cpuCard(s, store)

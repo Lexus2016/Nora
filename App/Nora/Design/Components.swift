@@ -104,20 +104,48 @@ struct InfoRow: View {
     }
 }
 
-/// The exact command an action will run, always shown before it runs. The copy button gives the
+/// The exact command an action will run, shown before it runs when Settings → Mole → Commands is
+/// on (off by default; the console always lists every command). The copy button gives the
 /// Terminal form: `sudo -A` needs Nora's password dialog, so it is copied as plain `sudo`.
 struct CommandPreview: View {
     let command: String
+    /// Settings → Mole → Commands. Off by default; the console always has the commands.
+    static let settingKey = "showCommands"
+    @AppStorage(CommandPreview.settingKey) private var visible = false
     /// Dark enough for the command text to keep 4.5:1 on the brightest scene (SceneContrastTests).
     static let chipOpacity = 0.5
 
     /// The command as it runs in Terminal: a `sudo -A` that starts a command becomes `sudo`.
     /// Text inside arguments is left alone.
     static func terminalForm(_ command: String) -> String {
-        command.replacingOccurrences(of: "(^|; |&& )sudo -A ", with: "$1sudo ", options: .regularExpression)
+        // Walk the line once, tracking single quotes (the only quoting ShellCommand uses), and drop
+        // "-A " only from a sudo that starts a command outside quotes.
+        var out = "", quoted = false, atCommandStart = true
+        var rest = Substring(command)
+        while let character = rest.first {
+            if !quoted, atCommandStart, rest.hasPrefix("sudo -A ") {
+                out += "sudo "
+                rest = rest.dropFirst("sudo -A ".count)
+                atCommandStart = false
+                continue
+            }
+            if character == "'" { quoted.toggle() }
+            out.append(character)
+            rest = rest.dropFirst()
+            if !quoted {
+                if out.hasSuffix("; ") || out.hasSuffix("&& ") { atCommandStart = true } else if character != " " { atCommandStart = false }
+            }
+        }
+        return out
     }
 
     var body: some View {
+        if visible {
+            chip
+        }
+    }
+
+    private var chip: some View {
         HStack(spacing: 8) {
             Image(systemName: "terminal").font(.system(size: 11))
             Text(command).font(.mono).lineLimit(1).truncationMode(.middle).textSelection(.enabled)

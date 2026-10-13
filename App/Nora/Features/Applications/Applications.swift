@@ -197,8 +197,10 @@ final class AppsModel {
             if let remaining {
                 let done = tokens.filter { !remaining.contains($0) }
                 let left = tokens.filter { remaining.contains($0) }
-                failed = done.isEmpty
-                resultHeadline = done.isEmpty ? String(localized: "No app was updated") : String(localized: "\(done.count) apps updated")
+                failed = !left.isEmpty
+                resultHeadline = done.isEmpty ? String(localized: "No app was updated")
+                    : left.isEmpty ? String(localized: "\(done.count) apps updated")
+                    : String(localized: "Updated: \(done.count) of \(tokens.count)")
                 resultLines = done.map { "✓ \($0)" } + left.map { "✕ " + String(localized: "\($0) is still outdated") }
             } else {
                 failed = true
@@ -221,15 +223,25 @@ final class AppsModel {
         stage = .scanning
         task = Task {
             for index in plans.indices {
+                // Stop means stop: back to the list, no half-made review.
+                guard !Task.isCancelled else { break }
                 let target = plans[index].app
                 do {
                     let (entries, _) = try await app.drive(["uninstall", "--dry-run", target.uninstallName]) { session in
                         try UninstallDriver().preview(app: target.name, in: session)
                     }
                     plans[index].entries = entries
+                } catch is CancellationError {
+                    break
                 } catch {
                     plans[index].error = Self.describe(error)
                 }
+            }
+            if Task.isCancelled {
+                plans = []
+                screen = .list
+                stage = .review
+                return
             }
             screen = .plans
             stage = .review
@@ -270,9 +282,13 @@ final class AppsModel {
                     problems.append("\(plan.app.name): \(Self.describe(error))")
                 }
             }
+            // Apps whose plan could not be read were not touched; they still belong in the report.
+            for plan in plans where plan.error != nil || plan.entries.isEmpty {
+                problems.append("\(plan.app.name): \(plan.error ?? String(localized: "Mole found nothing to remove."))")
+            }
             apps.removeAll { removedPaths.contains($0.path) }
             unusedPaths.subtract(removedPaths)
-            failed = removed.isEmpty
+            failed = !problems.isEmpty
             resultHeadline = removed.isEmpty ? String(localized: "No app was removed")
                 : permanent ? String(localized: "\(removed.count) apps removed") : String(localized: "\(removed.count) apps moved to the Trash")
             resultLines = removed.map { "✓ \($0)" } + problems.map { "✕ \($0)" }
@@ -288,6 +304,8 @@ final class AppsModel {
             String(localized: "Mole matched a different app (\(onScreen.joined(separator: ", "))). Nothing was removed.")
         case UninstallDriverError.planMismatch:
             String(localized: "Mole's removal plan changed since the preview. Nothing was removed.")
+        case UninstallDriverError.unreadablePlan:
+            String(localized: "Nora could not read Mole's full removal plan. Nothing was removed.")
         default:
             error.localizedDescription
         }

@@ -11,6 +11,8 @@ final class SmartCareModel {
     var phase: Phase = .start
     var enabled: Set<Module> = [.cleanup, .performance, .projects, .installers]
     var doneLines: [String] = []
+    /// Modules whose run failed or only partly finished; Done reports them instead of a plain success.
+    var failedModules: [Module] = []
     @ObservationIgnored private var task: Task<Void, Never>?
 
     static let tiles: [Module] = [.cleanup, .performance, .projects, .installers]
@@ -34,6 +36,7 @@ final class SmartCareModel {
     func run(_ app: AppModel) {
         phase = .running
         doneLines = []
+        failedModules = []
         task = Task {
             for module in Self.tiles where enabled.contains(module) && stage(of: module, app) == .review {
                 switch module {
@@ -44,7 +47,9 @@ final class SmartCareModel {
                 default: continue
                 }
                 while stage(of: module, app) == .running { try? await Task.sleep(nanoseconds: 300_000_000) }
-                doneLines.append("\(String(localized: String.LocalizationValue(module.titleText))): \(headline(of: module, app))")
+                let failed = self.failed(module, app)
+                if failed { failedModules.append(module) }
+                doneLines.append("\(failed ? "✕" : "✓") \(String(localized: String.LocalizationValue(module.titleText))): \(headline(of: module, app))")
             }
             phase = .done
         }
@@ -56,10 +61,25 @@ final class SmartCareModel {
         phase = .start
     }
 
+    /// Start over never resets a module whose command is still running: its state and overlay
+    /// belong to that run until it ends.
     func reset(_ app: AppModel) {
-        app.cleanup.reset(); app.performance.reset(); app.projects.reset(); app.installers.reset()
+        if app.cleanup.stage != .running { app.cleanup.reset() }
+        if app.performance.stage != .running { app.performance.reset() }
+        if app.projects.stage != .running { app.projects.reset() }
+        if app.installers.stage != .running { app.installers.reset() }
         enabled = Set(Self.tiles)
         phase = .start
+    }
+
+    func failed(_ module: Module, _ app: AppModel) -> Bool {
+        switch module {
+        case .cleanup: app.cleanup.failed
+        case .performance: app.performance.failed
+        case .projects: app.projects.failed
+        case .installers: app.installers.failed
+        default: false
+        }
     }
 
     func stage(of module: Module, _ app: AppModel) -> FlowStage {
@@ -141,7 +161,10 @@ struct SmartCareView: View {
         case .scanning, .results, .running:
             tiles
         case .done:
-            DoneView(module: module, headline: String(localized: "Smart Care is done"), lines: model.doneLines) { model.reset(app) }
+            DoneView(module: module,
+                     headline: model.failedModules.isEmpty ? String(localized: "Smart Care is done")
+                                                           : String(localized: "Smart Care finished with problems"),
+                     lines: model.doneLines, failed: !model.failedModules.isEmpty) { model.reset(app) }
         }
     }
 
@@ -176,7 +199,8 @@ struct SmartCareView: View {
     /// Every command Run starts, in order, for the ticked tiles that have something to do.
     private var runCommand: String {
         [Module.cleanup, .performance, .projects, .installers]
-            .filter { model.enabled.contains($0) && model.finding($0, app) != nil }
+            // The same rule Run uses, so the line shows exactly what will start.
+            .filter { model.enabled.contains($0) && model.stage(of: $0, app) == .review }
             .map { module -> String in
                 switch module {
                 case .cleanup: app.cleanup.command

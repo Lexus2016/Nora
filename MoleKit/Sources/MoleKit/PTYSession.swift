@@ -50,8 +50,8 @@ public final class PTYSession: @unchecked Sendable {
         arguments: [String],
         environment: [String: String],
         currentDirectory: String? = nil,
-        rows: Int = 80,
-        cols: Int = 220
+        rows: Int = 300,
+        cols: Int = 1024
     ) throws {
         screen = ScreenModel(rows: rows, cols: cols)
 

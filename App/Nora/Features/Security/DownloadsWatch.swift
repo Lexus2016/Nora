@@ -141,8 +141,14 @@ final class ClamdSession {
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         process.qualityOfService = .utility
+        process.terminationHandler = { ChildProcesses.unregister($0) }
+        // A socket left by an earlier clamd would look like readiness of this one.
+        try? FileManager.default.removeItem(at: layout.socket)
         ChildProcesses.register(process)
-        try process.run()
+        do { try process.run() } catch {
+            ChildProcesses.unregister(process)
+            throw error
+        }
         self.process = process
         for _ in 0..<300 {
             if FileManager.default.fileExists(atPath: layout.socket.path) { return }

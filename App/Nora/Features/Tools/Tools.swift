@@ -9,7 +9,11 @@ final class ToolsModel {
     var touchIDBusy = false
     var latestMole: String?
     var updateBusy = false
-    var externalVolume: URL?
+    /// A preview belongs to one drive: choosing another drive clears it, and Clean only runs for
+    /// the drive that was previewed.
+    var externalVolume: URL? { didSet { if externalVolume != oldValue { externalPreview = []; previewedVolume = nil } } }
+    private(set) var previewedVolume: URL?
+    @ObservationIgnored private var externalGeneration = UUID()
     var externalPreview: [String] = []
     var externalBusy = false
     var completionPreview: [String] = []
@@ -57,21 +61,30 @@ final class ToolsModel {
 
     func previewExternal(_ app: AppModel) {
         guard let volume = externalVolume else { return }
+        let generation = UUID()
+        externalGeneration = generation
+        previewedVolume = nil
         externalBusy = true
         Task {
-            defer { externalBusy = false }
+            defer { if externalGeneration == generation { externalBusy = false } }
             let result = try? await app.run(["clean", "--external", volume.path, "--dry-run"])
+            // A newer preview or another drive took over meanwhile: this result is stale.
+            guard externalGeneration == generation, externalVolume == volume else { return }
             externalPreview = Self.meaningful(result?.stdout ?? "")
+            previewedVolume = result?.succeeded == true ? volume : nil
         }
     }
 
     func cleanExternal(_ app: AppModel) {
-        guard let volume = externalVolume else { return }
+        guard let volume = externalVolume, previewedVolume == volume else { return }
+        let generation = UUID()
+        externalGeneration = generation
         externalBusy = true
         Task {
-            defer { externalBusy = false }
+            defer { if externalGeneration == generation { externalBusy = false } }
             let result = try? await app.run(["clean", "--external", volume.path])
             externalPreview = MoleSummary.lines(result?.stdout ?? "")
+            previewedVolume = nil
         }
     }
 
@@ -190,7 +203,7 @@ struct ToolsView: View {
                 Spacer()
                 if model.externalBusy { ProgressView().controlSize(.small) }
                 Button("Preview") { model.previewExternal(app) }.buttonStyle(GlassButtonStyle()).disabled(model.externalVolume == nil)
-                Button("Clean") { model.cleanExternal(app) }.buttonStyle(PrimaryButtonStyle()).disabled(model.externalVolume == nil || model.externalPreview.isEmpty)
+                Button("Clean") { model.cleanExternal(app) }.buttonStyle(PrimaryButtonStyle()).disabled(model.externalVolume == nil || model.previewedVolume != model.externalVolume || model.externalBusy)
             }
         }
     }

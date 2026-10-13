@@ -254,6 +254,11 @@ final class SecurityModel {
         let output = ClamScanParser.parse(lines.joined(separator: "\n"))
         scanFindings += output.detections.map(Self.detectionFinding)
         unreadableCount += output.errors
+        // Exit 2 or more: errors or unread files. Zero findings then does not mean a clean scan.
+        if status >= 2 {
+            let message = String(localized: "ClamAV stopped with an error or could not read some files, so this scan may be incomplete. The console shows the details.")
+            notice = notice.map { $0 + "\n" + message } ?? message
+        }
     }
 
     private func runLogged(_ command: ShellCommand, _ app: AppModel, qos: QualityOfService = .default) async throws -> CommandResult {
@@ -362,9 +367,10 @@ final class SecurityModel {
             defer { self.task = nil }
             do {
                 try self.layout.writeConfigs()
-                SecuritySettings.lastDatabaseUpdate = Date()
                 let result = try await self.runLogged(
                     ShellCommand(freshclam.path, ["--config-file", self.layout.freshclamConfig.path]), app)
+                // Only a successful update counts; a failed one is retried at the next check.
+                if result.succeeded { SecuritySettings.lastDatabaseUpdate = Date() }
                 self.databaseReady = self.layout.hasDatabase
                 self.notice = result.succeeded ? nil : Self.lastLine(result.stderr.isEmpty ? result.stdout : result.stderr,
                                                                      fallback: String(localized: "The database update failed."))
@@ -474,6 +480,9 @@ final class SecurityModel {
 
     /// Stops the watch and clamd without changing the setting. Call on quit.
     func shutdown() {
+        // A start still loading the database belongs to no one now: its late errors are dropped.
+        watchGeneration = nil
+        watchStarting = false
         watchStart?.cancel()
         watchStart = nil
         watch?.stop()

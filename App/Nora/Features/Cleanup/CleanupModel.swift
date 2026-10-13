@@ -78,13 +78,14 @@ final class CleanupModel {
         let protected = preview.items.filter { !selected.contains($0.path) }.map(\.path)
         stage = .running
         task = Task {
-            let runID = "clean-\(Int(Date().timeIntervalSince1970))"
+            let runID = "clean-\(UUID().uuidString)"
+            // Only this run's overlay is ever undone here; another module's stays in place.
+            defer { try? app.overlay.recover(runID: runID) }
             do {
                 if !protected.isEmpty {
                     let defaults = try mole.installation.cleanWhitelistDefaults(home: app.home)
                     try app.overlay.apply(protecting: protected, defaults: defaults, runID: runID)
                 }
-                defer { try? app.overlay.recoverIfNeeded() }
                 let text: String
                 let ok: Bool
                 if includeSystem {
@@ -96,13 +97,19 @@ final class CleanupModel {
                 }
                 finish(text: text, ok: ok)
             } catch {
-                try? app.overlay.recoverIfNeeded()
                 failed = true
-                resultHeadline = error.localizedDescription
+                resultHeadline = Self.describe(error)
                 resultLines = []
                 stage = .done
             }
         }
+    }
+
+    static func describe(_ error: Error) -> String {
+        if case WhitelistOverlayError.pendingRecovery = error {
+            return String(localized: "Another cleaning task is still running. Nothing was removed. Try again when it finishes.")
+        }
+        return error.localizedDescription
     }
 
     private func finish(text: String, ok: Bool) {
@@ -132,6 +139,15 @@ final class CleanupModel {
     }
 
     func sectionSize(_ section: String) -> Int64 { items(in: section).reduce(0) { $0 + $1.size } }
+
+    /// Categories other than `section` that still have ticked items, and their ticked size.
+    /// Clean always cleans every ticked item, so the one-category review names the others.
+    func otherSelected(than section: String) -> (titles: [String], size: Int64) {
+        let others = rankedSections.filter { $0 != section }
+            .map { ($0, items(in: $0).filter { selected.contains($0.path) }.reduce(0) { $0 + $1.size }) }
+            .filter { $0.1 > 0 }
+        return (others.map { String(localized: String.LocalizationValue(CleanSection($0.0).title)) }, others.reduce(0) { $0 + $1.1 })
+    }
 
     /// Sections, largest first, without empty ones.
     var rankedSections: [String] {

@@ -50,21 +50,28 @@ final class InstallersModel {
 
     func remove(_ app: AppModel) {
         let chosen = files.filter { selected.contains($0.id) }
-        let names = Set(chosen.map(\.name))
-        let sources = Set(chosen.map(\.source))
+        // Each file with the source it was listed from, so a same-named file elsewhere never stands in.
+        let targets = chosen.map { InstallerTarget(name: $0.name, sources: [$0.source]) }
         stage = .running
         task = Task {
             do {
                 let (_, result) = try await app.drive(["installer"], environment: Self.trashEnvironment) { session in
-                    try InstallerDriver().delete(names, allowedSources: sources, in: session)
+                    try InstallerDriver().delete(targets, in: session)
                 }
                 resultLines = MoleSummary.lines(result.text)
                 failed = !result.succeeded
-                resultHeadline = String(localized: "\(Format.bytes(chosen.reduce(0) { $0 + $1.size })) moved to the Trash")
-            } catch {
+                resultHeadline = failed ? String(localized: "Removal did not finish")
+                    : String(localized: "\(Format.bytes(chosen.reduce(0) { $0 + $1.size })) moved to the Trash")
+            } catch let refusal as InstallerDriverError {
+                // The driver refuses before the final Enter, so nothing was touched.
                 failed = true
                 resultHeadline = String(localized: "Nothing was removed")
-                resultLines = [error.localizedDescription]
+                resultLines = [String(describing: refusal)]
+            } catch {
+                // After the confirmation some files may already be in the Trash.
+                failed = true
+                resultHeadline = String(localized: "Removal did not finish")
+                resultLines = [error.localizedDescription, String(localized: "Check the Trash and the console for what was moved.")]
             }
             stage = .done
         }

@@ -89,7 +89,7 @@ public enum MoleLocator {
         var lastProblem: (String, String)?
         for url in paths where FileManager.default.isExecutableFile(atPath: url.path) {
             do {
-                let installation = try MoleInstallation(executable: url)
+                let installation = try MoleInstallation(executable: url, home: home)
                 let version = try installation.version(environment: Mole.environment(home: home, extraPath: url.deletingLastPathComponent().path))
                 return .found(Mole(installation: installation, version: version, home: home))
             } catch {

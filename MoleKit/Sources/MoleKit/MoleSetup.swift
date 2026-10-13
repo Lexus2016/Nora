@@ -24,15 +24,25 @@ public enum MoleSetup {
         case .homebrew(let brew):
             return [ShellCommand(brew.path, ["install", "mole"])]
         case .script:
+            // The installer is pinned to a release tag and checked against its SHA-256 before it
+            // runs; it then installs that same release and checks its payload against SHA256SUMS.
+            // It refuses a prefix whose parent folder is missing, so the prefix is created first.
+            let prefix = home.appendingPathComponent(".local/bin").path
             let script = home.appendingPathComponent("Library/Caches/Nora/mole-install.sh").path
             return [
+                ShellCommand("/bin/mkdir", ["-p", prefix]),
                 ShellCommand("/usr/bin/curl", ["-fsSL", "-o", script, installScriptURL.absoluteString]),
-                ShellCommand("/bin/bash", [script, "--prefix", home.appendingPathComponent(".local/bin").path]),
+                ShellCommand("/bin/sh", ["-c", "echo \"\(installScriptSHA256)  $0\" | /usr/bin/shasum -a 256 -c -", script]),
+                ShellCommand("/bin/bash", [script, "--prefix", prefix, pinnedVersion]),
             ]
         }
     }
 
-    public static let installScriptURL = URL(string: "https://raw.githubusercontent.com/tw93/mole/main/install.sh")!
+    /// The Mole release a script install brings in. Newer releases arrive through `mo update`.
+    public static let pinnedVersion = "1.59.1"
+    public static let installScriptURL = URL(string: "https://raw.githubusercontent.com/tw93/Mole/V\(pinnedVersion)/install.sh")!
+    /// SHA-256 of install.sh at tag V1.59.1.
+    public static let installScriptSHA256 = "5fae246355a1ff237beaf945e9d9778c49b743293095eb54d8cb7b7a5327f727"
 
     /// Updates through the channel Mole was installed with.
     public static func updateCommand(for mole: Mole) -> ShellCommand {

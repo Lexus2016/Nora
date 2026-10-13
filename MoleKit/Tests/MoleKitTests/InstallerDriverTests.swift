@@ -142,6 +142,28 @@ struct InstallerE2ETests {
         #expect(remaining(in: home) == ["NoraQ7-2.dmg", "NoraQ7-3.pkg", "NoraQ7-4.pkg", "NoraQ7-5.dmg"])
     }
 
+    /// The app's path: names come from the dry-run menu (cut with "..."), each with its source.
+    @Test func deletesWhatTheDryRunMenuListed() throws {
+        let home = try makeHome(extra: ["Downloads/\(Self.longName)"])
+        defer { try? FileManager.default.removeItem(at: home) }
+        let mo = try #require(MoleE2E.executable)
+        let env = MoleE2E.environment(home: home)
+
+        let listing = try PTYSession(executable: mo.path, arguments: ["installer", "--dry-run"], environment: env, currentDirectory: home.path)
+        let rows = try InstallerDriver().list(in: listing)
+        _ = try listing.waitForExit(timeout: 30)
+        listing.close()
+        let long = try #require(rows.first { $0.name.hasSuffix("...") && Self.longName.hasPrefix(String($0.name.dropLast(3))) })
+        let short = try #require(rows.first { $0.name == "NoraQ7-1.dmg" })
+
+        let session = try PTYSession(executable: mo.path, arguments: ["installer"], environment: env, currentDirectory: home.path)
+        defer { session.close() }
+        try InstallerDriver().delete([long, short].map { InstallerTarget(name: $0.name, sources: [$0.source]) }, in: session)
+        #expect(try session.waitForExit(timeout: 60) == .exited(0))
+        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent("Downloads/\(Self.longName)").path))
+        #expect(remaining(in: home) == ["NoraQ7-2.dmg", "NoraQ7-3.pkg", "NoraQ7-4.pkg", "NoraQ7-5.dmg"])
+    }
+
     @Test func refusesWhenATargetIsMissingAndDeletesNothing() throws {
         let home = try makeHome()
         defer { try? FileManager.default.removeItem(at: home) }
@@ -176,5 +198,19 @@ struct InstallerE2ETests {
         }
         _ = try session.waitForExit(timeout: 30)
         #expect(remaining(in: home).count == fixtures.count)
+    }
+}
+
+struct InstallerReviewMatchTests {
+    /// The menu cuts long names; the review prints them in full. One to one, nothing left over.
+    @Test func reviewMatchesCutMenuNamesOneToOne() {
+        let long = "Some-Very-Long-Installer-Name-For-Testing-1.2.3-universal.dmg"
+        let cut = String(long.prefix(37)) + "..."
+        let target = InstallerTarget(name: cut, sources: ["Downloads"])
+        #expect(InstallerDriver.review([long], matches: [target]))
+        #expect(!InstallerDriver.review([long, "Other.dmg"], matches: [target]))
+        #expect(!InstallerDriver.review(["Different.dmg"], matches: [target]))
+        let twin = InstallerTarget(name: cut, sources: ["Desktop"])
+        #expect(!InstallerDriver.review([long], matches: [target, twin]))
     }
 }

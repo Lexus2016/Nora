@@ -1,3 +1,4 @@
+import MoleKit
 import XCTest
 @testable import Nora
 
@@ -120,5 +121,17 @@ final class StatusParsersTests: XCTestCase {
         XCTAssertEqual(report.down.count, 5)
         XCTAssertEqual(report.down.first?.name, "App7")
         XCTAssertEqual(report.up.first?.name, "App1")
+    }
+}
+
+@MainActor
+final class DiskRateTests: XCTestCase {
+    /// Mole's `disk_io` rates are MB/s already; the store and the label must show them as is.
+    func testDiskRatesStayInMegabytesPerSecond() throws {
+        let json = #"{"disk_io":{"read_rate":512.5,"write_rate":3.25}}"#
+        let store = StatusStore()
+        store.ingest(try StatusSnapshot.decode(Data(json.utf8)))
+        XCTAssertEqual(store.diskRead.last, 512.5)
+        XCTAssertEqual(store.diskWrite.last, 3.25)
     }
 }

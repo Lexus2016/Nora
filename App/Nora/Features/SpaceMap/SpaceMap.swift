@@ -14,6 +14,8 @@ final class SpaceMapModel {
     var selected: Set<String> = []
     var showLargeFiles = false
     var loading = false
+    /// One request at a time: a newer request, Back or Start over makes older results stale.
+    @ObservationIgnored private var requestID = UUID()
     var error: String?
     var trashed: [String] = []
     var trashFailures: [String] = []
@@ -49,40 +51,55 @@ final class SpaceMapModel {
         return list
     }
 
+    /// Cancels whatever is loading and returns the id the next request must still hold.
+    private func newRequest() -> UUID {
+        task?.cancel()
+        requestID = UUID()
+        return requestID
+    }
+
     func scan(_ app: AppModel) {
+        let id = newRequest()
         stage = .scanning
         error = nil
         path = []
         forward = []
         selected = []
         task = Task {
-            if await load(root, app) { path = [root]; stage = .review } else { stage = .start }
+            let ok = await load(root, app)
+            guard requestID == id else { return }
+            if ok { path = [root]; stage = .review } else { stage = .start }
         }
     }
 
     func open(_ url: URL, _ app: AppModel) {
+        let id = newRequest()
         forward = []
         task = Task {
-            if cache[url] != nil {
-                path.append(url)
-            } else if await load(url, app) {
-                path.append(url)
+            if cache[url] == nil {
+                let ok = await load(url, app)
+                guard requestID == id, ok else { return }
             }
+            guard requestID == id else { return }
+            path.append(url)
         }
     }
 
     func back() {
         guard path.count > 1 else { return }
+        _ = newRequest()
         forward.append(path.removeLast())
     }
 
     func goForward() {
         guard let next = forward.popLast() else { return }
+        _ = newRequest()
         path.append(next)
     }
 
     func jump(to index: Int) {
         guard index < path.count - 1 else { return }
+        _ = newRequest()
         forward = Array(path[(index + 1)...].reversed())
         path = Array(path[...index])
     }
@@ -128,7 +145,7 @@ final class SpaceMapModel {
     }
 
     func stop() { task?.cancel() }
-    func reset() { stage = .start; path = []; cache = [:]; selected = []; forward = [] }
+    func reset() { _ = newRequest(); stage = .start; path = []; cache = [:]; selected = []; forward = [] }
 }
 
 struct SpaceMapView: View {

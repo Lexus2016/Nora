@@ -259,6 +259,10 @@ struct ResultHeadline: View {
 
 /// Result screen: the headline number, Mole's own summary lines and Done.
 struct DoneView: View {
+    static func problemsFirst(_ lines: [String]) -> [String] {
+        lines.filter { $0.hasPrefix("✕") } + lines.filter { !$0.hasPrefix("✕") }
+    }
+
     let module: Module
     let headline: String
     var lines: [String] = []
@@ -275,11 +279,18 @@ struct DoneView: View {
                     .font(.system(size: 18)).foregroundStyle(Palette.fg2)
                 Text(headline).font(.system(size: 46, weight: .light, design: .rounded)).multilineTextAlignment(.center)
                 if !lines.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(Array(lines.prefix(6).enumerated()), id: \.offset) { _, line in
-                            Text(line).font(.system(size: 13)).foregroundStyle(Palette.fg2).textSelection(.enabled)
+                    // Every line, problems first, so a failure is never hidden below successes.
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(Array(Self.problemsFirst(lines).enumerated()), id: \.offset) { _, line in
+                                Text(line).font(.system(size: 13))
+                                    .foregroundStyle(line.hasPrefix("✕") ? Palette.crit : Palette.fg2)
+                                    .textSelection(.enabled)
+                            }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .frame(maxHeight: 200)
                     .padding(16).frame(maxWidth: 560, alignment: .leading).glassPanel()
                 }
                 Button("Show log") { app.showConsole = true }.buttonStyle(GlassButtonStyle())
@@ -388,7 +399,14 @@ struct ReviewFooter: View {
     let command: String?
     var note: String?
 
+    @AppStorage(CommandPreview.settingKey) private var showCommands = false
+
     var body: some View {
+        // Nothing to show when commands are hidden and there is no note.
+        if (command != nil && showCommands) || note != nil { strip }
+    }
+
+    private var strip: some View {
         VStack(alignment: .leading, spacing: 4) {
             if let command { CommandPreview(command: command).frame(maxWidth: 520) }
             if let note { Text(note).font(.system(size: 11)).foregroundStyle(Palette.fg2).padding(.horizontal, 4) }

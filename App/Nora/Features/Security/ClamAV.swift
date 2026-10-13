@@ -45,20 +45,27 @@ enum ClamAVOrphans {
     static let names: Set<String> = ["clamscan", "clamd", "clamdscan", "freshclam"]
 
     static func reap(root: URL) async {
-        guard let result = try? await ProcessRunner.run(URL(fileURLWithPath: "/bin/ps"), ["-axo", "pid=,ppid=,command="],
-                                                        environment: ["PATH": "/bin:/usr/bin", "LC_ALL": "C"]) else { return }
-        for pid in orphans(in: result.stdout, root: root.path) { kill(pid, SIGTERM) }
+        let env = ["PATH": "/bin:/usr/bin", "LC_ALL": "C"]
+        guard let result = try? await ProcessRunner.run(URL(fileURLWithPath: "/bin/ps"), ["-axo", "pid=,ppid=,command="], environment: env) else { return }
+        for pid in orphans(in: result.stdout, root: root.path) {
+            // Read the process again right before the signal: the pid may belong to someone else by now.
+            guard let again = try? await ProcessRunner.run(URL(fileURLWithPath: "/bin/ps"), ["-o", "pid=,ppid=,command=", "-p", String(pid)], environment: env),
+                  orphans(in: again.stdout, root: root.path) == [pid] else { continue }
+            kill(pid, SIGTERM)
+        }
     }
 
     /// `ps -axo pid=,ppid=,command=` lines whose parent is launchd (1), whose program is a ClamAV
-    /// tool and whose arguments name `root`.
+    /// tool and whose arguments carry exactly the options Nora passes: `-d <root>/database` or
+    /// `--config-file <root>/clamd.conf` / `freshclam.conf`. A bare mention of the folder is not enough.
     static func orphans(in ps: String, root: String) -> [pid_t] {
-        ps.split(separator: "\n").compactMap { line in
+        let markers = [" -d \(root)/database ", " --config-file \(root)/clamd.conf ", " --config-file \(root)/freshclam.conf "]
+        return ps.split(separator: "\n").compactMap { line in
             let parts = line.split(separator: " ", maxSplits: 2, omittingEmptySubsequences: true)
             guard parts.count == 3, let pid = pid_t(parts[0]), parts[1] == "1" else { return nil }
-            let command = parts[2]
+            let command = String(parts[2]) + " "
             let program = command.split(separator: " ").first.map { String($0.split(separator: "/").last ?? "") } ?? ""
-            return names.contains(program) && command.contains(root) ? pid : nil
+            return names.contains(program) && markers.contains(where: command.contains) ? pid : nil
         }
     }
 }

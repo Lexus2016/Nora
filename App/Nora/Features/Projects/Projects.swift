@@ -47,28 +47,37 @@ final class ProjectsModel {
         }
     }
 
+    /// `mo purge --yes` takes every eligible folder it finds, not a list. So right before the run
+    /// Nora takes a fresh read-only preview and protects everything in it that the user did not
+    /// tick, including folders that appeared after the review. An incomplete preview means Mole
+    /// may reach folders nobody saw, so nothing runs.
     func purge(_ app: AppModel) {
-        guard let preview, let mole = app.mole else { return }
-        let protected = preview.items.filter { !selected.contains($0.path) }.map(\.path)
+        guard preview != nil, let mole = app.mole else { return }
+        let chosen = selected
         stage = .running
         task = Task {
+            let runID = "purge-\(UUID().uuidString)"
+            defer { try? app.overlay.recover(runID: runID) }
             do {
-                if !protected.isEmpty {
-                    try app.overlay.apply(protecting: protected, defaults: try mole.installation.cleanWhitelistDefaults(home: app.home),
-                                          runID: "purge-\(Int(Date().timeIntervalSince1970))")
+                let fresh = PurgePreview.parse(try await app.run(["purge", "--dry-run"]).stdout, home: app.home)
+                guard fresh.isComplete else {
+                    throw NoraError.commandFailed(String(localized: "Some project folders could not be scanned completely, so nothing was removed. Scan again, or limit the folders in Protection."))
                 }
-                defer { try? app.overlay.recoverIfNeeded() }
+                let protected = fresh.items.map(\.path).filter { !chosen.contains($0) }
+                if !protected.isEmpty {
+                    try app.overlay.apply(protecting: protected, defaults: try mole.installation.cleanWhitelistDefaults(home: app.home), runID: runID)
+                }
                 let result = try await app.run(["purge", "--yes"])
                 let summary = MoleSummary.lines(result.stdout)
-                failed = !result.succeeded && summary.isEmpty
-                resultHeadline = summary.first(where: { $0.contains("space freed") })?
+                let freed = summary.first(where: { $0.contains("space freed") })?
                     .components(separatedBy: ":").last?.components(separatedBy: "|").first?.trimmingCharacters(in: .whitespaces)
-                    ?? Format.bytes(selectedSize)
+                failed = !result.succeeded
+                resultHeadline = failed ? (freed.map { String(localized: "Partly done: \($0) freed") } ?? String(localized: "Removal did not finish"))
+                                        : (freed ?? Format.bytes(selectedSize))
                 resultLines = summary
             } catch {
-                try? app.overlay.recoverIfNeeded()
                 failed = true
-                resultHeadline = error.localizedDescription
+                resultHeadline = CleanupModel.describe(error)
             }
             stage = .done
         }
@@ -116,13 +125,16 @@ private struct ProjectsReview: View {
 
     var body: some View {
         ModuleScene(module: module, leading: .startOver { model.reset() },
-                    orb: model.selected.isEmpty ? nil : OrbAction(title: "Remove", destructive: true, action: { model.purge(app) })) {
+                    orb: model.selected.isEmpty || model.preview?.isComplete == false ? nil : OrbAction(title: "Remove", destructive: true, action: { model.purge(app) })) {
         VStack(alignment: .leading, spacing: 14) {
             StepHeader(module: module, title: "Review build folders",
                        subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected")) {
                 SelectAllButton(ids: model.preview?.items.map(\.path) ?? [], selection: $model.selected)
             }
             if let preview = model.preview {
+                if !preview.isComplete {
+                    Notice(text: String(localized: "Some project folders could not be scanned completely, so nothing was removed. Scan again, or limit the folders in Protection."))
+                }
                 ForEach(Array(preview.warnings.prefix(2).enumerated()), id: \.offset) { _, w in Notice(text: w, symbol: "info.circle", color: Palette.fg2) }
                 if preview.items.isEmpty {
                     Text("No old build folders found.").font(.system(size: 15)).foregroundStyle(Palette.fg2)

@@ -47,6 +47,7 @@ public struct ShellCommand: Sendable, Hashable, CustomStringConvertible {
 public enum ChildProcesses {
     private static let lock = NSLock()
     nonisolated(unsafe) private static var running: [ObjectIdentifier: Process] = [:]
+    nonisolated(unsafe) private static var shuttingDown = false
 
     public static func register(_ process: Process) {
         lock.withLock { running[ObjectIdentifier(process)] = process }
@@ -56,9 +57,23 @@ public enum ChildProcesses {
         lock.withLock { _ = running.removeValue(forKey: ObjectIdentifier(process)) }
     }
 
-    /// Sends SIGTERM to every child that is still running.
+    /// True once Nora is quitting: a child that starts after the sweep is stopped right away.
+    public static var isShuttingDown: Bool { lock.withLock { shuttingDown } }
+
+    /// Sends SIGTERM to every child that is still running. The list is taken under the lock and
+    /// the signals are sent after it is released, because termination handlers take the same lock.
     public static func terminateAll() {
-        lock.withLock { running.values.filter(\.isRunning).forEach { $0.terminate() } }
+        let children = lock.withLock { () -> [Process] in
+            shuttingDown = true
+            return Array(running.values)
+        }
+        for child in children where child.isRunning { child.terminate() }
+    }
+
+    /// Call right after `run()`: stops a child that was launched after Nora began quitting or
+    /// after its task was cancelled.
+    static func stopIfUnwanted(_ process: Process, cancelled: Bool) {
+        if (cancelled || isShuttingDown), process.isRunning { process.terminate() }
     }
 }
 
@@ -98,9 +113,18 @@ public enum ProcessRunner {
                         stderr: errBuffer.string
                     ))
                 }
+                // A task cancelled before the launch never starts the child.
+                guard !Task.isCancelled else {
+                    process.terminationHandler = nil
+                    continuation.resume(throwing: CancellationError())
+                    return
+                }
                 // Registered before run, so a child that exits at once is still removed.
                 ChildProcesses.register(process)
-                do { try process.run() } catch {
+                do {
+                    try process.run()
+                    ChildProcesses.stopIfUnwanted(process, cancelled: Task.isCancelled)
+                } catch {
                     ChildProcesses.unregister(process)
                     process.terminationHandler = nil
                     continuation.resume(throwing: error)
@@ -146,11 +170,17 @@ public enum ProcessRunner {
                     continuation.finish()
                 }
             }
+            let ended = Flag()
             continuation.onTermination = { _ in
+                ended.set()
                 if process.isRunning { process.terminate() }
             }
             ChildProcesses.register(process)
-            do { try process.run() } catch {
+            do {
+                try process.run()
+                // The consumer may have gone away while the child was starting.
+                ChildProcesses.stopIfUnwanted(process, cancelled: ended.isSet)
+            } catch {
                 ChildProcesses.unregister(process)
                 continuation.finish(throwing: error)
             }
@@ -165,6 +195,14 @@ public enum ProcessRunner {
         if let cwd { process.currentDirectoryURL = cwd }
         return process
     }
+}
+
+/// A one-way switch shared between a stream's termination handler and its producer.
+final class Flag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = false
+    func set() { lock.withLock { value = true } }
+    var isSet: Bool { lock.withLock { value } }
 }
 
 public struct OutputLine: Sendable, Equatable {

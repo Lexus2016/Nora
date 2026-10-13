@@ -5,6 +5,9 @@ public enum UninstallDriverError: Error, Equatable {
     case matchMismatch(expected: String, onScreen: [String])
     /// The removal plan differs from what Nora previewed; nothing was removed.
     case planMismatch(unexpected: [String], missing: [String])
+    /// The removal plan on screen could not be read completely (a wrapped line, an unexpected line,
+    /// or a list taller than the screen); nothing was removed.
+    case unreadablePlan
 }
 
 /// Drives `mo uninstall <name>` (Mole 1.59) through both of its confirmations.
@@ -36,7 +39,10 @@ public struct UninstallDriver {
         let review = try session.awaitMoleScreen(timeout: scanTimeout, "removal plan") { lines in
             lines.contains("Files to be removed:") && lines.contains { $0.contains("Enter confirm, ESC cancel") }
         }
-        let plan = RemovalList(review) ?? RemovalList()
+        guard let plan = RemovalList(review) else {
+            session.send(.escape)
+            throw UninstallDriverError.unreadablePlan
+        }
         let listed = Set(plan.entries)
         guard plan.groups == [name], listed == expectedEntries, listed.count == plan.entries.count else {
             session.send(.escape)
@@ -64,7 +70,8 @@ public struct UninstallDriver {
             lines.contains("Files to be removed:") && lines.contains { $0.contains("Enter confirm, ESC cancel") }
         }
         session.send(.escape)
-        return (RemovalList(review) ?? RemovalList()).entries
+        guard let plan = RemovalList(review) else { throw UninstallDriverError.unreadablePlan }
+        return plan.entries
     }
 
     /// `1. Slack  512MB  |  Last: Today` → `Slack`.

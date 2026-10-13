@@ -118,7 +118,7 @@ struct AppsReview: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             VStack(alignment: .leading, spacing: 4) {
-                CommandPreview(command: model.uninstallCommand(for: model.plans.map(\.app))).frame(maxWidth: 620)
+                CommandPreview(command: model.uninstallCommand(for: model.plans.filter { $0.error == nil && !$0.entries.isEmpty }.map(\.app))).frame(maxWidth: 620)
                 Toggle("Delete permanently instead of moving to the Trash", isOn: $model.permanent).toggleStyle(.switch).controlSize(.small)
                 Text("Nora answers Mole only if its list matches this preview.").font(.system(size: 11)).foregroundStyle(Palette.muted)
             }

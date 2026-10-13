@@ -12,6 +12,7 @@ final class HistoryModel {
     var error: String?
 
     func load(_ app: AppModel) {
+        error = nil
         Task {
             do {
                 let result = try await app.run(["history", "--json", "--limit", "200"])
@@ -84,7 +85,8 @@ struct HistoryView: View {
             }
             .scrollIndicators(.never)
         }
-        .task { if !model.loaded { model.load(app) } }
+        // Read again every time the screen opens, so runs made meanwhile show up.
+        .task { model.load(app) }
         .onAppear { app.status.retain() }
         .onDisappear { app.status.release() }
     }

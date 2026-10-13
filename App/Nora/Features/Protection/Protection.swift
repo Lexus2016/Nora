@@ -22,11 +22,18 @@ final class ProtectionModel {
     var newPattern = ""
     var message: String?
     var loaded = false
+    /// Lines of whitelist_optimize that are not task ids Nora knows (custom paths, newer ids).
+    /// They are written back unchanged.
+    private var optimizeOther: [String] = []
+    /// True while a Cleanup or Projects run has its temporary overlay on the whitelist.
+    private var cleanListBusy: () -> Bool = { false }
 
     private var configDir: URL { FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/mole") }
     var cleanURL: URL { configDir.appendingPathComponent("whitelist") }
     var optimizeURL: URL { configDir.appendingPathComponent("whitelist_optimize") }
     var purgeURL: URL { configDir.appendingPathComponent("purge_paths") }
+    /// Older Mole versions kept maintenance exclusions here; still read when the new file is absent.
+    var legacyOptimizeURL: URL { configDir.appendingPathComponent("whitelist_checks") }
 
     func load(_ app: AppModel) {
         guard let mole = app.mole else { return }
@@ -38,7 +45,11 @@ final class ProtectionModel {
         let defaultSet = Set(defaults.map(expand))
         custom = (cleanLines ?? []).filter { !defaultSet.contains(expand($0)) }
         tasks = (try? mole.installation.optimizeTasks(home: app.home)) ?? []
-        excludedTasks = Set(Self.lines(optimizeURL) ?? [])
+        let optimizeLines = Self.lines(optimizeURL) ?? Self.lines(legacyOptimizeURL) ?? []
+        let known = Set(tasks.map(\.id))
+        excludedTasks = Set(optimizeLines.filter(known.contains))
+        optimizeOther = optimizeLines.filter { !known.contains($0) }
+        cleanListBusy = { [weak app] in app?.overlay.needsRecovery ?? false }
         let purge = Self.lines(purgeURL)
         projectFileExists = purge != nil
         projectFolders = purge ?? []
@@ -51,7 +62,16 @@ final class ProtectionModel {
         return text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && !$0.hasPrefix("#") }
     }
 
+    /// A Cleanup or Projects run puts the whitelist back byte for byte when it ends, so an edit
+    /// made meanwhile would be lost. The list waits until the run is over.
+    private func cleanListLocked() -> Bool {
+        guard cleanListBusy() else { return false }
+        message = String(localized: "A cleaning task is running. Change this list when it finishes.")
+        return true
+    }
+
     func addPattern(_ pattern: String) {
+        guard !cleanListLocked() else { return }
         let p = pattern.trimmingCharacters(in: .whitespaces)
         guard !p.isEmpty, !custom.contains(p), !defaults.contains(p) else { return }
         custom.append(p)
@@ -59,6 +79,7 @@ final class ProtectionModel {
     }
 
     func removePattern(_ pattern: String) {
+        guard !cleanListLocked() else { return }
         custom.removeAll { $0 == pattern }
         saveClean()
     }
@@ -73,12 +94,17 @@ final class ProtectionModel {
     /// One write for a bulk change instead of one per task.
     func setAllTasks(included: Set<String>) {
         excludedTasks = Set(tasks.map(\.id)).subtracting(included)
-        write(optimizeURL, header: "# Tasks mo optimize skips. Written by Nora.", lines: tasks.map(\.id).filter(excludedTasks.contains))
+        saveOptimize()
     }
 
     func setTask(_ id: String, excluded: Bool) {
         if excluded { excludedTasks.insert(id) } else { excludedTasks.remove(id) }
-        write(optimizeURL, header: "# Tasks mo optimize skips. Written by Nora.", lines: tasks.map(\.id).filter(excludedTasks.contains))
+        saveOptimize()
+    }
+
+    private func saveOptimize() {
+        write(optimizeURL, header: "# Tasks mo optimize skips. Written by Nora; other lines are kept.",
+              lines: tasks.map(\.id).filter(excludedTasks.contains) + optimizeOther)
     }
 
     func addProjectFolder(_ path: String) {

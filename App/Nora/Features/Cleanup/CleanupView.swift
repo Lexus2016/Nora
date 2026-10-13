@@ -134,6 +134,13 @@ private struct CleanupList: View {
                            subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected")) {
                     SelectAllButton(ids: sections.flatMap { model.items(in: $0).map(\.path) }, selection: $model.selected)
                 }
+                if let section = model.listSection {
+                    let others = model.otherSelected(than: section)
+                    if !others.titles.isEmpty {
+                        Notice(text: String(localized: "Clean also cleans the other ticked categories: \(others.titles.joined(separator: ", ")) (\(Format.bytes(others.size)))."),
+                               symbol: "exclamationmark.triangle")
+                    }
+                }
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(sections, id: \.self) { section in

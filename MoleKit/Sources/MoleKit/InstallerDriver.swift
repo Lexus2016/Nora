@@ -9,6 +9,18 @@ public struct InstallerRow: Equatable, Sendable {
     public let source: String
 }
 
+/// One file to delete: its name as the menu shows it (possibly cut with "...") and the sources it
+/// may come from. The app passes the one source the user saw next to the name.
+public struct InstallerTarget: Hashable, Sendable {
+    public let name: String
+    public let sources: Set<String>
+
+    public init(name: String, sources: Set<String>) {
+        self.name = name
+        self.sources = sources
+    }
+}
+
 public enum InstallerDriverError: Error, Equatable {
     case targetNotListed(String)
     case targetListedTwice(String)
@@ -54,13 +66,20 @@ public struct InstallerDriver {
     ///   - allowedSources: source labels the files may come from, e.g. `["Downloads", "Desktop"]`.
     ///     `Shared` (`/Users/Shared`) is the one label Mole derives outside `$HOME`.
     public func delete(_ names: Set<String>, allowedSources: Set<String>, in session: PTYSession) throws {
+        try delete(names.map { InstallerTarget(name: $0, sources: allowedSources) }, in: session)
+    }
+
+    /// Deletes exactly `targets`: each must match one menu row by name and source, and the review
+    /// list (full names) must map one to one onto them before the final Enter.
+    public func delete(_ targets: [InstallerTarget], in session: PTYSession) throws {
+        let names = targets.map(\.name)
         let menu = try wait(session, "installer menu") { lines in
             lines.contains { $0.hasPrefix(Self.menuTitle) } && lines.contains { $0.contains("Space Select") }
         }
         let rows = Self.parseRows(menu)
         let chosen: Set<Int>
         do {
-            chosen = try plan(rows, menu: menu, names: names, allowedSources: allowedSources)
+            chosen = try plan(rows, menu: menu, targets: targets)
         } catch {
             session.send(.character("q"))
             throw error
@@ -96,15 +115,33 @@ public struct InstallerDriver {
             lines.contains("Files to be removed:") && lines.contains { $0.contains("Delete \(names.count) installer") }
         }
         let listed = Self.parseReview(review)
-        guard Set(listed) == names, listed.count == names.count else {
+        guard Self.review(listed, matches: targets) else {
             session.send(.escape)
             throw InstallerDriverError.reviewMismatch(expected: names.sorted(), onScreen: listed.sorted())
         }
         session.send(.enter)
     }
 
+    /// The review prints full names; every target (menu name, maybe cut) must account for exactly
+    /// one of them and no listed file may be left over.
+    static func review(_ listed: [String], matches targets: [InstallerTarget]) -> Bool {
+        guard listed.count == targets.count, Set(listed).count == listed.count else { return false }
+        var used = Set<String>()
+        for target in targets {
+            let hits = listed.filter { !used.contains($0) && name(target.name, matches: $0) }
+            guard hits.count == 1 else { return false }
+            used.insert(hits[0])
+        }
+        return used.count == listed.count
+    }
+
+    /// `name` as the menu shows it against a full file name.
+    static func name(_ shown: String, matches full: String) -> Bool {
+        shown == full || (shown.hasSuffix("...") && full.hasPrefix(String(shown.dropLast(3))))
+    }
+
     /// Maps each requested name to exactly one menu row, or refuses.
-    private func plan(_ rows: [InstallerRow], menu: [String], names: Set<String>, allowedSources: Set<String>) throws -> Set<Int> {
+    private func plan(_ rows: [InstallerRow], menu: [String], targets: [InstallerTarget]) throws -> Set<Int> {
         // A scroll indicator ("[3/40]") means rows are off screen; the spike does not scroll.
         if menu.contains(where: { $0.hasPrefix(Self.menuTitle + " [") }) {
             throw InstallerDriverError.paginated
@@ -112,15 +149,18 @@ public struct InstallerDriver {
         let preselected = rows.filter(\.isSelected).map(\.name)
         guard preselected.isEmpty else { throw InstallerDriverError.preselected(preselected) }
         var chosen = Set<Int>()
-        for name in names.sorted() {
-            let matches = rows.indices.filter { Self.row(rows[$0], shows: name) }
-            guard let index = matches.first else { throw InstallerDriverError.targetNotListed(name) }
-            // Two rows with the same visible prefix, or two targets behind one truncated row: refuse.
-            guard matches.count == 1, chosen.insert(index).inserted else {
-                throw InstallerDriverError.targetListedTwice(name)
+        for target in targets.sorted(by: { $0.name < $1.name }) {
+            let byName = rows.indices.filter { Self.row(rows[$0], shows: target.name) }
+            guard !byName.isEmpty else { throw InstallerDriverError.targetNotListed(target.name) }
+            // The name and the source together pick the row; the same name in another folder is
+            // a different file and never stands in for the one the user saw.
+            let matches = byName.filter { target.sources.contains(rows[$0].source) }
+            guard let index = matches.first else {
+                throw InstallerDriverError.sourceNotAllowed(name: target.name, source: rows[byName[0]].source)
             }
-            guard allowedSources.contains(rows[index].source) else {
-                throw InstallerDriverError.sourceNotAllowed(name: name, source: rows[index].source)
+            // Two rows with the same visible name and source, or two targets behind one row: refuse.
+            guard matches.count == 1, chosen.insert(index).inserted else {
+                throw InstallerDriverError.targetListedTwice(target.name)
             }
         }
         return chosen

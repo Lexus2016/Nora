@@ -83,6 +83,8 @@ final class OrphanAndCopyTests: XCTestCase {
             "  103     1 /opt/homebrew/bin/clamscan -r /Users/u/Downloads",
             "  104     1 /opt/homebrew/sbin/clamd --foreground --config-file \(root)/clamd.conf",
             "  105     1 /usr/bin/vim \(root)/clamd.conf",
+            "  106     1 /opt/homebrew/bin/clamscan -r -d \(root)-backup/database /Users/u",
+            "  107     1 /opt/homebrew/bin/clamscan -r /Users/u/notes-about \(root)/database",
         ].joined(separator: "\n")
         XCTAssertEqual(ClamAVOrphans.orphans(in: ps, root: root), [101, 104])
     }
@@ -91,5 +93,7 @@ final class OrphanAndCopyTests: XCTestCase {
         XCTAssertEqual(CommandPreview.terminalForm("sudo -A -v && mo clean"), "sudo -v && mo clean")
         XCTAssertEqual(CommandPreview.terminalForm("mo clean; sudo -A -v && mo optimize"), "mo clean; sudo -v && mo optimize")
         XCTAssertEqual(CommandPreview.terminalForm("mo uninstall 'Example sudo -A App'"), "mo uninstall 'Example sudo -A App'")
+        XCTAssertEqual(CommandPreview.terminalForm("mo uninstall 'Example; sudo -A App'"), "mo uninstall 'Example; sudo -A App'")
+        XCTAssertEqual(CommandPreview.terminalForm("sudo -A -v && mo uninstall 'A && sudo -A B'"), "sudo -v && mo uninstall 'A && sudo -A B'")
     }
 }

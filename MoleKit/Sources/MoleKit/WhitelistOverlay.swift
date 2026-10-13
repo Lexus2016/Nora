@@ -68,10 +68,23 @@ public struct WhitelistOverlay: Sendable {
         try Self.writeDurably(Data(text.utf8), to: target)
     }
 
-    /// Puts the whitelist back exactly as the journal recorded it. Safe to call at any time.
-    public func recoverIfNeeded() throws {
+    /// Ends one operation's overlay: restores only when the journal belongs to `runID`, so an
+    /// operation never removes the protection another one is still running under.
+    public func recover(runID: String) throws {
         guard needsRecovery else { return }
         let journal = try JSONDecoder().decode(Journal.self, from: try read(journalURL))
+        guard journal.runID == runID else { return }
+        try restore(journal)
+    }
+
+    /// Puts the whitelist back exactly as the journal recorded it, whoever wrote it. Only for
+    /// launch and quit, when no operation is running (crash recovery).
+    public func recoverIfNeeded() throws {
+        guard needsRecovery else { return }
+        try restore(try JSONDecoder().decode(Journal.self, from: try read(journalURL)))
+    }
+
+    private func restore(_ journal: Journal) throws {
         let target = URL(fileURLWithPath: journal.whitelistPath)
 
         if let original = journal.originalContents {

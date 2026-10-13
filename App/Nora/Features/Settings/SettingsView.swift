@@ -53,7 +53,8 @@ enum MenuTile: String, CaseIterable, Identifiable {
     static var chosen: [MenuTile] {
         let raw = UserDefaults.standard.string(forKey: "menuTiles") ?? ""
         let tiles = raw.split(separator: ",").compactMap { MenuTile(rawValue: String($0)) }
-        return tiles.count == 4 ? tiles : defaults
+        // Any one to four tiles the user picked; none picked falls back to the defaults.
+        return tiles.isEmpty ? defaults : Array(tiles.prefix(4))
     }
 }
 
@@ -132,7 +133,7 @@ private struct GeneralSettings: View {
 
 private struct MoleSettings: View {
     @Environment(AppModel.self) private var app
-    @AppStorage("moleDebug") private var debug = false
+    @AppStorage(CommandPreview.settingKey) private var showCommands = false
     @AppStorage("moleNoOpLog") private var noOpLog = false
 
     var body: some View {
@@ -156,8 +157,12 @@ private struct MoleSettings: View {
                     }
                 }
             }
+            Section("Commands") {
+                Toggle("Show the Mole and ClamAV commands under each action", isOn: $showCommands)
+                Text("Off by default. The console (⌘J) always shows every command Nora runs and its output.")
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
+            }
             Section("Logs") {
-                Toggle("Detailed Mole logs (--debug)", isOn: $debug)
                 Toggle("Do not write Mole's operations log (MO_NO_OPLOG)", isOn: $noOpLog)
                 Text("The History screen reads the operations log, so it stays empty while this is on.").font(.system(size: 12)).foregroundStyle(.secondary)
             }

@@ -32,6 +32,10 @@ extension PTYSession {
 
 /// `Files to be removed:` lists as Mole prints them: an optional `◎ Group , total`
 /// header per app, then `✓ entry , size` rows, ending at the `➤` prompt.
+///
+/// Strict on purpose: the list is accepted only when every non-empty line up to the `➤` prompt is
+/// a header or an entry and the prompt is on screen. A wrapped long path, an unexpected line or a
+/// list that scrolled off the top makes it nil, and the drivers then refuse to confirm.
 struct RemovalList: Equatable {
     var groups: [String] = []
     var entries: [String] = []
@@ -43,18 +47,20 @@ struct RemovalList: Equatable {
 
     init?(_ lines: [String]) {
         guard let start = lines.firstIndex(of: "Files to be removed:") else { return nil }
+        var reachedPrompt = false
         for line in lines[(start + 1)...] {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty { continue }
-            if trimmed.hasPrefix("➤") { break }
+            if trimmed.hasPrefix("➤") { reachedPrompt = true; break }
             if trimmed.hasPrefix("◎ ") {
                 groups.append(Self.stripSize(trimmed.dropFirst(2)))
             } else if trimmed.hasPrefix("✓ ") {
                 entries.append(Self.stripSize(trimmed.dropFirst(2)))
             } else {
-                break
+                return nil
             }
         }
+        guard reachedPrompt else { return nil }
     }
 
     private static func stripSize(_ text: Substring) -> String {

@@ -33,6 +33,24 @@ struct UninstallParsingTests {
             ]
         ))
     }
+
+    /// A long path wrapped onto a second row, a line that is not part of the list, or a list
+    /// without its prompt (scrolled off or cut) must never yield a partial plan.
+    @Test func refusesIncompleteRemovalPlans() {
+        let wrapped = [
+            "Files to be removed:",
+            "◎ App , 1MB",
+            "  ✓ ~/Library/Application Support/very-long-folder-name-that-the-terminal-wrapp",
+            "ed/onto-a-second-row , 1MB",
+            "  ✓ ~/Library/Caches/app , 1KB",
+            "➤ Remove 1 app, 1MB  Enter confirm, ESC cancel:",
+        ]
+        #expect(RemovalList(wrapped) == nil)
+        let noPrompt = ["Files to be removed:", "◎ App , 1MB", "  ✓ ~/Library/Caches/app , 1KB"]
+        #expect(RemovalList(noPrompt) == nil)
+        let stray = ["Files to be removed:", "◎ App , 1MB", "Warning: something", "  ✓ ~/x , 1KB", "➤ Remove"]
+        #expect(RemovalList(stray) == nil)
+    }
 }
 
 @Suite(.enabled(if: MoleE2E.enabled), .serialized)
@@ -115,5 +133,17 @@ struct UninstallE2ETests {
         }
         _ = try session.waitForExit(timeout: 60)
         #expect(present(in: home) == Self.entries)
+    }
+}
+
+struct OptimizePromptTests {
+    @Test func countsDetachPromptsOnScreen() {
+        let screen = [
+            "  ◎ /Volumes/Installer → disk image",
+            "  ◎ Detach now? Enter confirm / Space cancel: ",
+            "  ⚠ Kept mounted, whitelist via mo optimize --whitelist",
+        ]
+        #expect(OptimizeDriver.prompts(in: screen) == 1)
+        #expect(OptimizeDriver.prompts(in: ["Refreshing caches"]) == 0)
     }
 }

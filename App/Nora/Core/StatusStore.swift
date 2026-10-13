@@ -14,6 +14,8 @@ final class StatusStore {
     private(set) var diskRead: [Double] = []
     private(set) var diskWrite: [Double] = []
     private(set) var lastError: String?
+    /// When the last sample arrived; shown when the stream has failed after delivering data.
+    private(set) var lastSampleAt: Date?
     private(set) var isStreaming = false
 
     static let historyLength = 120
@@ -24,7 +26,14 @@ final class StatusStore {
     @ObservationIgnored private var stopTask: Task<Void, Never>?
 
     func attach(_ mole: Mole) {
+        // A different Mole (updated, reinstalled, chosen in Settings): the running stream still
+        // points at the old executable, so it restarts.
+        let changed = self.mole?.executable != mole.executable
         self.mole = mole
+        if changed, task != nil {
+            task?.cancel()
+            task = nil
+        }
         if demand > 0 { start() }
     }
 
@@ -73,17 +82,19 @@ final class StatusStore {
         isStreaming = false
     }
 
-    private func ingest(_ s: StatusSnapshot) {
+    func ingest(_ s: StatusSnapshot) {
         snapshot = s
         lastError = nil
+        lastSampleAt = Date()
         push(&cpu, s.cpu?.usage)
         push(&memory, s.memory?.usedPercent)
         let rx = s.network.compactMap(\.rxRate).reduce(0, +)
         let tx = s.network.compactMap(\.txRate).reduce(0, +)
         push(&download, rx)
         push(&upload, tx)
-        push(&diskRead, s.diskIO?.readRate.map { $0 / 1_048_576 })
-        push(&diskWrite, s.diskIO?.writeRate.map { $0 / 1_048_576 })
+        // Mole reports disk I/O already in MB/s (cmd/status/metrics.go); stored as is.
+        push(&diskRead, s.diskIO?.readRate)
+        push(&diskWrite, s.diskIO?.writeRate)
     }
 
     private func push(_ series: inout [Double], _ value: Double?) {

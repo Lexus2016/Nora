@@ -1663,6 +1663,22 @@
         }
       }
     },
+    "A cleaning task is running. Change this list when it finishes.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Идёт очистка. Измените этот список, когда она завершится."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Триває очищення. Змініть цей список, коли воно завершиться."
+          }
+        }
+      }
+    },
     "A file already exists at %@. Move it away first.": {
       "localizations": {
         "ru": {
@@ -1787,6 +1803,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Уже в порядку: %lld"
+          }
+        }
+      }
+    },
+    "Another cleaning task is still running. Nothing was removed. Try again when it finishes.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ещё идёт другая очистка. Ничего не удалено. Попробуйте снова, когда она завершится."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ще триває інше очищення. Нічого не видалено. Спробуйте знову, коли воно завершиться."
           }
         }
       }
@@ -2351,6 +2383,22 @@
         }
       }
     },
+    "Check the Trash and the console for what was moved.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте Корзину и консоль, чтобы увидеть, что уже перемещено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірте Кошик і консоль, щоб побачити, що вже переміщено."
+          }
+        }
+      }
+    },
     "Checking Homebrew updates": {
       "localizations": {
         "ru": {
@@ -2623,6 +2671,22 @@
         }
       }
     },
+    "ClamAV stopped with an error or could not read some files, so this scan may be incomplete. The console shows the details.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV остановился с ошибкой или не смог прочитать часть файлов, поэтому проверка может быть неполной. Подробности в консоли."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV зупинився з помилкою або не зміг прочитати частину файлів, тож перевірка може бути неповною. Подробиці в консолі."
+          }
+        }
+      }
+    },
     "ClamAV's daemon did not start. The console shows the details.": {
       "localizations": {
         "ru": {
@@ -2687,6 +2751,22 @@
         }
       }
     },
+    "Clean also cleans the other ticked categories: %@ (%@).": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Очистить» также очистит другие отмеченные категории: %@ (%@)."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Очистити» також очистить інші позначені категорії: %@ (%@)."
+          }
+        }
+      }
+    },
     "Cleaning…": {
       "localizations": {
         "ru": {
@@ -2731,6 +2811,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Очищення зупинено"
+          }
+        }
+      }
+    },
+    "Commands": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команды"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команди"
           }
         }
       }
@@ -4223,6 +4319,22 @@
         }
       }
     },
+    "Live data stopped: %@. The values below are from %@.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Живые данные остановились: %@. Значения ниже на момент %@."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Живі дані зупинилися: %@. Значення нижче станом на %@."
+          }
+        }
+      }
+    },
     "Load %@ · %@ · %@": {
       "localizations": {
         "ru": {
@@ -4735,6 +4847,22 @@
         }
       }
     },
+    "Mole found nothing to remove.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не нашёл, что удалять."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не знайшов, що видаляти."
+          }
+        }
+      }
+    },
     "Mole installer": {
       "localizations": {
         "ru": {
@@ -4891,6 +5019,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ще"
+          }
+        }
+      }
+    },
+    "Mounted disk images were left as they are. Eject them in Finder if you no longer need them.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключённые образы дисков оставлены как есть. Извлеките их в Finder, если они больше не нужны."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Змонтовані образи дисків залишено як є. Вийміть їх у Finder, якщо вони більше не потрібні."
           }
         }
       }
@@ -5309,6 +5453,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nora не може стежити за %@."
+          }
+        }
+      }
+    },
+    "Nora could not read Mole's full removal plan. Nothing was removed.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora не смогла прочитать полный план удаления от Mole. Ничего не удалено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora не змогла прочитати повний план видалення від Mole. Нічого не видалено."
           }
         }
       }
@@ -5747,6 +5907,22 @@
         }
       }
     },
+    "Off by default. The console (⌘J) always shows every command Nora runs and its output.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "По умолчанию выключено. Консоль (⌘J) всегда показывает каждую команду, которую запускает Nora, и её вывод."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Типово вимкнено. Консоль (⌘J) завжди показує кожну команду, яку запускає Nora, і її вивід."
+          }
+        }
+      }
+    },
     "Old build folders": {
       "localizations": {
         "ru": {
@@ -5935,6 +6111,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оптимізувати"
+          }
+        }
+      }
+    },
+    "Partly done: %@ freed": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполнено частично: освобождено %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виконано частково: звільнено %@"
           }
         }
       }
@@ -6399,6 +6591,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевстановити"
+          }
+        }
+      }
+    },
+    "Removal did not finish": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаление не завершилось"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалення не завершилося"
           }
         }
       }
@@ -7219,6 +7427,22 @@
         }
       }
     },
+    "Show the Mole and ClamAV commands under each action": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывать команды Mole и ClamAV под каждым действием"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показувати команди Mole і ClamAV під кожною дією"
+          }
+        }
+      }
+    },
     "Show the commands Nora ran and their output (⌘J)": {
       "localizations": {
         "ru": {
@@ -7429,6 +7653,22 @@
         }
       }
     },
+    "Smart Care finished with problems": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Умный уход завершился с проблемами"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розумний догляд завершився з проблемами"
+          }
+        }
+      }
+    },
     "Smart Care is done": {
       "localizations": {
         "ru": {
@@ -7473,6 +7713,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Частину позицій залишено"
+          }
+        }
+      }
+    },
+    "Some project folders could not be scanned completely, so nothing was removed. Scan again, or limit the folders in Protection.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Некоторые папки проектов не удалось проверить полностью, поэтому ничего не удалено. Сканируйте снова или ограничьте папки в «Защите»."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Деякі теки проєктів не вдалося перевірити повністю, тож нічого не видалено. Скануйте знову або обмежте теки в «Захисті»."
           }
         }
       }
@@ -8449,6 +8705,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновлено %@"
+          }
+        }
+      }
+    },
+    "Updated: %lld of %lld": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновлено: %lld из %lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлено: %lld з %lld"
           }
         }
       }

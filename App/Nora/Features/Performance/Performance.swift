@@ -67,11 +67,20 @@ final class PerformanceModel {
         stage = .running
         task = Task {
             do {
-                let result = try await app.runPTY(["optimize"], sudo: true)
+                let (declined, result) = try await app.drive(["optimize"], sudo: true) { session in
+                    try OptimizeDriver().run(in: session)
+                }
                 let after = OptimizeReport.parse(result.text)
                 failed = !result.succeeded
                 resultLines = after.summary
+                if declined > 0 {
+                    resultLines.append(String(localized: "Mounted disk images were left as they are. Eject them in Finder if you no longer need them."))
+                }
                 resultHeadline = failed ? String(localized: "Maintenance stopped") : String(localized: "Your Mac is refreshed")
+            } catch is CancellationError {
+                failed = true
+                resultHeadline = String(localized: "Maintenance stopped")
+                resultLines = []
             } catch {
                 failed = true
                 resultHeadline = error.localizedDescription
@@ -108,7 +117,8 @@ struct PerformanceView: View {
         case .review:
             PerformanceReview(model: model)
         case .running:
-            WorkingView(module: module, title: "Refreshing…", detail: WorkingView.currentItem(app.console.entries.last?.output ?? []))
+            WorkingView(module: module, title: "Refreshing…", detail: WorkingView.currentItem(app.console.entries.last?.output ?? []),
+                        onStop: { model.stop() })
         case .done:
             DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
         }
