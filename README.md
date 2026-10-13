@@ -17,7 +17,7 @@
   <img alt="Status: design approved, app in development" src="https://img.shields.io/badge/status-design%20approved%20·%20app%20in%20development-ff3ea5?style=flat-square">
   <img alt="Platform: macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-7b2ff7?style=flat-square&logo=apple&logoColor=white">
   <img alt="Built with SwiftUI" src="https://img.shields.io/badge/SwiftUI-native-2ee6ff?style=flat-square&logo=swift&logoColor=white">
-  <img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-ffb02e?style=flat-square">
+  <img alt="License: PolyForm Noncommercial" src="https://img.shields.io/badge/license-PolyForm_Noncommercial-ffb02e?style=flat-square">
 </p>
 
 <p align="center">
@@ -136,4 +136,8 @@ Use **Scenarios** («Сценарії») in the top bar to see the first-run, ou
 
 ## License
 
-[GPL-3.0](LICENSE) © Nora contributors
+[PolyForm Noncommercial 1.0.0](LICENSE) © 2026 Lexus2016
+
+You may use, copy, modify and share Nora's code for any noncommercial purpose: personal use, study, research and hobby projects, and use by charities, schools and public institutions. Commercial use needs a separate license from the author; open an issue to ask.
+
+Mole is a separate GPL-3.0 project. Nora runs it as an external program and does not include its code, so Mole's license is unaffected.

@@ -121,8 +121,8 @@ Key facts from the source:
 | **Sniffnet** | MIT/Apache (Rust) | Connection table and filters | idea |
 | Pearcleaner | Apache + Commons Clause | Leftover preview, Trash "Sentinel" | idea only |
 | Spacie | Non-Commercial | Plugin protocol for categories | idea only |
-| GrandPerspective, Neodisk, QDirStat | GPL | Cushion treemap | code allowed (Nora is GPL-3.0) |
-| KnockKnock, BlockBlock, Latest | GPL-3.0 | Persistence audit, change alerts, "what's new" in updates | code allowed (Nora is GPL-3.0) |
+| GrandPerspective, Neodisk, QDirStat | GPL | Cushion treemap | idea only (GPL is incompatible with Nora's license) |
+| KnockKnock, BlockBlock, Latest | GPL-3.0 | Persistence audit, change alerts, "what's new" in updates | idea only (GPL is incompatible with Nora's license) |
 | Cork | license unverified | Homebrew GUI | idea |
 
 ## 4. Coverage matrix
@@ -266,12 +266,12 @@ Tests: parser tests on fixtures recorded from real runs (CI matrix with `brew in
 ## 9. Decisions
 
 1. ~~Name~~ — **Nora**, approved.
-2. **License:** **GPL-3.0** chosen (allows reusing both MIT and GPL code; aligned with Mole). Can still change before the first release.
+2. ~~License~~ — **PolyForm Noncommercial 1.0.0**, approved: Nora's code may be reused for noncommercial purposes only. MIT/BSD/Apache code is borrowed with its copyright notices kept in `THIRD_PARTY_NOTICES.md`; GPL projects are ideas only. Commits up to and including `6b840c6` were published under GPL-3.0.
 3. **Minimum macOS:** 14+ (recommended) or 26 only (full Liquid Glass).
 4. **3D:** AI-generated premium art with a strict style guide and/or Blender renders; live RealityKit later.
 5. **Upstream PR to Mole:** `--json` for dry-runs of clean/purge/installer/optimize and a path-selection flag. This would remove the PTY driver. Opening the PR is your call.
 6. **Beyond-Mole modules** (§4.3): which ones to include.
-7. **Signing and notarization:** a DMG without Gatekeeper warnings needs an Apple Developer ID ($99/year). Without it, the DMG is ad-hoc signed and opens via *Open* in the context menu.
+7. ~~Signing and notarization~~ — an Apple Developer ID is available: the DMG is signed with Developer ID, notarized with `notarytool` and stapled; Sparkle updates are EdDSA-signed.
 
 ## 10. Risks
 
