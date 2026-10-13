@@ -194,6 +194,7 @@ const VIEWS = ['overview', 'clean', 'uninstall', 'purge', 'installer', 'analyze'
 const S = {
   view: VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview',
   scen: { cli: 'ok', fda: true, admin: false },
+  mbTop: 'mem',
   smart: { phase: 'landing', freed: 0 },
   prog: { pct: 0, status: '', step: 0 },
   clean: { phase: 'idle', sel: new Set(CLEAN_ITEMS.filter(selectable).map(i => i.id)), open: new Set(['dev', 'user']), progress: 0, result: null },
@@ -220,7 +221,9 @@ const live = {
   rd: Array.from({ length: N }, () => 1 + Math.random() * 6),
   wr: Array.from({ length: N }, () => 4 + Math.random() * 20),
   cores: Array.from({ length: 14 }, (_, i) => (i < 10 ? 30 : 10) + Math.random() * 40),
-  gpu: 12, temp: 58, fan: 1200, batt: 87, health: 92,
+  gpu: 12, temp: 58, fan: 1200, batt: 87, health: 92, swap: 1.3,
+  // memory by app: helper processes are counted into the .app that owns them
+  apps: [['Docker Desktop', 9, 3.4], ['Visual Studio Code', 12, 2.6], ['Google Chrome', 17, 2.1]],
   procs: [
     ['Code Helper (Renderer)', 4242, 104.0, 1.9], ['WindowServer', 155, 21.3, 0.6], ['Google Chrome Helper', 3110, 18.6, 1.2], ['mds_stores', 412, 11.2, 0.3],
     ['Docker Desktop', 2088, 7.9, 3.4], ['Slack Helper', 2771, 4.1, 0.8], ['Telegram', 1904, 2.3, 0.5], ['kernel_task', 0, 2.1, 0.2],
@@ -579,10 +582,27 @@ const LIVE = {
   mb: () => { const h = live.health, cell = (n, v, arr, col, max) => `<div class="qm-stat"><small>${n}</small><b>${v}</b>${arr ? spark(arr.slice(-30), { h: 18, max, color: col }) : ''}</div>`;
     const ps = [...live.procs].sort((a, b) => b[2] - a[2]).slice(0, 3);
     return `<div class="row" style="margin-bottom:8px">${ring(h, { size: 46, stroke: 5, color: healthCol(h), label: h })}<div class="sp"><b>${healthWord(h)}</b><div class="note">Помірне навантаження CPU; пам’ять у нормі</div></div></div>
-    <div class="qm-stats">${cell('Процесор', nf0.format(live.cpu.at(-1)) + ' %', live.cpu, '#ff5cb4', 100)}${cell('Пам’ять', nf0.format(live.mem.at(-1)) + ' %', live.mem, '#2ee6ff', 100)}${cell('Мережа ↓', nf1.format(live.down.at(-1)) + ' МБ/с', live.down, '#ffb02e')}${cell('Диск · вільно', '302 ГБ', live.wr, '#c98bff')}${cell('Графіка', nf0.format(live.gpu) + ' %', null)}${cell('Вентилятор', nf0.format(live.fan) + ' об/хв', null)}</div>
+    <div class="qm-stats">${cell('Процесор', nf0.format(live.cpu.at(-1)) + ' %', live.cpu, '#ff5cb4', 100)}${cell('Пам’ять', nf0.format(live.mem.at(-1)) + ' %', live.mem, '#2ee6ff', 100)}${cell('Мережа ↓', nf1.format(live.down.at(-1)) + ' МБ/с', live.down, '#ffb02e')}${cell('Диск · вільно', '302 ГБ', live.wr, '#c98bff')}</div>
     <div class="qm-stat row" style="margin-top:8px;gap:12px"><span style="color:var(--good)">${ic('i-battery')}</span><span class="sp">Батарея <b style="font:500 13px var(--f-ui)">${live.batt} %</b> · заряджається</span><span class="dim">${ic('i-thermo')} ${nf0.format(live.temp)} °C</span></div>
-    <div style="margin-top:8px">${ps.map(p => `<div class="row" style="font-size:12px;padding:3px 2px"><span class="sp ell">${esc(p[0])}</span>${p[2] > 100 ? '<span class="pill crit">довго &gt;100 %</span>' : ''}<span class="num dim" style="width:52px;text-align:right">${nf1.format(p[2])} %</span></div>`).join('')}</div>`; },
+    ${mbTop(ps)}`; },
 };
+// "What is using the Mac": memory (composition, pressure, swap, apps with their helpers) or CPU.
+// Read-only by design: it explains where memory goes; it never frees or kills anything.
+function mbTop(ps) {
+  const m = live.mem.at(-1), high = m > 75, total = 32, used = total * m / 100, cache = 4.8;
+  const tab = (v, n) => `<button aria-pressed="${S.mbTop === v}" data-a="mbTop" data-v="${v}">${n}</button>`;
+  const item = (name, note, value, share, kind) => `<div class="qm-item"><div class="row"><span class="sp ell">${name}${note ? ` <span class="dim">${note}</span>` : ''}</span><span class="num">${value}</span></div><div class="qm-track"><i class="${kind}" style="width:${Math.max(4, Math.min(100, share))}%"></i></div></div>`;
+  let body;
+  if (S.mbTop === 'cpu') {
+    body = ps.map(p => item(esc(p[0]), p[2] > 100 ? '<span class="pill crit">довго &gt;100 %</span>' : '', nf1.format(p[2]) + ' %', p[2], 'cpu')).join('');
+  } else {
+    const top = live.apps[0][2];
+    body = `<div class="qm-meter" title="Програми ${nf1.format(used - cache)} ГБ · кеш ${nf1.format(cache)} ГБ · вільно ${nf1.format(total - used)} ГБ"><i class="apps" style="width:${(used - cache) / total * 100}%"></i><i class="cache" style="width:${cache / total * 100}%"></i></div>
+      <div class="row qm-memline"><span class="pill ${high ? 'warn' : 'good'}">тиск ${high ? 'підвищений' : 'нормальний'}</span><span class="sp num">${nf1.format(used)} з ${total} ГБ</span><span class="dim" title="Swap зменшиться, коли закриються програми, яким належать ці сторінки, або після перезавантаження">swap ${nf1.format(live.swap)} ГБ ⓘ</span></div>`
+      + live.apps.map(a => item(esc(a[0]), `· ${a[1]} процесів`, nf1.format(a[2]) + ' ГБ', a[2] / top * 100, 'mem')).join('');
+  }
+  return `<div class="qm-top"><div class="row"><small class="dim sp">Найбільше навантажують</small><div class="seg seg-sm">${tab('mem', 'Пам’ять')}${tab('cpu', 'Процесор')}</div></div>${body}</div>`;
+}
 function vStatus() {
   return `<div class="st fade-in">
     <div class="card w6 row" style="gap:18px;align-items:center">${hero('status', 'idle', 120)}<div class="sp" data-live="stHead">${LIVE.stHead()}</div></div>
@@ -921,6 +941,7 @@ const A = {
   scen: v => { const [k, raw] = v.split(':'); S.scen[k] = raw === 'true' ? true : raw === 'false' ? false : raw; if (k === 'cli' && raw !== 'missing') closeSheet(); renderScen(); render(); },
   toggleMb: () => { S.mb = !S.mb; $('#mbPop').hidden = !S.mb; $('#mbBtn').setAttribute('aria-pressed', S.mb); if (S.mb) renderMb(); },
   mbMenuAct: v => { $('#mbMenu').hidden = true; if (v === 'pause') toast('Оновлення показників призупинено'); else A.mbAct(v); if (S.mb && v !== 'pause') {} },
+  mbTop: v => { S.mbTop = v; document.querySelectorAll('[data-live="mb"]').forEach(el => { el.innerHTML = LIVE.mb(); }); },
   mbMode: v => { S.set.mbMode = v; $('#mbCpu').innerHTML = mbLabel(); render(true); },
   mbAct: v => { if (S.mb) A.toggleMb(); if (v === 'smart') { go('overview'); smartScan(); } else if (v === 'update') cliUpdate(); else if (v === 'quit') toast('Nora закрито (у прототипі вікно лишається)'); else go(v === 'open' ? S.view : v); },
   palette: () => palOpen(true), palRun: v => { palOpen(false); PAL[+v][2](); },
