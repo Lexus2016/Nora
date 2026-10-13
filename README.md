@@ -28,6 +28,8 @@
 
 > [!NOTE]
 > **Project status.** The design and the interactive prototype are approved; the native SwiftUI app is in development. Signed DMG builds will be published on the [Releases](https://github.com/Lexus2016/Nora/releases) page. Watch the repo to get notified.
+>
+> The prototype UI and the screenshots are in Ukrainian for now; the app ships in English, Ukrainian and Russian.
 
 ## Why Nora
 
@@ -109,7 +111,7 @@ The approved interactive prototype runs in any modern browser. All data in it is
 - Online: **https://lexus2016.github.io/Nora/prototype/**
 - Locally: `cd prototype && python3 -m http.server 8000`, then open http://localhost:8000
 
-Use **Scenarios** in the top bar to see the first-run, outdated-Mole, no-Full-Disk-Access and admin-session states.
+Use **Scenarios** («Сценарії») in the top bar to see the first-run, outdated-Mole, no-Full-Disk-Access and admin-session states.
 
 ## Documentation
 
