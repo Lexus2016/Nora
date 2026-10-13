@@ -41,30 +41,33 @@ public struct InstallerDriver {
             lines.contains { $0.hasPrefix(Self.menuTitle) } && lines.contains { $0.contains("Space Select") }
         }
         let rows = Self.parseRows(menu)
+        let chosen: Set<Int>
         do {
-            try validate(rows, menu: menu, names: names, allowedSources: allowedSources)
+            chosen = try plan(rows, menu: menu, names: names, allowedSources: allowedSources)
         } catch {
             session.send(.character("q"))
             throw error
         }
 
         do {
-            for (index, row) in rows.enumerated() {
+            for index in rows.indices {
                 if index > 0 {
                     session.send(.down)
                     try wait(session, "cursor on row \(index)") { Self.parseRows($0)[safe: index]?.isCursor == true }
                 }
-                if names.contains(row.name) {
+                if chosen.contains(index) {
                     session.send(.space)
                     try wait(session, "row \(index) selected") { Self.parseRows($0)[safe: index]?.isSelected == true }
                 }
             }
 
-            let selected = Self.parseRows(session.lines).filter(\.isSelected).map(\.name)
-            guard Set(selected) == names, selected.count == names.count,
+            let onScreen = Self.parseRows(session.lines)
+            let selected = Set(onScreen.indices.filter { onScreen[$0].isSelected })
+            guard selected == chosen,
                   session.lines.contains(where: { $0.hasPrefix(Self.menuTitle) && $0.contains("\(names.count) selected") })
             else {
-                throw InstallerDriverError.selectionMismatch(expected: names.sorted(), onScreen: selected.sorted())
+                throw InstallerDriverError.selectionMismatch(
+                    expected: names.sorted(), onScreen: selected.sorted().map { onScreen[$0].name })
             }
         } catch {
             session.send(.character("q"))
@@ -83,21 +86,35 @@ public struct InstallerDriver {
         session.send(.enter)
     }
 
-    private func validate(_ rows: [InstallerRow], menu: [String], names: Set<String>, allowedSources: Set<String>) throws {
+    /// Maps each requested name to exactly one menu row, or refuses.
+    private func plan(_ rows: [InstallerRow], menu: [String], names: Set<String>, allowedSources: Set<String>) throws -> Set<Int> {
         // A scroll indicator ("[3/40]") means rows are off screen; the spike does not scroll.
         if menu.contains(where: { $0.hasPrefix(Self.menuTitle + " [") }) {
             throw InstallerDriverError.paginated
         }
         let preselected = rows.filter(\.isSelected).map(\.name)
         guard preselected.isEmpty else { throw InstallerDriverError.preselected(preselected) }
+        var chosen = Set<Int>()
         for name in names.sorted() {
-            let matches = rows.filter { $0.name == name }
-            guard let match = matches.first else { throw InstallerDriverError.targetNotListed(name) }
-            guard matches.count == 1 else { throw InstallerDriverError.targetListedTwice(name) }
-            guard allowedSources.contains(match.source) else {
-                throw InstallerDriverError.sourceNotAllowed(name: name, source: match.source)
+            let matches = rows.indices.filter { Self.row(rows[$0], shows: name) }
+            guard let index = matches.first else { throw InstallerDriverError.targetNotListed(name) }
+            // Two rows with the same visible prefix, or two targets behind one truncated row: refuse.
+            guard matches.count == 1, chosen.insert(index).inserted else {
+                throw InstallerDriverError.targetListedTwice(name)
+            }
+            guard allowedSources.contains(rows[index].source) else {
+                throw InstallerDriverError.sourceNotAllowed(name: name, source: rows[index].source)
             }
         }
+        return chosen
+    }
+
+    /// The menu cuts names to its column (20–40 cells) and appends "..."; the review list
+    /// prints them in full and stays the final check.
+    static func row(_ row: InstallerRow, shows name: String) -> Bool {
+        if row.name == name { return true }
+        guard row.name.hasSuffix("...") else { return false }
+        return name.hasPrefix(String(row.name.dropLast(3)))
     }
 
     /// Waits for a screen state, aborting on a password prompt or terminal drift.

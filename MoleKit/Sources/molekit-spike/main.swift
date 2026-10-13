@@ -4,9 +4,10 @@ import MoleKit
 // Spike helpers:
 //   molekit-spike overlay-apply <home> <journal> <pattern>...
 //       Applies a whitelist overlay, prints "applied", then waits to be killed (crash-recovery test).
-//   molekit-spike sudo-check [path-to-mo]
+//   molekit-spike sudo-check [--no-auth] [path-to-mo]
 //       Interactive: authenticates with `sudo -A` inside a PTY, then asks Mole's own
 //       `adopt_sudo_session` whether it sees that session. Shows a macOS password dialog.
+//       --no-auth skips authentication: a smoke test of the script itself, no password involved.
 
 func fail(_ message: String, code: Int32) -> Never {
     FileHandle.standardError.write(Data((message + "\n").utf8))
@@ -32,7 +33,16 @@ case "overlay-apply":
     while true { sleep(60) }
 
 case "sudo-check":
-    let mo = URL(fileURLWithPath: arguments.count >= 3 ? arguments[2] : "/opt/homebrew/bin/mo")
+    let options = Array(arguments.dropFirst(2))
+    let noAuth = options.contains("--no-auth")
+    let mo = URL(fileURLWithPath: options.first { $0 != "--no-auth" } ?? "/opt/homebrew/bin/mo")
+    exit(sudoCheck(mo: mo, authenticate: !noAuth))
+
+default:
+    fail("usage: molekit-spike overlay-apply <home> <journal> <pattern>... | sudo-check [--no-auth] [path-to-mo]", code: 64)
+}
+
+func sudoCheck(mo: URL, authenticate: Bool) -> Int32 {
     let sandbox = FileManager.default.temporaryDirectory.appendingPathComponent("nora-sudo-check-\(UUID().uuidString.prefix(8))")
     defer { try? FileManager.default.removeItem(at: sandbox) }
     do {
@@ -41,9 +51,10 @@ case "sudo-check":
         try PrivilegeBroker.writeDialogAskpass(to: askpass)
 
         // Same shape as PrivilegeBroker.wrap, but ends in Mole's adopt check instead of a real command.
+        let authentication = authenticate ? "sudo -A -v || { echo NORA_AUTH_FAILED; exit 10; }" : ":"
         let script = """
         sudo -k
-        sudo -A -v || { echo NORA_AUTH_FAILED; exit 10; }
+        \(authentication)
         source "$1/lib/core/common.sh" >/dev/null 2>&1
         declare -f adopt_sudo_session >/dev/null || source "$1/lib/core/sudo.sh" >/dev/null 2>&1
         if adopt_sudo_session; then echo NORA_ADOPTED; rc=0; else echo NORA_NOT_ADOPTED; rc=12; fi
@@ -55,7 +66,8 @@ case "sudo-check":
             ["HOME": sandbox.path, "PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "TERM": "xterm-256color", "LANG": "en_US.UTF-8"],
             askpass: askpass
         )
-        print("A macOS password dialog will appear. Mole \(try mole.version(environment: environment)), root \(mole.root.path)")
+        let version = try mole.version(environment: environment)
+        print(authenticate ? "A macOS password dialog will appear. Mole \(version)" : "Smoke test without authentication. Mole \(version)")
         let session = try PTYSession(
             executable: "/bin/bash", arguments: ["-c", script, "bash", mole.root.path],
             environment: environment, rows: 24, cols: 120
@@ -69,13 +81,15 @@ case "sudo-check":
         let lines = session.lines.filter { !$0.isEmpty }
         lines.forEach { print("  | \($0)") }
         let adopted = lines.contains("NORA_ADOPTED")
+        if !authenticate {
+            print("Script ran to its verdict (\(status)); without authentication Mole should not adopt a session.")
+            return adopted ? 1 : 0
+        }
         print(adopted ? "PASS: Mole adopts the sudo session authenticated in the same PTY (\(status))"
                       : "FAIL: \(status)")
-        exit(adopted ? 0 : 1)
+        return adopted ? 0 : 1
     } catch {
-        fail("sudo-check failed: \(error)", code: 1)
+        FileHandle.standardError.write(Data("sudo-check failed: \(error)\n".utf8))
+        return 1
     }
-
-default:
-    fail("usage: molekit-spike overlay-apply <home> <journal> <pattern>... | sudo-check [path-to-mo]", code: 64)
 }

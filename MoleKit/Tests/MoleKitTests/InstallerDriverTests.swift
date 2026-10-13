@@ -32,6 +32,14 @@ struct InstallerParsingTests {
         ]
         #expect(InstallerDriver.parseReview(review) == ["NoraQ7-2.dmg", "NoraQ7-4.pkg"])
     }
+
+    @Test func truncatedRowsMatchByPrefix() {
+        let row = InstallerRow(isCursor: false, isSelected: false, name: "NoraQ7-VeryLongIns...", size: "400KB", source: "Downloads")
+        #expect(InstallerDriver.row(row, shows: "NoraQ7-VeryLongInstallerName-v1.2.3-arm64.dmg"))
+        #expect(!InstallerDriver.row(row, shows: "NoraQ7-Other.dmg"))
+        let full = InstallerRow(isCursor: false, isSelected: false, name: "NoraQ7-1.dmg", size: "1MB", source: "Downloads")
+        #expect(!InstallerDriver.row(full, shows: "NoraQ7-1.dmg.bak"))
+    }
 }
 
 @Suite(.enabled(if: MoleE2E.enabled), .serialized)
@@ -41,9 +49,11 @@ struct InstallerE2ETests {
         "Desktop/NoraQ7-4.pkg", "Desktop/NoraQ7-5.dmg",
     ]
 
-    private func makeHome() throws -> URL {
+    private static let longName = "NoraQ7-VeryLongInstallerName-ForTruncationProbe-v1.2.3-arm64.dmg"
+
+    private func makeHome(extra: [String] = []) throws -> URL {
         let home = try TestSandbox.make("installer")
-        for (index, path) in fixtures.enumerated() {
+        for (index, path) in (fixtures + extra).enumerated() {
             try TestSandbox.writeRandom(bytes: 300_000 * (index + 1), to: home.appendingPathComponent(path))
         }
         try FileManager.default.createDirectory(at: home.appendingPathComponent("tmp"), withIntermediateDirectories: true)
@@ -74,6 +84,24 @@ struct InstallerE2ETests {
         #expect(session.unknownSequences.isEmpty)
 
         try MoleE2E.recordFixture(session.transcriptBytes, name: "installer-delete-2-of-5.transcript", version: version, home: home)
+    }
+
+    /// Real installer names usually exceed the menu column and show as "Prefix...".
+    @Test func deletesATruncatedLongName() throws {
+        let home = try makeHome(extra: ["Downloads/\(Self.longName)"])
+        defer { try? FileManager.default.removeItem(at: home) }
+        let mo = try #require(MoleE2E.executable)
+
+        let session = try PTYSession(
+            executable: mo.path, arguments: ["installer"],
+            environment: MoleE2E.environment(home: home), currentDirectory: home.path
+        )
+        defer { session.close() }
+
+        try InstallerDriver().delete([Self.longName, "NoraQ7-1.dmg"], allowedSources: ["Downloads"], in: session)
+        #expect(try session.waitForExit(timeout: 60) == .exited(0))
+        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent("Downloads/\(Self.longName)").path))
+        #expect(remaining(in: home) == ["NoraQ7-2.dmg", "NoraQ7-3.pkg", "NoraQ7-4.pkg", "NoraQ7-5.dmg"])
     }
 
     @Test func refusesWhenATargetIsMissingAndDeletesNothing() throws {
