@@ -36,3 +36,7 @@ AuthKey_*.p8
 # Python
 __pycache__/
 *.pyc
+
+# Nora app: generated project and machine-specific config
+App/Nora.xcodeproj/
+App/Config/Local.xcconfig
