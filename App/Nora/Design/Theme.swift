@@ -15,8 +15,8 @@ enum Palette {
     static let window = Color(hex: 0x140A26)
     static let desk = Color(hex: 0x0A0612)
     static let ink = Color(hex: 0x1B1033)
-    static let fg2 = Color.white.opacity(0.76)
-    static let muted = Color.white.opacity(0.54)
+    static let fg2 = Color.white.opacity(0.82)
+    static let muted = Color.white.opacity(0.62)
     static let surface = Color.white.opacity(0.09)
     static let surface2 = Color.white.opacity(0.06)
     static let line = Color.white.opacity(0.13)
@@ -50,14 +50,18 @@ struct SceneBackground: View {
     let palette: ScenePalette
 
     var body: some View {
+        // Saturated like CleanMyMac: a bright pool of colour near the object, the body colour across,
+        // and a depth that stays coloured instead of muddy.
         ZStack {
-            LinearGradient(stops: [.init(color: palette.body, location: 0), .init(color: palette.depth, location: 0.72)],
-                           startPoint: UnitPoint(x: 0.1, y: 0), endPoint: UnitPoint(x: 0.9, y: 1))
-            EllipticalGradient(colors: [palette.body.opacity(0.9), .clear], center: UnitPoint(x: 0.95, y: 0),
-                               startRadiusFraction: 0, endRadiusFraction: 0.7)
-            EllipticalGradient(colors: [palette.glow.opacity(0.58), .clear], center: UnitPoint(x: 0.27, y: 0.55),
-                               startRadiusFraction: 0, endRadiusFraction: 0.72)
+            LinearGradient(stops: [.init(color: palette.body.blend(with: palette.glow, by: 0.18), location: 0),
+                                   .init(color: palette.depth.blend(with: palette.body, by: 0.38), location: 0.85)],
+                           startPoint: UnitPoint(x: 0.05, y: 0), endPoint: UnitPoint(x: 0.95, y: 1))
+            EllipticalGradient(colors: [palette.body.opacity(0.75), .clear], center: UnitPoint(x: 0.95, y: 0.02),
+                               startRadiusFraction: 0, endRadiusFraction: 0.62)
+            EllipticalGradient(colors: [palette.glow.opacity(0.62), palette.glow.opacity(0.12), .clear], center: UnitPoint(x: 0.3, y: 0.52),
+                               startRadiusFraction: 0, endRadiusFraction: 0.6)
         }
+        .saturation(1.3)
         .ignoresSafeArea()
     }
 }
@@ -71,8 +75,7 @@ struct SceneTitle: View {
         Text(text)
             .font(.system(size: 44, weight: .light, design: .default))
             .tracking(-0.4)
-            .foregroundStyle(LinearGradient(colors: [.white, .white.opacity(0.86)], startPoint: .top, endPoint: .bottom))
-            .shadow(color: glow.opacity(0.6), radius: 17)
+            .foregroundStyle(.white)
             
     }
 }
@@ -91,16 +94,12 @@ struct PrimaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(Palette.ink)
-            .padding(.horizontal, 22)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(Color(hex: 0x111111))
+            .padding(.horizontal, 20)
             .frame(height: 38)
-            .background(
-                Capsule().fill(LinearGradient(colors: [.white, Color(hex: 0xF3EEFF), Color(hex: 0xE6DEFB)],
-                                              startPoint: .top, endPoint: .bottom))
-            )
-            .overlay(Capsule().strokeBorder(.white.opacity(0.9), lineWidth: 0.5))
-            .shadow(color: glow.opacity(configuration.isPressed ? 0.2 : 0.45), radius: 14, y: 8)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(configuration.isPressed ? Color(hex: 0xE8E8E8) : .white))
+            .shadow(color: .black.opacity(0.22), radius: 5, y: 2)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
@@ -110,12 +109,12 @@ struct PrimaryButtonStyle: ButtonStyle {
 struct GlassButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13, weight: .medium))
+            .font(.system(size: 15, weight: .semibold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 16)
-            .frame(height: 34)
-            .modifier(GlassCapsule())
-            .opacity(configuration.isPressed ? 0.8 : 1)
+            .padding(.horizontal, 18)
+            .frame(height: 38)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.black.opacity(configuration.isPressed ? 0.36 : 0.24)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(.white.opacity(0.16), lineWidth: 1))
     }
 }
 
@@ -153,14 +152,9 @@ struct GlassPanel: ViewModifier {
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        if #available(macOS 26, *) {
-            content.glassEffect(.regular.tint(.black.opacity(0.18)), in: shape)
-        } else {
-            content
-                .background(.ultraThinMaterial.opacity(0.85), in: shape)
-                .background(Color.black.opacity(0.18), in: shape)
-                .overlay(shape.strokeBorder(Palette.line, lineWidth: 0.5))
-        }
+        content
+            .background(shape.fill(Color.white.opacity(0.11)))
+            .overlay(shape.strokeBorder(Color.white.opacity(0.17), lineWidth: 1))
     }
 }
 

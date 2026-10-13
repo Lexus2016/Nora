@@ -56,14 +56,14 @@ struct BottomOrb: View {
                 Circle()
                     .fill(RadialGradient(colors: [tint.blend(with: .white, by: 0.35), tint, tint.blend(with: palette.depth, by: 0.45)],
                                          center: UnitPoint(x: 0.5, y: 0.25), startRadius: 2, endRadius: 64))
-                Circle().strokeBorder(.white.opacity(0.6), lineWidth: 1.6)
+                Circle().strokeBorder(.white.opacity(0.85), lineWidth: 2.5)
                 Ellipse()
                     .fill(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0)], startPoint: .top, endPoint: .bottom))
                     .frame(width: 64, height: 27).offset(y: -30).blur(radius: 1.5)
                 Text(LocalizedStringKey(action.title))
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+                    .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
                     .lineLimit(1).minimumScaleFactor(0.7)
                     .padding(.horizontal, 12)
             }
@@ -108,14 +108,13 @@ struct ModuleStart<Extra: View>: View {
                 Glass3D(name: module.glass, size: 340, glow: module.palette.glow, amplitude: 9, period: 7)
                 VStack(alignment: .leading, spacing: 18) {
                     Text(module.title)
-                        .font(.system(size: 54, weight: .light))
-                        .shadow(color: module.palette.glow.opacity(0.5), radius: 16)
-                    Text(subtitle).font(.system(size: 17)).foregroundStyle(Palette.fg2).lineSpacing(3)
+                        .font(.system(size: 60, weight: .light))
+                    Text(subtitle).font(.system(size: 18)).foregroundStyle(Palette.fg2).lineSpacing(3)
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(features) { feature in
                             HStack(spacing: 14) {
                                 FeatureDisc(symbol: feature.symbol, tint: module.palette.glow)
-                                Text(feature.text).font(.system(size: 15, weight: .semibold))
+                                Text(feature.text).font(.system(size: 17, weight: .semibold))
                             }
                         }
                     }
@@ -172,8 +171,8 @@ struct WorkingView: View {
                 Spacer(minLength: 0)
                 Glass3D(name: module.glass, size: 300, glow: module.palette.glow)
                 VStack(spacing: 10) {
-                    Text(title).font(.system(size: 46, weight: .light))
-                    Text(detail ?? " ").font(.system(size: 15)).foregroundStyle(Palette.fg2)
+                    Text(title).font(.system(size: 50, weight: .light))
+                    Text(detail ?? " ").font(.system(size: 17)).foregroundStyle(Palette.fg2)
                         .lineLimit(1).truncationMode(.middle).frame(maxWidth: 620)
                         .animation(nil, value: detail)
                 }
@@ -213,12 +212,12 @@ struct CategoryCard: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(value).font(.system(size: large ? 40 : 28, weight: .semibold, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6)
-                    Text(caption).font(.system(size: large ? 17 : 14, weight: .medium)).foregroundStyle(Palette.fg2).lineLimit(2)
+                    Text(caption).font(.system(size: large ? 18 : 15, weight: .semibold)).foregroundStyle(Palette.fg2).lineLimit(2)
                 }
                 Spacer(minLength: 8)
                 if glass == nil { FeatureDisc(symbol: symbol, tint: tint, size: 44) }
             }
-            if let detail { Text(detail).font(.system(size: 14)).foregroundStyle(Palette.fg2).lineLimit(3).frame(maxWidth: 300, alignment: .leading) }
+            if let detail { Text(detail).font(.system(size: 15)).foregroundStyle(Palette.fg2).lineLimit(4).frame(maxWidth: 320, alignment: .leading) }
             Spacer(minLength: 0)
             HStack(spacing: 10) {
                 Spacer(minLength: 0)
@@ -232,7 +231,7 @@ struct CategoryCard: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(alignment: .bottomLeading) {
             if let glass {
-                GlassImage(name: glass, size: 300, glow: tint).offset(x: -40, y: 70).opacity(0.95)
+                GlassImage(name: glass, size: 250, glow: tint).offset(x: -56, y: 64).opacity(0.95)
             }
         }
         .background(VolumeFill(radius: 22))
@@ -274,7 +273,6 @@ struct DoneView: View {
                 Text(failed ? String(localized: "Something went wrong") : String(localized: "Well done!"))
                     .font(.system(size: 18)).foregroundStyle(Palette.fg2)
                 Text(headline).font(.system(size: 46, weight: .light, design: .rounded)).multilineTextAlignment(.center)
-                    .shadow(color: module.palette.glow.opacity(0.6), radius: 18)
                 if !lines.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(Array(lines.prefix(6).enumerated()), id: \.offset) { _, line in
@@ -302,7 +300,7 @@ struct StepHeader<Trailing: View>: View {
         HStack(alignment: .center, spacing: 16) {
             GlassImage(name: module.glass, size: 64, glow: module.palette.glow)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 28, weight: .light)).shadow(color: module.palette.glow.opacity(0.5), radius: 12)
+                Text(title).font(.system(size: 30, weight: .light))
                 if let subtitle { Text(subtitle).font(.system(size: 13)).foregroundStyle(Palette.fg2) }
             }
             Spacer()
@@ -408,17 +406,18 @@ extension View {
     }
 }
 
-/// The body of a volume card: lighter at the top, darker at the bottom.
+/// The body of a volume card: a light, slightly brighter top over the scene colour.
 struct VolumeFill: View {
     let radius: CGFloat
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        shape.fill(LinearGradient(colors: [.white.opacity(0.17), .white.opacity(0.07), .black.opacity(0.1)],
-                                  startPoint: .top, endPoint: .bottom))
+        shape.fill(LinearGradient(colors: [.white.opacity(0.17), .white.opacity(0.10)], startPoint: .top, endPoint: .bottom))
     }
 }
 
+/// Crisp card edge like CleanMyMac: a clear 1 pt light border, brighter along the top, and a
+/// short soft shadow that lifts the card without blurring it.
 struct VolumeCard: ViewModifier {
     let radius: CGFloat
     let tint: Color
@@ -426,18 +425,7 @@ struct VolumeCard: ViewModifier {
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         content
-            .background(.ultraThinMaterial.opacity(0.35), in: shape)
-            .overlay(
-                shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.55), .white.opacity(0.12), .white.opacity(0.04), .black.opacity(0.25)],
-                                                  startPoint: .top, endPoint: .bottom), lineWidth: 1.1)
-            )
-            .overlay(alignment: .top) {
-                // Specular line along the top edge.
-                shape.inset(by: 1.5).trim(from: 0.0, to: 1.0)
-                    .stroke(LinearGradient(colors: [.white.opacity(0.35), .clear], startPoint: .top, endPoint: .center), lineWidth: 1)
-                    .blendMode(.plusLighter)
-            }
-            .shadow(color: .black.opacity(0.38), radius: 22, x: 0, y: 16)
-            .shadow(color: tint.opacity(0.16), radius: 30, x: 0, y: 0)
+            .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.34), .white.opacity(0.16)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
+            .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 6)
     }
 }

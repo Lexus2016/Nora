@@ -96,16 +96,15 @@ struct Rail: View {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: module.symbol)
                     .font(.system(size: 21, weight: .medium))
-                    .foregroundStyle(.white.opacity(isSelected ? 1 : 0.82))
+                    .foregroundStyle(.white.opacity(isSelected ? 1 : 0.9))
                     .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
                     .frame(width: 56, height: 52)
                     .background {
                         if isSelected {
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(LinearGradient(colors: [module.palette.glow.opacity(0.42), module.palette.body.opacity(0.32)],
-                                                     startPoint: .top, endPoint: .bottom))
-                                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.22), lineWidth: 0.5))
-                                .shadow(color: module.palette.glow.opacity(0.45), radius: 10)
+                                .fill(LinearGradient(colors: [.white.opacity(0.26), .white.opacity(0.14)], startPoint: .top, endPoint: .bottom))
+                                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.white.opacity(0.3), lineWidth: 1))
+                                .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
                         }
                     }
                 if app.isBusy(module) {
@@ -193,11 +192,11 @@ struct TopBar: View {
 
     var body: some View {
         ZStack {
-            Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Palette.fg2)
+            Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white.opacity(0.9))
             HStack {
                 if let leading {
                     Button(action: leading.action) {
-                        Label(leading.label, systemImage: leading.symbol).font(.system(size: 13, weight: .medium))
+                        Label(leading.label, systemImage: leading.symbol).font(.system(size: 15, weight: .semibold))
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
