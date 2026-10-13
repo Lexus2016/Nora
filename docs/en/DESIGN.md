@@ -290,6 +290,19 @@ Every action is at most three clicks from opening Nora or the menu bar, and ever
 | **M4 Release** | Developer ID, notarization, Sparkle, EN/UK/RU localization | Signed DMG; updates work; the language follows the system |
 | **M5 Extras** | Security module, scheduler, MCP, beyond-Mole modules (by decision) | — |
 
+### 8.1. Build status (2026-10-13)
+
+The native app is built (`App/`, SwiftUI, XcodeGen) and ships as a Developer ID signed, notarized and stapled DMG through `scripts/build-dmg.sh` (see `docs/BUILD.md`). Every module in the sidebar runs real Mole commands; none is a mock.
+
+Changes against this design, for your veto:
+1. **Projects selection** uses the whitelist overlay plus `mo purge --yes` instead of a menu driver: `mo purge` skips whitelisted artifacts. Verified end to end on Mole 1.59.1 in a sandbox `$HOME`.
+2. **Navigation** follows the CleanMyMac references: an icon rail with hover cards instead of a labelled sidebar; the round action button sits in a child window over the window's bottom edge.
+3. **Smart Care** runs the four previews side by side (all read-only), so a scan takes as long as the slowest one.
+4. **Schedules** (Security) run from an in-app timer while Nora is open or in the menu bar; there is no launchd helper.
+5. **Administrator rights** come from an osascript password dialog used as `SUDO_ASKPASS`; Touch ID works once `mo touchid enable` is on.
+6. **Energy mode** runs `sudo -A /usr/bin/pmset`, because `pmset -a` needs root itself. Mapping: `powermode` 0 Automatic, 1 Low Power, 2 High Power.
+7. **Not built yet:** the read-only MCP server, browser extension and configuration-profile audit, personal-data selection (`D`) for apps.
+
 ## 9. Decisions
 
 1. ~~Name~~ — **Nora**, approved.

@@ -34,3 +34,16 @@ A module that is not finished is absent from the sidebar. There are no mock scre
 
 - Bundle ID `io.github.lexus2016.nora`. It is durable: TCC grants, Sparkle and notarization history key on it.
 - Minimum macOS 14.0. Built with the macOS 27 SDK; Liquid Glass is used behind `#available(macOS 26, *)`.
+
+## Tests
+
+- App: `cd App && xcodegen generate && xcodebuild -project Nora.xcodeproj -scheme Nora -destination 'platform=macOS' test`.
+- MoleKit: `cd MoleKit && swift test`. With `NORA_MOLE_E2E=1` the end-to-end suites run the real `mo` against a sandbox `$HOME` (installer, uninstall, purge, whitelist overlay). They never use sudo.
+
+## Releasing an update
+
+1. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `App/Config/Nora.xcconfig`.
+2. `scripts/build-dmg.sh` → `dist/Nora-<version>.dmg`, signed, notarized and stapled.
+3. Make the Sparkle feed: `build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast dist/`. It signs each archive with the EdDSA private key in the login keychain and writes `dist/appcast.xml`.
+4. Upload the DMG to a GitHub Release and publish `appcast.xml` at `https://lexus2016.github.io/Nora/appcast.xml` (the `SUFeedURL` in `Info.plist`), with the enclosure URL pointing at the release asset.
+5. Back up the Sparkle private key once: `generate_keys -x sparkle_private_key` (the file name is gitignored), then store it somewhere safe and delete the export. Without this key, installed copies cannot verify future updates.
