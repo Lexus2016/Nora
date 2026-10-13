@@ -119,6 +119,7 @@ struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 15, weight: .semibold))
+            .lineLimit(1).minimumScaleFactor(0.8)
             .foregroundStyle(Color(hex: 0x111111))
             .padding(.horizontal, 20)
             .frame(height: 38)
@@ -134,6 +135,7 @@ struct GlassButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 15, weight: .semibold))
+            .lineLimit(1).minimumScaleFactor(0.8)
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
             .frame(height: 38)

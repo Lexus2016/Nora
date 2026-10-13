@@ -114,8 +114,7 @@ final class MenuBarController: NSObject {
     }
 
     @objc private func openSettings() {
-        NSApp.activate()
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        app.showSettings()
     }
 
     /// ⌥⌘N through Carbon, which needs no Accessibility permission.
@@ -137,6 +136,7 @@ final class MenuBarController: NSObject {
 struct QuickMenu: View {
     let close: () -> Void
     @Environment(AppModel.self) private var app
+    @Environment(\.openSettings) private var openSettings
     @State private var tab = 0
 
     var body: some View {
@@ -145,7 +145,7 @@ struct QuickMenu: View {
             HStack(spacing: 12) {
                 HealthRing(score: s?.healthScore, size: 52)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(s?.healthMessage ?? String(localized: "Reading your Mac…")).font(.system(size: 14, weight: .semibold)).lineLimit(1)
+                    Text(s?.healthScore == nil ? String(localized: "Reading your Mac…") : HistoryView.healthWord(s?.healthScore)).font(.system(size: 14, weight: .semibold)).lineLimit(1)
                     Text("Mole \(app.mole?.version ?? "—")").font(.system(size: 11)).foregroundStyle(Palette.muted)
                 }
                 Spacer()
@@ -167,7 +167,7 @@ struct QuickMenu: View {
                 }
             }
             HStack {
-                Button("Settings…") { close(); NSApp.activate(); NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) }
+                Button("Settings…") { close(); NSApp.activate(); openSettings() }
                 Spacer()
                 Button("Quit Nora") { NSApp.terminate(nil) }
             }
@@ -211,13 +211,13 @@ struct QuickMenu: View {
     private func load(_ s: StatusSnapshot?) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Highest load").font(.system(size: 13, weight: .semibold))
-                Spacer()
+                Text("Highest load").font(.system(size: 13, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.85)
+                Spacer(minLength: 8)
                 Picker("", selection: $tab) {
                     Text("Memory").tag(0)
                     Text("CPU").tag(1)
                 }
-                .pickerStyle(.segmented).labelsHidden().frame(width: 150)
+                .pickerStyle(.segmented).labelsHidden().frame(width: 128)
             }
             if tab == 0 {
                 let m = s?.memory
@@ -260,8 +260,9 @@ struct QuickMenu: View {
         .background(VolumeFill(radius: 12))
     }
 
+    /// Text on its own line and two equal buttons under it, so long translations never wrap.
     private var reclaim: some View {
-        HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 if let preview = app.cleanup.preview {
                     Text(Format.bytes(preview.items.reduce(0) { $0 + $1.size })).font(.system(size: 18, weight: .semibold, design: .rounded))
@@ -271,9 +272,12 @@ struct QuickMenu: View {
                     Text("Run a scan to see how much").font(.system(size: 11)).foregroundStyle(Palette.fg2)
                 }
             }
-            Spacer()
-            Button("Clean") { open(app.cleanup.preview == nil ? .smartCare : .cleanup) }.buttonStyle(PrimaryButtonStyle())
-            Button("Optimize") { open(.performance) }.buttonStyle(GlassButtonStyle())
+            HStack(spacing: 10) {
+                Button { open(app.cleanup.preview == nil ? .smartCare : .cleanup) } label: { Text("Clean").frame(maxWidth: .infinity) }
+                    .buttonStyle(PrimaryButtonStyle())
+                Button { open(.performance) } label: { Text("Optimize").frame(maxWidth: .infinity) }
+                    .buttonStyle(GlassButtonStyle())
+            }
         }
     }
 }

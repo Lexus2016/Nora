@@ -54,6 +54,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await app.locate()
             menuBar = MenuBarController(app: app)
             app.security.resumeWatchIfEnabled(app)
+            #if DEBUG
+            // Screenshot helpers: -NoraShowPopover 1 opens the quick menu, -NoraShowSettings 1 the Settings window.
+            if UserDefaults.standard.bool(forKey: "NoraShowPopover") {
+                try? await Task.sleep(for: .seconds(1.5))
+                menuBar?.toggle()
+            }
+            if UserDefaults.standard.bool(forKey: "NoraShowSettings") {
+                try? await Task.sleep(for: .seconds(1.5))
+                app.showSettings()
+            }
+            #endif
         }
         // Scheduled security scans: the app has no launchd helper, so a timer asks every 15 min.
         scheduler = Timer.scheduledTimer(withTimeInterval: 15 * 60, repeats: true) { [weak self] _ in

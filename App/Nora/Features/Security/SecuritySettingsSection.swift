@@ -23,14 +23,25 @@ struct SecuritySettingsSection: View {
             }
             .disabled(!scheduleOn)
             Text("Runs ClamAV in the background and posts a notification when it finds something. Nothing is moved without your click.")
-                .font(.caption)
+                .font(.system(size: 12))
                 .foregroundStyle(.secondary)
 
-            Toggle("Watch Downloads", isOn: Binding(
-                get: { model.watchActive },
-                set: { model.setWatch($0, app) }))
+            Toggle(isOn: Binding(
+                get: { model.watchActive || model.watchStarting },
+                set: { model.setWatch($0, app) })) {
+                HStack(spacing: 8) {
+                    Text("Watch Downloads")
+                    if model.watchStarting {
+                        ProgressView().controlSize(.small)
+                        Text("Starting ClamAV…").foregroundStyle(.secondary)
+                    }
+                }
+            }
+            if let error = model.watchError {
+                Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+            }
             Text("The Downloads watch keeps ClamAV's virus database in memory: about 1 GB, and up to 2.4 GB during the daily reload. Turn it off to free that memory.")
-                .font(.caption)
+                .font(.system(size: 12))
                 .foregroundStyle(.secondary)
 
             LabeledContent("ClamAV database") {

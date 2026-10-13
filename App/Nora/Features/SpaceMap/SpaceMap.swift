@@ -241,6 +241,11 @@ private struct SpaceLens: View {
                     Text("Large files").tag(true)
                 }
                 .pickerStyle(.segmented).labelsHidden()
+                // No "Select all" here: ticking every folder of a level (at / that includes Applications)
+                // and sending it to the Trash is too easy a mistake. Clearing a selection is always safe.
+                if !model.selected.isEmpty {
+                    Button("Deselect all") { model.selected.removeAll() }.buttonStyle(GlassButtonStyle())
+                }
                 if analysis.scanStatus == "partial" {
                     Notice(text: String(localized: "Some folders could not be read fully; their sizes are at least what is shown."), symbol: "info.circle", color: Palette.fg2)
                 }

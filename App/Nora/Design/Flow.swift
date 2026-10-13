@@ -326,6 +326,22 @@ struct GlassCircle: ViewModifier {
     }
 }
 
+/// The same control on every selectable list: "Select all" until every item is ticked, then
+/// "Deselect all". `ids` are the items the list shows, so a filtered list selects only what is visible.
+struct SelectAllButton<ID: Hashable>: View {
+    let ids: [ID]
+    @Binding var selection: Set<ID>
+
+    var body: some View {
+        let all = !ids.isEmpty && ids.allSatisfy(selection.contains)
+        Button(all ? "Deselect all" : "Select all") {
+            if all { selection.subtract(ids) } else { selection.formUnion(ids) }
+        }
+        .buttonStyle(GlassButtonStyle())
+        .disabled(ids.isEmpty)
+    }
+}
+
 /// A row with a checkbox, a title, an optional detail line and a size.
 struct CheckRow: View {
     @Binding var isOn: Bool

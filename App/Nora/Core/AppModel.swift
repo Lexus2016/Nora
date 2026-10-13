@@ -68,6 +68,14 @@ final class AppModel {
 
     /// Set by the main window so the menu bar can reopen it after it was closed.
     @ObservationIgnored var openMainWindow: (() -> Void)?
+    /// SwiftUI's openSettings, captured from a view. Since macOS 14 the old
+    /// `showSettingsWindow:` action is ignored, so AppKit menus go through this.
+    @ObservationIgnored var openSettingsWindow: (() -> Void)?
+
+    func showSettings() {
+        NSApp.activate()
+        openSettingsWindow?()
+    }
 
     /// Brings the main window forward, optionally on a module.
     func showMain(_ module: Module?) {

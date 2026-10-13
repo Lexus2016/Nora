@@ -252,7 +252,11 @@ private struct SecurityList: View {
             : nil
         ModuleScene(module: module, leading: .back { model.listMode = nil }, orb: orb) {
             VStack(alignment: .leading, spacing: 14) {
-                StepHeader(module: module, title: title, subtitle: subtitle)
+                StepHeader(module: module, title: title, subtitle: subtitle) {
+                    if mode == .findings {
+                        SelectAllButton(ids: model.findings.filter(\.canQuarantine).map(\.id), selection: Bindable(model).checked)
+                    }
+                }
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         rows

@@ -4,6 +4,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         Group {
@@ -12,7 +13,10 @@ struct RootView: View {
             default: OnboardingView()
             }
         }
-        .onAppear { app.openMainWindow = { openWindow(id: "main") } }
+        .onAppear {
+            app.openMainWindow = { openWindow(id: "main") }
+            app.openSettingsWindow = { openSettings() }
+        }
     }
 }
 

@@ -13,7 +13,9 @@ struct AppsUpdates: View {
                     orb: model.selectedUpdates.isEmpty ? nil : OrbAction(title: "Update", action: { model.upgrade(app) })) {
         VStack(alignment: .leading, spacing: 14) {
             StepHeader(module: module, title: "Updates",
-                       subtitle: String(localized: "\(model.updates.count) Homebrew apps have a newer version"))
+                       subtitle: String(localized: "\(model.updates.count) Homebrew apps have a newer version")) {
+                SelectAllButton(ids: model.updates.map(\.token), selection: $model.selectedUpdates)
+            }
             if let note = model.updatesNote { Notice(text: note, symbol: "info.circle", color: Palette.muted) }
             if model.updates.isEmpty {
                 Text("Every Homebrew app is up to date.").font(.system(size: 15)).foregroundStyle(Palette.fg2)

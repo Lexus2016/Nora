@@ -82,6 +82,10 @@ final class SecurityModel {
     var unreadableCount = 0
     var quarantine: [QuarantineEntry] = []
     var watchActive = false
+    /// clamd is loading its database (several seconds); Settings shows the switch as on meanwhile.
+    private(set) var watchStarting = false
+    /// Why the last attempt to turn the Downloads watch on failed, shown under the switch.
+    private(set) var watchError: String?
     var clamav = ClamAVTools.locate()
     var databaseReady = false
     /// The formula `brew install` is working on, for the button's busy state.
@@ -413,14 +417,17 @@ final class SecurityModel {
     /// Turns the Downloads watch on or off. On starts clamd as a child process and the FSEvents-style directory watch.
     func setWatch(_ on: Bool, _ app: AppModel) {
         SecuritySettings.watchEnabled = on
+        watchError = nil
         guard on else {
             shutdown()
             return
         }
         guard watch == nil else { return }
+        refreshTools()
         guard let clamd = clamav.clamd, let clamdscan = clamav.clamdscan, layout.hasDatabase else {
             SecuritySettings.watchEnabled = false
-            notice = String(localized: "The Downloads watch needs ClamAV and its virus database. Install ClamAV and update the database first.")
+            watchError = String(localized: "The Downloads watch needs ClamAV and its virus database. Install ClamAV and update the database first.")
+            notice = watchError
             return
         }
         let session = ClamdSession(clamd: clamd, clamdscan: clamdscan, layout: layout)
@@ -431,14 +438,17 @@ final class SecurityModel {
         self.clamd = session
         self.watch = watch
         SecurityNotifier.requestAuthorization()
+        watchStarting = true
         watchStart = Task {
+            defer { self.watchStarting = false }
             do {
                 try await session.start()
                 try watch.start()
                 self.watchActive = true
             } catch {
                 self.shutdown()
-                self.notice = error.localizedDescription
+                self.watchError = error.localizedDescription
+                self.notice = self.watchError
                 SecuritySettings.watchEnabled = false
             }
         }

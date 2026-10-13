@@ -119,7 +119,9 @@ private struct ProjectsReview: View {
                     orb: model.selected.isEmpty ? nil : OrbAction(title: "Remove", destructive: true, action: { model.purge(app) })) {
         VStack(alignment: .leading, spacing: 14) {
             StepHeader(module: module, title: "Review build folders",
-                       subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected"))
+                       subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected")) {
+                SelectAllButton(ids: model.preview?.items.map(\.path) ?? [], selection: $model.selected)
+            }
             if let preview = model.preview {
                 ForEach(Array(preview.warnings.prefix(2).enumerated()), id: \.offset) { _, w in Notice(text: w, symbol: "info.circle", color: Palette.fg2) }
                 if preview.items.isEmpty {

@@ -57,7 +57,7 @@ struct StatusView: View {
             GlassImage(name: module.glass, size: 120, glow: module.palette.glow)
             VStack(alignment: .leading, spacing: 6) {
                 SceneTitle(text: module.title, glow: module.palette.glow)
-                if let msg = s?.healthMessage { Text(msg).font(.system(size: 15)).foregroundStyle(Palette.fg2) }
+                if s?.healthScore != nil { Text(HistoryView.healthWord(s?.healthScore)).font(.system(size: 15)).foregroundStyle(Palette.fg2) }
                 if let hw = s?.hardware {
                     Text([hw.model, hw.cpuModel, hw.totalRAM, hw.osVersion].compactMap { $0 }.joined(separator: " · "))
                         .font(.system(size: 12)).foregroundStyle(Palette.muted)

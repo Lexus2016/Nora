@@ -61,7 +61,14 @@ final class BrewEnvironmentTests: XCTestCase {
     /// brew exits with "$HOME must be set to run brew" when the environment lacks HOME.
     func testBrewEnvironmentKeepsHome() {
         XCTAssertNotNil(BrewTools.environment["HOME"])
-        XCTAssertEqual(BrewTools.environment["PATH"], "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
+        XCTAssertEqual(BrewTools.environment["PATH"], "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin")
+        XCTAssertTrue(BrewTools.directories.contains("/opt/homebrew/sbin"), "clamd lives in sbin")
         XCTAssertEqual(BrewTools.environment["HOMEBREW_NO_AUTO_UPDATE"], "1")
+    }
+
+    /// The Downloads watch needs clamd, which Homebrew links into sbin. Runs only where ClamAV is installed.
+    func testClamdIsFoundInSbin() throws {
+        try XCTSkipUnless(FileManager.default.isExecutableFile(atPath: "/opt/homebrew/sbin/clamd"), "ClamAV is not installed")
+        XCTAssertEqual(ClamAVTools.locate().clamd?.path, "/opt/homebrew/sbin/clamd")
     }
 }

@@ -21,6 +21,7 @@ struct AppsList: View {
                         .font(.system(size: 13)).foregroundStyle(Palette.fg2)
                 }
                 Spacer()
+                SelectAllButton(ids: model.visible.map(\.path), selection: $model.selected)
                 TextField("Search apps", text: $model.search).textFieldStyle(.roundedBorder).frame(width: 220)
             }
             if model.listFilter == .unused {

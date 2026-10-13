@@ -2,13 +2,14 @@ import Foundation
 
 /// Homebrew binaries. Nora never installs anything itself; installs run only on the user's click.
 enum BrewTools {
-    static let directories = ["/opt/homebrew/bin", "/usr/local/bin"]
+    /// clamd is a daemon, so Homebrew links it into sbin, not bin.
+    static let directories = ["/opt/homebrew/bin", "/opt/homebrew/sbin", "/usr/local/bin", "/usr/local/sbin"]
 
     /// ProcessRunner replaces the whole environment, and brew refuses to run without HOME, so the
     /// inherited variables stay and only PATH and Homebrew's own switches are set.
     static var environment: [String: String] {
         ProcessInfo.processInfo.environment
-            .merging(["PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"]) { $1 }
+            .merging(["PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin"]) { $1 }
             .merging(Homebrew.variables) { $1 }
     }
 

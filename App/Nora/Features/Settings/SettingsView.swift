@@ -6,17 +6,29 @@ import SwiftUI
 /// Settings window (⌘,): General, Mole, Security, Updates.
 struct SettingsView: View {
     @Environment(AppModel.self) private var app
+    /// Debug builds take `-NoraSettingsTab security` for screenshots.
+    @State private var tab = Self.initialTab
+
+    private static var initialTab: String {
+        #if DEBUG
+        UserDefaults.standard.string(forKey: "NoraSettingsTab") ?? "general"
+        #else
+        "general"
+        #endif
+    }
 
     var body: some View {
-        TabView {
-            GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }
-            MoleSettings().tabItem { Label("Mole", systemImage: "terminal") }
+        TabView(selection: $tab) {
+            GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }.tag("general")
+            MoleSettings().tabItem { Label("Mole", systemImage: "terminal") }.tag("mole")
             Form { SecuritySettingsSection(model: app.security) }
                 .formStyle(.grouped)
                 .tabItem { Label("Security", systemImage: "checkmark.shield") }
-            UpdateSettings().tabItem { Label("Updates", systemImage: "arrow.triangle.2.circlepath") }
+                .tag("security")
+            UpdateSettings().tabItem { Label("Updates", systemImage: "arrow.triangle.2.circlepath") }.tag("updates")
         }
-        .frame(width: 560, height: 470)
+        .font(.system(size: 14))
+        .frame(width: 640, height: 580)
     }
 }
 
@@ -79,7 +91,7 @@ private struct GeneralSettings: View {
                             launchAtLogin = SMAppService.mainApp.status == .enabled
                         }
                     }
-                if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
+                if let loginError { Text(loginError).font(.system(size: 12)).foregroundStyle(.red) }
             }
             Section("Menu bar") {
                 Toggle("Show Nora in the menu bar", isOn: $showMenuBar)
@@ -96,13 +108,13 @@ private struct GeneralSettings: View {
                                 .disabled(!tiles.contains(tile) && tiles.count >= 4)
                         }
                     }
-                    Text("Shortcut: ⌥⌘N opens the quick menu.").font(.caption).foregroundStyle(.secondary)
+                    Text("Shortcut: ⌥⌘N opens the quick menu.").font(.system(size: 12)).foregroundStyle(.secondary)
                 }
                 .disabled(!showMenuBar)
             }
             Section {
                 Text("Nora follows your Mac's language: English, Ukrainian or Russian. Change it per app in System Settings → General → Language & Region → Applications.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -147,11 +159,11 @@ private struct MoleSettings: View {
             Section("Logs") {
                 Toggle("Detailed Mole logs (--debug)", isOn: $debug)
                 Toggle("Do not write Mole's operations log (MO_NO_OPLOG)", isOn: $noOpLog)
-                Text("The History screen reads the operations log, so it stays empty while this is on.").font(.caption).foregroundStyle(.secondary)
+                Text("The History screen reads the operations log, so it stays empty while this is on.").font(.system(size: 12)).foregroundStyle(.secondary)
             }
             Section("Credits") {
                 Text("Nora is a window for Mole by tw93 (github.com/tw93/Mole, GPL-3.0). Nora is not affiliated with Mole.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -167,7 +179,7 @@ private struct UpdateSettings: View {
                 LabeledContent("Version", value: "\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""))")
                 Toggle("Check for updates automatically", isOn: $automatic)
                 Button("Check for updates now") { Updater.shared.checkForUpdates() }
-                Text("Updates come from GitHub Releases and are verified with Nora's EdDSA signature.").font(.caption).foregroundStyle(.secondary)
+                Text("Updates come from GitHub Releases and are verified with Nora's EdDSA signature.").font(.system(size: 12)).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

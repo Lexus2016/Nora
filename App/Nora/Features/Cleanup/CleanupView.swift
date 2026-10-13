@@ -131,7 +131,9 @@ private struct CleanupList: View {
             VStack(alignment: .leading, spacing: 14) {
                 StepHeader(module: module,
                            title: model.listSection.map { LocalizedStringKey(CleanSection($0).title) } ?? "All junk",
-                           subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected"))
+                           subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected")) {
+                    SelectAllButton(ids: sections.flatMap { model.items(in: $0).map(\.path) }, selection: $model.selected)
+                }
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(sections, id: \.self) { section in

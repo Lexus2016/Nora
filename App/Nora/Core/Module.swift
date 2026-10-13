@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Sidebar sections. A module that is not built yet has `isAvailable == false` and is not shown.
 enum Module: String, CaseIterable, Identifiable, Hashable {
-    case smartCare, cleanup, applications, performance, spaceMap, status, projects, installers
+    // Order of the rail and the menu bar jumps. System Status comes first.
+    case status, smartCare, cleanup, applications, performance, spaceMap, projects, installers
     case protection, security, history, tools
 
     var id: String { rawValue }

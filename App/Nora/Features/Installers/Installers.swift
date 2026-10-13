@@ -109,7 +109,9 @@ struct InstallersView: View {
                            orb: model.selected.isEmpty ? nil : OrbAction(title: "Remove", destructive: true, action: { model.remove(app) })) {
         VStack(alignment: .leading, spacing: 14) {
             StepHeader(module: module, title: "Review installers",
-                       subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected"))
+                       subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected")) {
+                SelectAllButton(ids: model.files.map(\.id), selection: $model.selected)
+            }
             if model.files.isEmpty {
                 Text("No installer files found.").font(.system(size: 15)).foregroundStyle(Palette.fg2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

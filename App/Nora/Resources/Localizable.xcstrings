@@ -2975,6 +2975,22 @@
         }
       }
     },
+    "Deselect all": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Снять выбор"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зняти вибір"
+          }
+        }
+      }
+    },
     "Detailed Mole logs (--debug)": {
       "localizations": {
         "ru": {
@@ -6979,6 +6995,22 @@
         }
       }
     },
+    "Select all": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбрать все"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибрати все"
+          }
+        }
+      }
+    },
     "Select apps to see the command.": {
       "localizations": {
         "ru": {
@@ -7521,6 +7553,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Почати спочатку"
+          }
+        }
+      }
+    },
+    "Starting ClamAV…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запускаю ClamAV…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запускаю ClamAV…"
           }
         }
       }
