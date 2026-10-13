@@ -54,6 +54,8 @@ final class SpaceMapModel {
     /// Cancels whatever is loading and returns the id the next request must still hold.
     private func newRequest() -> UUID {
         task?.cancel()
+        // The superseded load no longer owns the spinner; a new load sets it again.
+        loading = false
         requestID = UUID()
         return requestID
     }

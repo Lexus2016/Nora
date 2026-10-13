@@ -4767,6 +4767,22 @@
         }
       }
     },
+    "Mole could not check the junk again before cleaning, so nothing was removed. Scan again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не смог ещё раз проверить мусор перед очисткой, поэтому ничего не удалено. Просканируйте снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не зміг ще раз перевірити сміття перед очищенням, тож нічого не видалено. Скануйте знову."
+          }
+        }
+      }
+    },
     "Mole could not read this folder.": {
       "localizations": {
         "ru": {

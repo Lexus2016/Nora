@@ -235,6 +235,7 @@
  "Menu bar item",
  "Mole",
  "Mole %@",
+ "Mole could not check the junk again before cleaning, so nothing was removed. Scan again.",
  "Mole could not read this folder.",
  "Mole default",
  "Mole does not start",

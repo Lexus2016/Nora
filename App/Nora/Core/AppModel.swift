@@ -62,6 +62,20 @@ final class AppModel {
         WhitelistOverlay(home: home, journalURL: supportDirectory.appendingPathComponent("whitelist-journal.json"))
     }
 
+    /// One Cleanup or Projects run at a time, from its fresh check until the whitelist is put
+    /// back: a second run would read the first one's temporary protection as the user's choice.
+    @ObservationIgnored private var exclusiveRun: String?
+
+    func beginExclusiveRun(_ id: String) -> Bool {
+        guard exclusiveRun == nil, !overlay.needsRecovery else { return false }
+        exclusiveRun = id
+        return true
+    }
+
+    func endExclusiveRun(_ id: String) {
+        if exclusiveRun == id { exclusiveRun = nil }
+    }
+
     /// Full Disk Access lets Mole clean the Trash and app containers. Mole runs as Nora's
     /// child, so the permission belongs to Nora.
     var hasFullDiskAccess: Bool {

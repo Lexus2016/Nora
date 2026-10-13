@@ -60,12 +60,18 @@ public enum ChildProcesses {
 
     /// A PTY child leads its own session, so it is signalled as a process group: sudo, askpass
     /// and Mole's helpers stop with it.
+    /// The group stays registered after its leader exits: a background helper may still run in
+    /// it. Groups that are empty by now are dropped here.
     public static func registerGroup(_ leader: pid_t) {
-        lock.withLock { _ = groups.insert(leader) }
+        lock.withLock {
+            groups = groups.filter(groupAlive)
+            groups.insert(leader)
+        }
     }
 
-    public static func unregisterGroup(_ leader: pid_t) {
-        lock.withLock { _ = groups.remove(leader) }
+    /// True while any process is left in the group (ESRCH means it is empty).
+    public static func groupAlive(_ leader: pid_t) -> Bool {
+        kill(-leader, 0) == 0 || errno == EPERM
     }
 
     /// True once Nora is quitting: a child that starts after the sweep is stopped right away.
@@ -82,23 +88,25 @@ public enum ChildProcesses {
         for leader in leaders { kill(-leader, SIGTERM) }
     }
 
-    /// The quit barrier: stops every child and returns only once they are gone (SIGKILL after
-    /// `grace`), so nothing Nora started still reads the whitelist when the overlay is put back.
-    public static func terminateAllAndWait(grace: TimeInterval = 3) {
+    /// The quit barrier: stops every child and its whole group, SIGKILL after `grace`. Returns
+    /// false if something survived; the caller then leaves the whitelist overlay in place (more
+    /// protection, put back at the next launch) instead of restoring it under a live run.
+    @discardableResult
+    public static func terminateAllAndWait(grace: TimeInterval = 3) -> Bool {
         terminateAll()
-        guard !waitUntilGone(Date().addingTimeInterval(grace)) else { return }
+        if waitUntilGone(Date().addingTimeInterval(grace)) { return true }
         let (children, leaders) = lock.withLock { (Array(running.values), Array(groups)) }
         for child in children where child.isRunning { kill(child.processIdentifier, SIGKILL) }
         for leader in leaders { kill(-leader, SIGKILL) }
-        _ = waitUntilGone(Date().addingTimeInterval(1))
+        return waitUntilGone(Date().addingTimeInterval(1))
     }
 
     private static func waitUntilGone(_ deadline: Date) -> Bool {
-        while Date() < deadline {
+        repeat {
             let (children, leaders) = lock.withLock { (Array(running.values), Array(groups)) }
-            if !children.contains(where: \.isRunning) && !leaders.contains(where: { kill($0, 0) == 0 }) { return true }
+            if !children.contains(where: \.isRunning) && !leaders.contains(where: groupAlive) { return true }
             usleep(50_000)
-        }
+        } while Date() < deadline
         return false
     }
 

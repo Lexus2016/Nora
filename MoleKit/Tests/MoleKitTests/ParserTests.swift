@@ -76,6 +76,8 @@ final class ParserTests: XCTestCase {
         XCTAssertTrue(PurgePreview.parse(done, home: home).isComplete)
         XCTAssertFalse(PurgePreview.parse(done.replacingOccurrences(of: "Items: 2", with: "Items: 3"), home: home).isComplete,
                        "an item Nora could not read must make the preview incomplete")
+        XCTAssertFalse(PurgePreview.parse(done.replacingOccurrences(of: " | Items: 2", with: ""), home: home).isComplete,
+                       "listed rows without Mole's item count are not a complete answer")
         XCTAssertTrue(PurgePreview.parse("✓ Great! No old project artifacts to clean", home: home).isComplete)
         XCTAssertFalse(PurgePreview.parse("No artifacts found in the completed project scans", home: home).isComplete)
     }

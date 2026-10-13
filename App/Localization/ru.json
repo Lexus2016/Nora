@@ -635,5 +635,6 @@
   "The antivirus scan did not finish, so this result is incomplete.": "Антивирусная проверка не завершилась, поэтому результат неполный.",
   "The drive was unplugged or changed since the preview. Preview it again.": "После просмотра диск отключили или заменили. Просмотрите его ещё раз.",
   "The folders you chose are already gone, so nothing was removed.": "Выбранных папок уже нет, поэтому ничего не удалено.",
-  "Tiles in the quick menu (one to four)": "Плитки в быстром меню (от одной до четырёх)"
+  "Tiles in the quick menu (one to four)": "Плитки в быстром меню (от одной до четырёх)",
+  "Mole could not check the junk again before cleaning, so nothing was removed. Scan again.": "Mole не смог ещё раз проверить мусор перед очисткой, поэтому ничего не удалено. Просканируйте снова."
 }

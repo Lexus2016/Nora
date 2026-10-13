@@ -54,10 +54,22 @@ final class ProjectsModel {
     func purge(_ app: AppModel) {
         guard preview != nil, let mole = app.mole else { return }
         let chosen = selected
+        let runID = "purge-\(UUID().uuidString)"
+        // Taken before the fresh preview: under another run's overlay that preview would miss
+        // the folders that run protects, and they would lose protection when it ends.
+        guard app.beginExclusiveRun(runID) else {
+            failed = true
+            resultHeadline = CleanupModel.describe(WhitelistOverlayError.pendingRecovery)
+            resultLines = []
+            stage = .done
+            return
+        }
         stage = .running
         task = Task {
-            let runID = "purge-\(UUID().uuidString)"
-            defer { try? app.overlay.recover(runID: runID) }
+            defer {
+                try? app.overlay.recover(runID: runID)
+                app.endExclusiveRun(runID)
+            }
             do {
                 let check = try await app.run(["purge", "--dry-run"])
                 let fresh = PurgePreview.parse(check.stdout, home: app.home)

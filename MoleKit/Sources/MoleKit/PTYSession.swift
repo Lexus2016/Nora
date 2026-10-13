@@ -143,11 +143,13 @@ public final class PTYSession: @unchecked Sendable {
     /// SIGTERM, then SIGKILL if the child is still alive after `grace` seconds. The child leads
     /// its own session, so the whole group gets the signal: a pending sudo or askpass included.
     public func terminate(grace: TimeInterval = 2) {
-        guard exitStatus == nil else { return }
+        guard exitStatus == nil || ChildProcesses.groupAlive(pid) else { return }
         kill(-pid, SIGTERM)
-        if (try? waitForExit(timeout: grace)) == nil {
-            kill(-pid, SIGKILL)
-        }
+        // The leader may be gone while a helper it started lives on in the group: wait for the
+        // whole group, not just the leader.
+        let deadline = Date().addingTimeInterval(grace)
+        while Date() < deadline, exitStatus == nil || ChildProcesses.groupAlive(pid) { usleep(50_000) }
+        if exitStatus == nil || ChildProcesses.groupAlive(pid) { kill(-pid, SIGKILL) }
     }
 
     public func close() {
@@ -186,7 +188,6 @@ public final class PTYSession: @unchecked Sendable {
         while waitpid(pid, &raw, 0) < 0, errno == EINTR {}
         let exit = ExitStatus(waitStatus: raw)
         locked { status = exit }
-        ChildProcesses.unregisterGroup(pid)
     }
 
     private func locked<T>(_ body: () throws -> T) rethrows -> T {

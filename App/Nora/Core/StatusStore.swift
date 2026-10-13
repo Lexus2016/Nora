@@ -87,6 +87,7 @@ final class StatusStore {
     }
 
     private func stop() {
+        generation += 1
         task?.cancel()
         task = nil
         isStreaming = false

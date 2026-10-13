@@ -124,7 +124,9 @@ public struct PurgePreview: Sendable {
                 finished = true
             }
         }
-        let complete = finished && !incomplete && (counted ?? items.count) == items.count
+        // Mole prints "Items: N" whenever it lists anything; listed rows without it are not a
+        // complete answer.
+        let complete = finished && !incomplete && (items.isEmpty ? counted == nil : counted == items.count)
         return PurgePreview(items: items, totalSize: total, warnings: warnings, isComplete: complete)
     }
 }

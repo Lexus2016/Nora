@@ -74,14 +74,35 @@ final class CleanupModel {
     }
 
     func clean(_ app: AppModel) {
-        guard preview != nil, let mole = app.mole else { return }
-        let protected = protectedPaths
+        guard let preview, let mole = app.mole else { return }
+        let runID = "clean-\(UUID().uuidString)"
+        guard app.beginExclusiveRun(runID) else {
+            return refuse(WhitelistOverlayError.pendingRecovery)
+        }
+        let reviewed = protectedPaths
+        let chosen = selected
+        let partial = !reviewed.isEmpty
+        let allPaths = Set(preview.items.map(\.path))
         stage = .running
         task = Task {
-            let runID = "clean-\(UUID().uuidString)"
             // Only this run's overlay is ever undone here; another module's stays in place.
-            defer { try? app.overlay.recover(runID: runID) }
+            defer {
+                try? app.overlay.recover(runID: runID)
+                app.endExclusiveRun(runID)
+            }
             do {
+                var protected = reviewed
+                if partial {
+                    // Some items stay: check again right before the run, so junk that appeared
+                    // since the review is protected too instead of riding along unseen.
+                    let check = try await app.run(["clean", "--dry-run"])
+                    let list = (try? String(contentsOf: app.home.appendingPathComponent(".config/mole/clean-list.txt"), encoding: .utf8)) ?? ""
+                    let fresh = CleanPreview.parse(cleanList: list, stdout: check.stdout)
+                    guard check.succeeded, fresh.potentialSize != nil else {
+                        throw NoraError.commandFailed(String(localized: "Mole could not check the junk again before cleaning, so nothing was removed. Scan again."))
+                    }
+                    protected += fresh.items.map(\.path).filter { !chosen.contains($0) && !allPaths.contains($0) }
+                }
                 if !protected.isEmpty {
                     let defaults = try mole.installation.cleanWhitelistDefaults(home: app.home)
                     try app.overlay.apply(protecting: protected, defaults: defaults, runID: runID)
@@ -103,6 +124,13 @@ final class CleanupModel {
                 stage = .done
             }
         }
+    }
+
+    private func refuse(_ error: Error) {
+        failed = true
+        resultHeadline = Self.describe(error)
+        resultLines = []
+        stage = .done
     }
 
     static func describe(_ error: Error) -> String {

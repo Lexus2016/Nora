@@ -1,3 +1,4 @@
+import AppKit
 import MoleKit
 import Observation
 import SwiftUI
@@ -27,6 +28,21 @@ final class ToolsModel {
     var externalBusy = false
     /// While a drive is being cleaned the picker and Preview wait, so nothing overlaps the run.
     var externalCleaning = false
+    @ObservationIgnored private var unmountObserver: NSObjectProtocol?
+
+    init() {
+        // Unplugging the chosen drive voids its preview at once, whatever its identifiers say.
+        unmountObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didUnmountNotification, object: nil, queue: .main) { [weak self] note in
+            let url = note.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL
+            MainActor.assumeIsolated { self?.volumeUnmounted(url) }
+        }
+    }
+
+    func volumeUnmounted(_ url: URL?) {
+        guard let url, externalVolume?.standardizedFileURL == url.standardizedFileURL else { return }
+        externalVolume = nil
+    }
     var completionPreview: [String] = []
     var removePreview: [String] = []
     var message: String?

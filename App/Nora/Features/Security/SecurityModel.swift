@@ -241,6 +241,8 @@ final class SecurityModel {
         progress = String(localized: "ClamAV antivirus scan")
         let arguments = ClamScanParser.arguments(database: layout.database, roots: plan.roots)
         let id = app.console.begin(ShellCommand(clamscan.path, arguments))
+        // Unfinished until clamscan itself says otherwise: a cancel or a failed launch counts too.
+        clamavIncomplete = true
         var lines: [String] = []
         var status: Int32 = 0
         do {
@@ -261,8 +263,8 @@ final class SecurityModel {
         scanFindings += output.detections.map(Self.detectionFinding)
         unreadableCount += output.errors
         // Exit 2 or more: errors or unread files. Zero findings then does not mean a clean scan.
+        clamavIncomplete = status >= 2
         if status >= 2 {
-            clamavIncomplete = true
             let message = String(localized: "ClamAV stopped with an error or could not read some files, so this scan may be incomplete. The console shows the details.")
             notice = notice.map { $0 + "\n" + message } ?? message
         }
@@ -371,7 +373,9 @@ final class SecurityModel {
     func updateDatabase(_ app: AppModel) {
         guard task == nil, let freshclam = clamav.freshclam else { return }
         task = Task {
-            defer { self.task = nil }
+            // Recorded when the attempt ends, so a slow failing download cannot keep a due
+            // scheduled scan waiting.
+            defer { self.task = nil; self.lastUpdateAttempt = Date() }
             do {
                 try self.layout.writeConfigs()
                 let result = try await self.runLogged(
@@ -422,7 +426,6 @@ final class SecurityModel {
         let needsDatabase = SecuritySettings.scheduleEnabled || SecuritySettings.watchEnabled
         if needsDatabase, ScanSchedule.isUpdateDue(now: now, last: SecuritySettings.lastDatabaseUpdate),
            lastUpdateAttempt.map({ now.timeIntervalSince($0) >= 3_600 }) ?? true {
-            lastUpdateAttempt = now
             updateDatabase(app)
             return
         }
