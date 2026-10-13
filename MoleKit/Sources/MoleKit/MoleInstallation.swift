@@ -38,6 +38,23 @@ public struct MoleInstallation: Sendable {
         return output.split(separator: "\n").map(String.init)
     }
 
+    /// Maintenance tasks `mo optimize` can skip, as Mole lists them for its own whitelist editor
+    /// (`get_optimize_whitelist_items`): display name and the id written to `whitelist_optimize`.
+    public func optimizeTasks(home: URL) throws -> [(name: String, id: String)] {
+        let script = """
+        source "$1/lib/core/common.sh" >/dev/null 2>&1 || exit 3
+        source "$1/lib/manage/whitelist.sh" >/dev/null 2>&1 || exit 3
+        source "$1/lib/optimize/catalog.sh" >/dev/null 2>&1 || exit 3
+        get_optimize_whitelist_items
+        """
+        let output = try Self.run("/bin/bash", ["-c", script, "bash", root.path], environment: Self.probeEnvironment(home))
+        return output.split(separator: "\n").compactMap { line in
+            let parts = line.split(separator: "|", omittingEmptySubsequences: false)
+            guard parts.count >= 2 else { return nil }
+            return (String(parts[0]), String(parts[1]))
+        }
+    }
+
     /// Asks the check Mole's deletion sink uses (`is_path_whitelisted`) whether `path`
     /// is protected for `home`. `is_whitelisted` in whitelist.sh only compares pattern strings.
     public func protects(_ path: String, home: URL) throws -> Bool {

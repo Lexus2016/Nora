@@ -1,0 +1,230 @@
+import MoleKit
+import Observation
+import SwiftUI
+
+/// Protection: Mole's own config files, edited natively.
+/// - Cleanup: `~/.config/mole/whitelist`. While the file does not exist Mole applies its optional
+///   defaults; any written file replaces them, so Nora always writes the defaults back in.
+/// - Maintenance: `~/.config/mole/whitelist_optimize`, one task id per line.
+/// - Project folders: `~/.config/mole/purge_paths`, one folder per line (`~` allowed).
+@MainActor @Observable
+final class ProtectionModel {
+    enum Tab: String, CaseIterable { case cleanup, maintenance, projects }
+
+    var tab: Tab = .cleanup
+    var defaults: [String] = []
+    var custom: [String] = []
+    var cleanFileExists = false
+    var tasks: [(name: String, id: String)] = []
+    var excludedTasks: Set<String> = []
+    var projectFolders: [String] = []
+    var projectFileExists = false
+    var newPattern = ""
+    var message: String?
+    var loaded = false
+
+    private var configDir: URL { FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/mole") }
+    var cleanURL: URL { configDir.appendingPathComponent("whitelist") }
+    var optimizeURL: URL { configDir.appendingPathComponent("whitelist_optimize") }
+    var purgeURL: URL { configDir.appendingPathComponent("purge_paths") }
+
+    func load(_ app: AppModel) {
+        guard let mole = app.mole else { return }
+        defaults = (try? mole.installation.cleanWhitelistDefaults(home: app.home)) ?? []
+        let cleanLines = Self.lines(cleanURL)
+        cleanFileExists = cleanLines != nil
+        let home = app.home.path
+        let expand: (String) -> String = { $0.hasPrefix("~/") ? home + $0.dropFirst(1) : $0 }
+        let defaultSet = Set(defaults.map(expand))
+        custom = (cleanLines ?? []).filter { !defaultSet.contains(expand($0)) }
+        tasks = (try? mole.installation.optimizeTasks(home: app.home)) ?? []
+        excludedTasks = Set(Self.lines(optimizeURL) ?? [])
+        let purge = Self.lines(purgeURL)
+        projectFileExists = purge != nil
+        projectFolders = purge ?? []
+        loaded = true
+    }
+
+    /// Non-empty, non-comment lines, or nil when the file is absent.
+    static func lines(_ url: URL) -> [String]? {
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        return text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && !$0.hasPrefix("#") }
+    }
+
+    func addPattern(_ pattern: String) {
+        let p = pattern.trimmingCharacters(in: .whitespaces)
+        guard !p.isEmpty, !custom.contains(p), !defaults.contains(p) else { return }
+        custom.append(p)
+        saveClean()
+    }
+
+    func removePattern(_ pattern: String) {
+        custom.removeAll { $0 == pattern }
+        saveClean()
+    }
+
+    private func saveClean() {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let body = (defaults + custom).map { $0.hasPrefix(home) ? "~" + $0.dropFirst(home.count) : $0 }
+        write(cleanURL, header: "# Protected from mo clean. Written by Nora: Mole's optional defaults are kept at the top.", lines: body)
+        cleanFileExists = true
+    }
+
+    func setTask(_ id: String, excluded: Bool) {
+        if excluded { excludedTasks.insert(id) } else { excludedTasks.remove(id) }
+        write(optimizeURL, header: "# Tasks mo optimize skips. Written by Nora.", lines: tasks.map(\.id).filter(excludedTasks.contains))
+    }
+
+    func addProjectFolder(_ path: String) {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let p = path.hasPrefix(home) ? "~" + path.dropFirst(home.count) : path
+        guard !projectFolders.contains(p) else { return }
+        projectFolders.append(p)
+        savePurge()
+    }
+
+    func removeProjectFolder(_ path: String) {
+        projectFolders.removeAll { $0 == path }
+        savePurge()
+    }
+
+    private func savePurge() {
+        write(purgeURL, header: "# Mole Purge Paths, edited in Nora. One folder per line, ~ for the home folder.", lines: projectFolders)
+        projectFileExists = true
+    }
+
+    private func write(_ url: URL, header: String, lines: [String]) {
+        do {
+            try FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
+            try (([header, ""] + lines).joined(separator: "\n") + "\n").write(to: url, atomically: true, encoding: .utf8)
+            message = String(localized: "Saved to \((url.path as NSString).abbreviatingWithTildeInPath)")
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+}
+
+struct ProtectionView: View {
+    @Environment(AppModel.self) private var app
+    private var model: ProtectionModel { app.protection }
+    private let module = Module.protection
+
+    var body: some View {
+        @Bindable var model = model
+        ModuleScene(module: module) {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(spacing: 18) {
+                    Glass3D(name: module.glass, size: 110, glow: module.palette.glow, amplitude: 0)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(module.title).font(.system(size: 44, weight: .light))
+                        Text("What Mole must never touch. Changes are saved at once to Mole's own settings files.")
+                            .font(.system(size: 15)).foregroundStyle(Palette.fg2)
+                    }
+                    Spacer()
+                }
+                Picker("", selection: $model.tab) {
+                    Text("Cleanup").tag(ProtectionModel.Tab.cleanup)
+                    Text("Maintenance").tag(ProtectionModel.Tab.maintenance)
+                    Text("Project folders").tag(ProtectionModel.Tab.projects)
+                }
+                .pickerStyle(.segmented).labelsHidden().frame(width: 460)
+                Group {
+                    switch model.tab {
+                    case .cleanup: cleanup
+                    case .maintenance: maintenance
+                    case .projects: projects
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(18)
+                .glassPanel(radius: 20)
+                if let message = model.message { Text(message).font(.system(size: 12)).foregroundStyle(Palette.muted) }
+            }
+            .padding(.horizontal, 34).padding(.top, 6)
+        }
+        .task { if !model.loaded { model.load(app) } }
+    }
+
+    private var cleanup: some View {
+        @Bindable var model = model
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                TextField("Path or pattern, e.g. ~/Library/Caches/com.example.app", text: $model.newPattern)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { model.addPattern(model.newPattern); model.newPattern = "" }
+                Button("Add") { model.addPattern(model.newPattern); model.newPattern = "" }.buttonStyle(GlassButtonStyle())
+                Button("Choose folder…") { if let path = Self.chooseFolder() { model.addPattern(path) } }.buttonStyle(GlassButtonStyle())
+            }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(model.custom, id: \.self) { pattern in
+                        row(pattern, badge: nil) { model.removePattern(pattern) }
+                    }
+                    ForEach(model.defaults, id: \.self) { pattern in
+                        row(pattern, badge: String(localized: "Mole default"), remove: nil)
+                    }
+                }
+            }
+            Text("Mole's built-in safety rules (system fonts, Spotlight, iCloud and more) always apply on top of this list.")
+                .font(.system(size: 12)).foregroundStyle(Palette.muted)
+        }
+    }
+
+    private var maintenance: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(model.tasks, id: \.id) { task in
+                    Toggle(isOn: Binding(get: { !model.excludedTasks.contains(task.id) }, set: { model.setTask(task.id, excluded: !$0) })) {
+                        HStack {
+                            Text(task.name).font(.system(size: 14, weight: .medium))
+                            Spacer()
+                            Text(task.id).font(.mono).foregroundStyle(Palette.muted)
+                        }
+                    }
+                    .toggleStyle(.switch).controlSize(.small)
+                    .padding(.vertical, 6)
+                    Divider().overlay(Palette.line)
+                }
+            }
+        }
+    }
+
+    private var projects: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(model.projectFileExists ? "Mole scans these folders for old build folders." : "Mole finds project folders on its own. Add a folder to set the list yourself.")
+                    .font(.system(size: 13)).foregroundStyle(Palette.fg2)
+                Spacer()
+                Button("Add folder…") { if let path = Self.chooseFolder() { model.addProjectFolder(path) } }.buttonStyle(GlassButtonStyle())
+            }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(model.projectFolders, id: \.self) { folder in
+                        row(folder, badge: nil) { model.removeProjectFolder(folder) }
+                    }
+                }
+            }
+        }
+    }
+
+    private func row(_ text: String, badge: String?, remove: (() -> Void)?) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: badge == nil ? "lock.shield" : "lock").foregroundStyle(module.palette.glow)
+            Text(text).font(.mono).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+            Spacer()
+            if let badge { Text(badge).font(.system(size: 11)).foregroundStyle(Palette.muted) }
+            if let remove {
+                Button(action: remove) { Image(systemName: "minus.circle") }.buttonStyle(.plain).foregroundStyle(Palette.fg2).help(Text("Remove"))
+            }
+        }
+        .padding(.vertical, 6)
+    }
+
+    static func chooseFolder() -> String? {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        return panel.runModal() == .OK ? panel.url?.path : nil
+    }
+}
