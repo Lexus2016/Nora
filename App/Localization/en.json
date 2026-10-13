@@ -1,0 +1,78 @@
+{
+  "%lld CPU sensors": {
+    "one": "%lld CPU sensor",
+    "other": "%lld CPU sensors"
+  },
+  "%lld Homebrew apps have a newer version": {
+    "one": "%lld Homebrew app has a newer version",
+    "other": "%lld Homebrew apps have a newer version"
+  },
+  "%lld apps": {
+    "one": "%lld app",
+    "other": "%lld apps"
+  },
+  "%lld apps moved to the Trash": {
+    "one": "%lld app moved to the Trash",
+    "other": "%lld apps moved to the Trash"
+  },
+  "%lld apps removed": {
+    "one": "%lld app removed",
+    "other": "%lld apps removed"
+  },
+  "%lld apps updated": {
+    "one": "%lld app updated",
+    "other": "%lld apps updated"
+  },
+  "%lld files": {
+    "one": "%lld file",
+    "other": "%lld files"
+  },
+  "%lld items": {
+    "one": "%lld item",
+    "other": "%lld items"
+  },
+  "%lld items could not be read and were not scanned.": {
+    "one": "%lld item could not be read and was not scanned.",
+    "other": "%lld items could not be read and were not scanned."
+  },
+  "%lld items moved to the Trash": {
+    "one": "%lld item moved to the Trash",
+    "other": "%lld items moved to the Trash"
+  },
+  "%lld signals to review in Nora.": {
+    "one": "%lld signal to review in Nora.",
+    "other": "%lld signals to review in Nora."
+  },
+  "%lld signals to review.": {
+    "one": "%lld signal to review.",
+    "other": "%lld signals to review."
+  },
+  "%lld tasks": {
+    "one": "%lld task",
+    "other": "%lld tasks"
+  },
+  "%lld to review": {
+    "one": "%lld to review",
+    "other": "%lld to review"
+  },
+  "%lld unchecked items stay protected for this run. Caches and logs are deleted permanently; apps recreate them.": {
+    "one": "%lld unchecked item stays protected for this run. Caches and logs are deleted permanently; apps recreate them.",
+    "other": "%lld unchecked items stay protected for this run. Caches and logs are deleted permanently; apps recreate them."
+  },
+  "Moving %lld items to quarantine": {
+    "one": "Moving %lld item to quarantine",
+    "other": "Moving %lld items to quarantine"
+  },
+  "Not opened for 90 days or more. %lld apps.": {
+    "one": "Not opened for 90 days or more. %lld app.",
+    "other": "Not opened for 90 days or more. %lld apps."
+  },
+  "Skipped %lld iCloud folders. Their files are placeholders until downloaded.": {
+    "one": "Skipped %lld iCloud folder. Its files are placeholders until downloaded.",
+    "other": "Skipped %lld iCloud folders. Their files are placeholders until downloaded."
+  },
+  "We found %lld apps on your Mac.": {
+    "one": "We found %lld app on your Mac.",
+    "other": "We found %lld apps on your Mac."
+  }
+}
