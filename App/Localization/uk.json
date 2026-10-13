@@ -636,5 +636,9 @@
   "The drive was unplugged or changed since the preview. Preview it again.": "Після перегляду диск від’єднали або замінили. Перегляньте його ще раз.",
   "The folders you chose are already gone, so nothing was removed.": "Вибраних тек уже немає, тож нічого не видалено.",
   "Tiles in the quick menu (one to four)": "Плитки в швидкому меню (від однієї до чотирьох)",
-  "Mole could not check the junk again before cleaning, so nothing was removed. Scan again.": "Mole не зміг ще раз перевірити сміття перед очищенням, тож нічого не видалено. Скануйте знову."
+  "Mole could not check the junk again before cleaning, so nothing was removed. Scan again.": "Mole не зміг ще раз перевірити сміття перед очищенням, тож нічого не видалено. Скануйте знову.",
+  "Downloading the virus database…": "Завантажую вірусну базу…",
+  "The virus database could not be updated, so this scan used the copy already on this Mac.": "Вірусну базу не вдалося оновити, тому сканування пройшло з копією, що вже є на цьому Mac.",
+  "The virus database could not be updated, so this scan used the copy from %@.": "Вірусну базу не вдалося оновити, тому сканування пройшло з копією від %@.",
+  "Updating the virus database": "Оновлюю вірусну базу"
 }

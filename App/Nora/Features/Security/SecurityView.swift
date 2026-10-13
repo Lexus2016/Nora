@@ -83,7 +83,7 @@ private struct SecurityStart: View {
                         .disabled(model.installing != nil)
                     if model.installing == formula {
                         ProgressView().controlSize(.small).tint(.white)
-                        Text("Installing…").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+                        Text(model.downloadingDatabase ? "Downloading the virus database…" : "Installing…").font(.system(size: 12)).foregroundStyle(Palette.fg2)
                     }
                 }
                 CommandPreview(command: "brew install \(formula)").frame(maxWidth: 420)

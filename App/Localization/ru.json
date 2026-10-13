@@ -636,5 +636,9 @@
   "The drive was unplugged or changed since the preview. Preview it again.": "После просмотра диск отключили или заменили. Просмотрите его ещё раз.",
   "The folders you chose are already gone, so nothing was removed.": "Выбранных папок уже нет, поэтому ничего не удалено.",
   "Tiles in the quick menu (one to four)": "Плитки в быстром меню (от одной до четырёх)",
-  "Mole could not check the junk again before cleaning, so nothing was removed. Scan again.": "Mole не смог ещё раз проверить мусор перед очисткой, поэтому ничего не удалено. Просканируйте снова."
+  "Mole could not check the junk again before cleaning, so nothing was removed. Scan again.": "Mole не смог ещё раз проверить мусор перед очисткой, поэтому ничего не удалено. Просканируйте снова.",
+  "Downloading the virus database…": "Загружаю вирусную базу…",
+  "The virus database could not be updated, so this scan used the copy already on this Mac.": "Вирусную базу не удалось обновить, поэтому сканирование прошло с копией, которая уже есть на этом Mac.",
+  "The virus database could not be updated, so this scan used the copy from %@.": "Вирусную базу не удалось обновить, поэтому сканирование прошло с копией от %@.",
+  "Updating the virus database": "Обновляю вирусную базу"
 }

@@ -92,6 +92,8 @@ final class SecurityModel {
     var databaseReady = false
     /// The formula `brew install` is working on, for the button's busy state.
     private(set) var installing: String?
+    /// The ClamAV install fetches the virus database in the same click.
+    private(set) var downloadingDatabase = false
     /// Programs of the current launch items, read when the screen opens, so the scan command
     /// preview lists the same paths a Quick scan will cover.
     private(set) var previewLaunchPaths: [String] = []
@@ -234,8 +236,23 @@ final class SecurityModel {
 
     private func runClamAV(_ plan: ScanPlan, _ app: AppModel) async throws {
         guard let clamscan = clamav.clamscan, !plan.roots.isEmpty else { return }
+        // A database older than a day, or none: update first. A failed update still scans with
+        // the copy on this Mac and says how old it is; an old database beats no scan.
+        if let freshclam = clamav.freshclam,
+           !layout.hasDatabase || ScanSchedule.isUpdateDue(now: .now, last: SecuritySettings.lastDatabaseUpdate) {
+            progress = String(localized: "Updating the virus database")
+            if let failure = await refreshDatabase(freshclam, app) {
+                let message = layout.hasDatabase
+                    ? SecuritySettings.lastDatabaseUpdate.map { String(localized: "The virus database could not be updated, so this scan used the copy from \($0.formatted(date: .abbreviated, time: .omitted)).") }
+                        ?? String(localized: "The virus database could not be updated, so this scan used the copy already on this Mac.")
+                    : failure
+                notice = notice.map { $0 + "\n" + message } ?? message
+            }
+            try Task.checkCancellation()
+        }
         guard layout.hasDatabase else {
-            notice = String(localized: "ClamAV's virus database is not downloaded yet, so the antivirus scan was skipped.")
+            let message = String(localized: "ClamAV's virus database is not downloaded yet, so the antivirus scan was skipped.")
+            notice = notice.map { $0 + "\n" + message } ?? message
             return
         }
         progress = String(localized: "ClamAV antivirus scan")
@@ -373,21 +390,26 @@ final class SecurityModel {
     func updateDatabase(_ app: AppModel) {
         guard task == nil, let freshclam = clamav.freshclam else { return }
         task = Task {
-            // Recorded when the attempt ends, so a slow failing download cannot keep a due
-            // scheduled scan waiting.
-            defer { self.task = nil; self.lastUpdateAttempt = Date() }
-            do {
-                try self.layout.writeConfigs()
-                let result = try await self.runLogged(
-                    ShellCommand(freshclam.path, ["--config-file", self.layout.freshclamConfig.path]), app)
-                // Only a successful update counts; a failed one is retried at the next check.
-                if result.succeeded { SecuritySettings.lastDatabaseUpdate = Date() }
-                self.databaseReady = self.layout.hasDatabase
-                self.notice = result.succeeded ? nil : Self.lastLine(result.stderr.isEmpty ? result.stdout : result.stderr,
-                                                                     fallback: String(localized: "The database update failed."))
-            } catch {
-                self.notice = error.localizedDescription
-            }
+            defer { self.task = nil }
+            self.notice = await self.refreshDatabase(freshclam, app)
+        }
+    }
+
+    /// One freshclam run. Nil when the database is current afterwards, otherwise why not.
+    /// Only a successful update counts; a failed one is retried at the next check.
+    private func refreshDatabase(_ freshclam: URL, _ app: AppModel) async -> String? {
+        // Timed from the end of the attempt, so a slow failing download cannot keep a due
+        // scheduled scan waiting.
+        defer { lastUpdateAttempt = Date() }
+        do {
+            try layout.writeConfigs()
+            let result = try await runLogged(ShellCommand(freshclam.path, ["--config-file", layout.freshclamConfig.path]), app)
+            if result.succeeded { SecuritySettings.lastDatabaseUpdate = Date() }
+            databaseReady = layout.hasDatabase
+            return result.succeeded ? nil : Self.lastLine(result.stderr.isEmpty ? result.stdout : result.stderr,
+                                                          fallback: String(localized: "The database update failed."))
+        } catch {
+            return error.localizedDescription
         }
     }
 
@@ -400,10 +422,15 @@ final class SecurityModel {
         }
         installing = formula
         task = Task {
-            defer { self.task = nil; self.installing = nil }
+            defer { self.task = nil; self.installing = nil; self.downloadingDatabase = false }
             do {
                 try await app.stream(ShellCommand(brew.path, ["install", formula]), environment: BrewTools.environment)
                 self.notice = nil
+                // ClamAV is no use without its database: fetch it in the same click.
+                if formula == "clamav", let freshclam = ClamAVTools.locate().freshclam {
+                    self.downloadingDatabase = true
+                    self.notice = await self.refreshDatabase(freshclam, app)
+                }
             } catch {
                 self.notice = String(localized: "brew install \(formula) did not finish. The console shows the output.")
             }
@@ -423,8 +450,8 @@ final class SecurityModel {
     /// the daily database update when the schedule or the watch needs it, then a due scheduled scan.
     func tick(_ app: AppModel, now: Date = .now) {
         guard task == nil, stage == .start || stage == .review, checked.isEmpty, clamav.isInstalled else { return }
-        let needsDatabase = SecuritySettings.scheduleEnabled || SecuritySettings.watchEnabled
-        if needsDatabase, ScanSchedule.isUpdateDue(now: now, last: SecuritySettings.lastDatabaseUpdate),
+        // Kept fresh whenever ClamAV is installed, not only for the schedule or the watch.
+        if ScanSchedule.isUpdateDue(now: now, last: SecuritySettings.lastDatabaseUpdate),
            lastUpdateAttempt.map({ now.timeIntervalSince($0) >= 3_600 }) ?? true {
             updateDatabase(app)
             return

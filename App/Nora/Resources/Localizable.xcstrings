@@ -3263,6 +3263,22 @@
         }
       }
     },
+    "Downloading the virus database…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загружаю вирусную базу…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завантажую вірусну базу…"
+          }
+        }
+      }
+    },
     "Downloads and Desktop": {
       "localizations": {
         "ru": {
@@ -8437,6 +8453,38 @@
         }
       }
     },
+    "The virus database could not be updated, so this scan used the copy already on this Mac.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вирусную базу не удалось обновить, поэтому сканирование прошло с копией, которая уже есть на этом Mac."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вірусну базу не вдалося оновити, тому сканування пройшло з копією, що вже є на цьому Mac."
+          }
+        }
+      }
+    },
+    "The virus database could not be updated, so this scan used the copy from %@.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вирусную базу не удалось обновить, поэтому сканирование прошло с копией от %@."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вірусну базу не вдалося оновити, тому сканування пройшло з копією від %@."
+          }
+        }
+      }
+    },
     "They skip the Trash and cannot be restored.": {
       "localizations": {
         "ru": {
@@ -8913,6 +8961,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновлюю програми…"
+          }
+        }
+      }
+    },
+    "Updating the virus database": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновляю вирусную базу"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлюю вірусну базу"
           }
         }
       }
