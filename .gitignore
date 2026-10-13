@@ -40,3 +40,6 @@ __pycache__/
 # Nora app: generated project and machine-specific config
 App/Nora.xcodeproj/
 App/Config/Local.xcconfig
+
+# Agent worktrees
+.claude/
