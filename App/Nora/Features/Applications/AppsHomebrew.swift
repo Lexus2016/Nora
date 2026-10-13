@@ -1,0 +1,126 @@
+import Foundation
+import MoleKit
+
+/// Homebrew casks with a newer version. Reads go through `brew outdated` and `brew info`
+/// (both read-only). The only write, `brew upgrade --cask`, runs when the user presses Update.
+/// Parsing and command building are pure, so they are tested without running brew.
+enum Homebrew {
+    /// One outdated cask: `brew outdated` gives the versions, `brew info` the display name and
+    /// whether the app updates itself.
+    struct Update: Identifiable, Hashable, Sendable {
+        let token: String
+        let name: String
+        let installed: String
+        let latest: String
+        let autoUpdates: Bool
+        var id: String { token }
+    }
+
+    struct Outdated: Hashable, Sendable {
+        let token: String
+        let installed: String
+        let latest: String
+    }
+
+    struct CaskInfo: Hashable, Sendable {
+        let name: String?
+        let autoUpdates: Bool
+    }
+
+    static let candidates = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
+
+    /// No auto-update, so the list the user reviewed is the list that gets upgraded; no analytics.
+    static let variables = ["HOMEBREW_NO_ANALYTICS": "1", "HOMEBREW_NO_AUTO_UPDATE": "1"]
+
+    static func executable() -> String? {
+        candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
+    }
+
+    /// ProcessRunner replaces the whole environment, so PATH and HOME are kept here.
+    static var processEnvironment: [String: String] {
+        ProcessInfo.processInfo.environment.merging(variables) { $1 }
+    }
+
+    static func outdatedArguments() -> [String] { ["outdated", "--cask", "--greedy", "--json=v2"] }
+    static func infoArguments() -> [String] { ["info", "--cask", "--json=v2", "--installed"] }
+
+    /// The command as the console and the review footer show it, variables included.
+    static func command(_ executable: String, _ arguments: [String]) -> ShellCommand {
+        ShellCommand(executable, arguments, environment: variables)
+    }
+
+    /// `brew upgrade --cask <tokens>`. Refused when the list is empty or a token would be read
+    /// as a flag or contains control characters. Other tokens are one argument each; the
+    /// display quotes any that need it.
+    static func upgradeCommand(tokens: [String], executable: String) -> ShellCommand? {
+        guard !tokens.isEmpty, tokens.allSatisfy(isValidToken) else { return nil }
+        return command(executable, ["upgrade", "--cask"] + tokens)
+    }
+
+    static func isValidToken(_ token: String) -> Bool {
+        !token.isEmpty && !token.hasPrefix("-")
+            && !token.unicodeScalars.contains { $0.value < 0x20 || $0.value == 0x7F }
+    }
+
+    // MARK: - JSON (brew v2 shapes, lenient about missing or null fields)
+
+    private struct OutdatedRoot: Decodable {
+        let casks: [OutdatedCask]?
+    }
+
+    /// `name` is the cask token here, not the display name.
+    private struct OutdatedCask: Decodable {
+        let name: String
+        let installedVersions: [String]?
+        let currentVersion: String?
+
+        enum CodingKeys: String, CodingKey {
+            case name, installedVersions = "installed_versions", currentVersion = "current_version"
+        }
+    }
+
+    private struct InfoRoot: Decodable {
+        let casks: [InfoCask]?
+    }
+
+    private struct InfoCask: Decodable {
+        let token: String
+        let name: [String]?
+        let autoUpdates: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case token, name, autoUpdates = "auto_updates"
+        }
+    }
+
+    static func parseOutdated(_ data: Data) throws -> [Outdated] {
+        let root = try JSONDecoder().decode(OutdatedRoot.self, from: data)
+        return (root.casks ?? []).map {
+            Outdated(token: $0.name,
+                     installed: ($0.installedVersions ?? []).joined(separator: ", "),
+                     latest: $0.currentVersion ?? "?")
+        }
+    }
+
+    static func parseInfo(_ data: Data) throws -> [String: CaskInfo] {
+        let root = try JSONDecoder().decode(InfoRoot.self, from: data)
+        var out: [String: CaskInfo] = [:]
+        for cask in root.casks ?? [] {
+            out[cask.token] = CaskInfo(name: cask.name?.first, autoUpdates: cask.autoUpdates ?? false)
+        }
+        return out
+    }
+
+    /// Joins the two outputs. Without a display name the token is shown; sorted by name.
+    static func merge(outdated: [Outdated], info: [String: CaskInfo]) -> [Update] {
+        outdated.map { item in
+            let meta = info[item.token]
+            return Update(token: item.token,
+                          name: meta?.name ?? item.token,
+                          installed: item.installed,
+                          latest: item.latest,
+                          autoUpdates: meta?.autoUpdates ?? false)
+        }
+        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+}
