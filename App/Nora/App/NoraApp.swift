@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let app = AppModel()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        app.prepare()
         Task { await app.locate() }
     }
 

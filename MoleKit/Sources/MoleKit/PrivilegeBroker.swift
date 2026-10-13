@@ -17,11 +17,21 @@ public enum PrivilegeBroker {
 
     /// Spike askpass: a native password dialog through osascript, printed to stdout for sudo.
     /// The shipping app replaces it with a signed helper that can use Touch ID.
-    public static func writeDialogAskpass(to url: URL) throws {
+    public static func writeDialogAskpass(
+        to url: URL,
+        message: String = "Nora needs administrator access for this Mole command.",
+        cancel: String = "Cancel",
+        ok: String = "OK"
+    ) throws {
+        func quoted(_ s: String) -> String {
+            // AppleScript string inside a single-quoted shell word.
+            "\"" + s.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+                .replacingOccurrences(of: "'", with: "\u{2019}") + "\""
+        }
         let script = """
         #!/bin/sh
         exec /usr/bin/osascript \
-          -e 'set answer to display dialog "Nora needs administrator access for this Mole command." default answer "" with hidden answer with title "Nora" with icon caution buttons {"Cancel", "OK"} default button "OK"' \
+          -e 'set answer to display dialog \(quoted(message)) default answer "" with hidden answer with title "Nora" with icon caution buttons {\(quoted(cancel)), \(quoted(ok))} default button \(quoted(ok))' \
           -e 'text returned of answer'
 
         """

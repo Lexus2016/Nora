@@ -52,6 +52,7 @@ struct ModuleDetail: View {
     var body: some View {
         switch module {
         case .status: StatusView()
+        case .cleanup: CleanupView()
         default: EmptyView()
         }
     }

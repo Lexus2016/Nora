@@ -14,12 +14,54 @@ final class AppModel {
     }
 
     var moleState: MoleState = .locating
-    var selection: Module = .status
+    var selection: Module = .smartCare
+    /// Debug launch arguments for screenshots and checks: `-NoraModule cleanup -NoraAutoScan 1`.
+    let autoScan: Bool
+
+    init() {
+        #if DEBUG
+        if let name = UserDefaults.standard.string(forKey: "NoraModule"), let module = Module(rawValue: name) { selection = module }
+        autoScan = UserDefaults.standard.bool(forKey: "NoraAutoScan")
+        #else
+        autoScan = false
+        #endif
+        if !selection.isAvailable { selection = Module.available.first ?? .status }
+    }
     var showConsole = false
     let console = ConsoleLog()
     let status = StatusStore()
 
     let home = FileManager.default.homeDirectoryForCurrentUser
+
+    /// `~/Library/Application Support/Nora`: askpass helper, whitelist journal, history.
+    var supportDirectory: URL {
+        let url = home.appendingPathComponent("Library/Application Support/Nora", isDirectory: true)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
+    var askpassURL: URL { supportDirectory.appendingPathComponent("askpass.sh") }
+
+    var overlay: WhitelistOverlay {
+        WhitelistOverlay(home: home, journalURL: supportDirectory.appendingPathComponent("whitelist-journal.json"))
+    }
+
+    /// Full Disk Access lets Mole clean the Trash and app containers. Mole runs as Nora's
+    /// child, so the permission belongs to Nora.
+    var hasFullDiskAccess: Bool {
+        FileManager.default.isReadableFile(atPath: "/Library/Application Support/com.apple.TCC/TCC.db")
+            || FileManager.default.isReadableFile(atPath: home.appendingPathComponent("Library/Safari/Bookmarks.plist").path)
+    }
+
+    /// Prepares the askpass helper and undoes a whitelist overlay left by a crash.
+    func prepare() {
+        try? PrivilegeBroker.writeDialogAskpass(
+            to: askpassURL,
+            message: String(localized: "Nora needs your Mac password for this Mole command. Nora does not see or store it."),
+            cancel: String(localized: "Cancel"),
+            ok: String(localized: "OK"))
+        try? overlay.recoverIfNeeded()
+    }
 
     var mole: Mole? {
         if case .ready(let mole) = moleState { return mole }
@@ -58,18 +100,47 @@ final class AppModel {
         }
     }
 
-    /// Runs a Mole command in pipe mode and records it in the console.
-    func run(_ arguments: [String], environment: [String: String] = [:]) async throws -> CommandResult {
+    /// Runs a Mole command in a PTY (prompts, same-tty sudo), mirroring the screen into the console.
+    func runPTY(_ arguments: [String], sudo: Bool = false, environment: [String: String] = [:]) async throws -> PTYRun.Result {
         guard let mole else { throw NoraError.moleMissing }
-        let entry = console.begin(mole.command(arguments, environment: environment))
+        var env = mole.environment.merging(environment) { $1 }
+        if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
+        let shown = mole.command(arguments, environment: environment)
+        let id = console.begin(shown, prefix: sudo ? "sudo -A -v && " : "")
+        let console = self.console
         do {
-            let result = try await mole.run(arguments, environment: environment)
-            console.finish(entry, result: result)
+            let result = try await PTYRun.run(executable: mole.executable.path, arguments: arguments, environment: env, sudo: sudo) { lines in
+                Task { @MainActor in console.mirror(id, lines) }
+            }
+            console.replace(id, result.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init))
+            if case .exited(let code) = result.status { console.finish(id, status: code) } else { console.finish(id, status: -1) }
             return result
         } catch {
-            console.fail(entry, error: error)
+            console.fail(id, error: error)
             throw error
         }
+    }
+
+    /// Runs a Mole command in pipe mode, streaming its output into the console as it arrives.
+    func run(_ arguments: [String], environment: [String: String] = [:]) async throws -> CommandResult {
+        guard let mole else { throw NoraError.moleMissing }
+        let id = console.begin(mole.command(arguments, environment: environment))
+        var out: [String] = [], err: [String] = []
+        var status: Int32 = 0
+        do {
+            for try await line in ProcessRunner.lines(mole.executable, arguments, environment: mole.environment.merging(environment) { $1 }) {
+                if line.isError { err.append(line.text) } else { out.append(line.text) }
+                console.append(id, [ANSI.strip(line.text)])
+            }
+        } catch let failure as ProcessFailure {
+            status = failure.status
+        } catch {
+            console.fail(id, error: error)
+            throw error
+        }
+        try Task.checkCancellation()
+        console.finish(id, status: status)
+        return CommandResult(status: status, stdout: out.joined(separator: "\n"), stderr: err.joined(separator: "\n"))
     }
 }
 
@@ -101,8 +172,8 @@ final class ConsoleLog {
     private(set) var entries: [Entry] = []
     private let maxLines = 4000
 
-    func begin(_ command: ShellCommand) -> UUID {
-        let entry = Entry(command: command.description)
+    func begin(_ command: ShellCommand, prefix: String = "") -> UUID {
+        let entry = Entry(command: prefix + command.description)
         entries.append(entry)
         if entries.count > 60 { entries.removeFirst(entries.count - 60) }
         return entry.id
@@ -112,6 +183,18 @@ final class ConsoleLog {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
         entries[i].output.append(contentsOf: lines)
         if entries[i].output.count > maxLines { entries[i].output.removeFirst(entries[i].output.count - maxLines) }
+    }
+
+    /// Shows the live PTY screen while the command runs.
+    func mirror(_ id: UUID, _ lines: [String]) {
+        guard let i = entries.firstIndex(where: { $0.id == id }), entries[i].isRunning else { return }
+        let trimmed = Array(lines.reversed().drop { $0.trimmingCharacters(in: .whitespaces).isEmpty }.reversed())
+        entries[i].output = trimmed
+    }
+
+    func replace(_ id: UUID, _ lines: [String]) {
+        guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        entries[i].output = Array(lines.suffix(maxLines))
     }
 
     func finish(_ id: UUID, result: CommandResult) {

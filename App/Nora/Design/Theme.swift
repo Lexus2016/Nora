@@ -73,7 +73,7 @@ struct SceneTitle: View {
             .tracking(-0.4)
             .foregroundStyle(LinearGradient(colors: [.white, .white.opacity(0.86)], startPoint: .top, endPoint: .bottom))
             .shadow(color: glow.opacity(0.6), radius: 17)
-            .fixedSize(horizontal: false, vertical: true)
+            
     }
 }
 

@@ -37,7 +37,7 @@ struct OnboardingView: View {
         case .missing:
             SceneTitle(text: "Welcome to Nora", glow: palette.glow)
             Text("Nora is a window for Mole, a free command-line tool that cleans and tunes your Mac. Mole is not installed yet. Nora installs it for you, no password needed.")
-                .font(.system(size: 15)).foregroundStyle(Palette.fg2).fixedSize(horizontal: false, vertical: true)
+                .font(.system(size: 15)).foregroundStyle(Palette.fg2)
             installBlock
         case .unsupported(let mole):
             SceneTitle(text: "Mole needs an update", glow: palette.glow)
