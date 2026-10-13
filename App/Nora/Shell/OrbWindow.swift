@@ -16,7 +16,8 @@ final class OrbController {
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
 
     static let diameter: CGFloat = 104
-    static let panelSize: CGFloat = 240
+    /// Large enough for the orb's glow (shadow radius up to 46 pt on hover) so it is never clipped.
+    static let panelSize: CGFloat = 320
     /// How far the orb's centre sits above the window's bottom edge.
     static let lift: CGFloat = 20
     /// Space a scene keeps free above the bottom edge: the orb's radius, its progress ring

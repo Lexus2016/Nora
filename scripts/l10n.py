@@ -34,7 +34,7 @@ def runtime_keys():
         text = open(path, encoding="utf-8").read()
         for m in re.finditer(r'OrbAction\(title: ([^,]+?),', text):
             keys.update(re.findall(r'"([^"\\]+)"', m.group(1)))
-        keys.update(re.findall(r'scanTitle: "([^"]+)"', text))
+        keys.update(re.findall(r'scanTitle(?:: String)?(?: =|:) "([^"]+)"', text))
         keys.update(re.findall(r'LocalizedStringKey\("([^"\\]+)"\)', text))
     return keys
 

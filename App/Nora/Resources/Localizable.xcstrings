@@ -3359,6 +3359,22 @@
         }
       }
     },
+    "Finding every file…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ищу все файлы…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шукаю всі файли…"
+          }
+        }
+      }
+    },
     "Folders": {
       "localizations": {
         "ru": {
@@ -4251,6 +4267,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Журнали й кеші, що зберігаються в Application Support."
+          }
+        }
+      }
+    },
+    "Looking at your apps…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просматриваю ваши программы…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переглядаю ваші програми…"
           }
         }
       }
@@ -6783,6 +6815,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Збережено в %@"
+          }
+        }
+      }
+    },
+    "Scan": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сканировать"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сканувати"
           }
         }
       }
