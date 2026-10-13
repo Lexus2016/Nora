@@ -21,7 +21,7 @@ const initials = n => n.replace(/^(Adobe|Google)\s+/, '').split(/\s+/).filter(w 
 
 // ---------- mock data ----------
 const CLEAN = [
-  { id: 'user', name: 'Основне користувача', items: [
+  { id: 'user', name: 'Основне для користувача', items: [
     { id: 'u1', label: 'Кеш застосунків', path: '~/Library/Caches/* · 18 застосунків', mb: 2400, n: 18 },
     { id: 'u2', label: 'Журнали застосунків', path: '~/Library/Logs/*', mb: 12.8, n: 7 },
     { id: 'u3', label: 'Кошик', path: '~/.Trash', mb: 1100, n: 9, trash: true },
@@ -38,7 +38,7 @@ const CLEAN = [
     { id: 'b4', label: 'Браузери Playwright', path: '~/Library/Caches/ms-playwright*', mb: 1700, prot: 'типовий захист Mole' } ] },
   { id: 'dev', name: 'Інструменти розробника', items: [
     { id: 'd1', label: 'npm', path: '~/.npm/_cacache', mb: 1800, n: 1 },
-    { id: 'd2', label: 'pnpm', path: '~/Library/pnpm/store/v10', mb: null, skip: 'pnpm зайнятий — Mole пропустить' },
+    { id: 'd2', label: 'pnpm', path: '~/Library/pnpm/store/v10', mb: null, skip: 'pnpm зайнятий, тому Mole його пропустить' },
     { id: 'd3', label: 'Xcode DerivedData', path: '~/Library/Developer/Xcode/DerivedData', mb: 6200, n: 14 },
     { id: 'd4', label: 'Go build cache', path: '~/Library/Caches/go-build', mb: 910, n: 1 },
     { id: 'd5', label: 'Homebrew', path: '~/Library/Caches/Homebrew', mb: 2100, n: 46 },
@@ -84,7 +84,7 @@ function appFiles(a) {
     { t: 'Кеші та стан', mb: a.mb * 0.11, files: [`~/Library/Caches/${a.bid}`, `~/Library/HTTPStorages/${a.bid}`, `~/Library/Saved Application State/${a.bid}.savedState`] },
     { t: 'Служби запуску', mb: 0.1, files: [`~/Library/LaunchAgents/${a.bid}.helper.plist`] },
   ];
-  if (a.cask) groups.push({ t: 'Homebrew', mb: 0, files: [`cask «${a.cask}» — Mole видалить через brew`] });
+  if (a.cask) groups.push({ t: 'Homebrew', mb: 0, files: [`cask «${a.cask}» (Mole видалить через brew)`] });
   const kept = [`~/Library/Application Support/${a.name}`, `~/Library/Preferences/${a.bid}.plist`];
   const refs = a.id === 'docker' ? ['~/.zshrc:42 · source ~/.docker/init-zsh.sh', '~/.claude.json:118 · MCP-сервер «docker»']
     : a.id === 'idea' ? ['~/.zshrc:17 · export PATH="…/IntelliJ IDEA.app/Contents/MacOS:$PATH"'] : [];
@@ -122,19 +122,19 @@ const OPT = [
   ['saved_state_cleanup', 'Старі стани застосунків', 'Прибирає збережені стани вікон, старші за 30 днів'],
   ['fix_broken_configs', 'Ремонт налаштувань', 'Виправляє пошкоджені plist-файли налаштувань'],
   ['network_optimization', 'Мережевий кеш', 'Оновлює кеш DNS'],
-  ['sqlite_vacuum', 'Оптимізація баз даних', 'Стискає SQLite-бази Пошти, Safari і Повідомлень; пропускає, якщо застосунки відкриті'],
-  ['prevent_network_dsstore', 'Без .DS_Store на мережевих дисках', 'Забороняє Finder створювати .DS_Store на SMB/AFP/NFS і USB'],
-  ['legacy_overrides_audit', 'Застарілі перевизначення', 'Знімає приховані налаштування App Nap і перевірки образів від старих «твікерів»'],
+  ['sqlite_vacuum', 'Оптимізація баз даних', 'Стискає бази даних Пошти, Safari і Повідомлень (SQLite). Якщо застосунки відкриті, цей крок пропускається.'],
+  ['prevent_network_dsstore', 'Без .DS_Store на мережевих дисках', 'Не дає Finder створювати .DS_Store на SMB/AFP/NFS і USB'],
+  ['legacy_overrides_audit', 'Застарілі перевизначення', 'Знімає приховані налаштування App Nap і перевірки образів, які лишили старі «твікери»'],
   ['network_stack_optimize', 'Мережевий стек', 'Скидає таблицю маршрутів і ARP-кеш'],
   ['disk_permissions_repair', 'Ремонт дозволів', 'Виправляє дозволи в домашній теці'],
   ['spotlight_index_optimize', 'Індекс Spotlight', 'Перебудовує індекс, якщо пошук повільний'],
-  ['spotlight_orphan_rules_cleanup', 'Сирітські правила Spotlight', 'Прибирає правила пошуку видалених застосунків'],
-  ['periodic_maintenance', 'Періодичне обслуговування', 'Запускає щоденні, щотижневі й щомісячні скрипти macOS, якщо вони застаріли'],
+  ['spotlight_orphan_rules_cleanup', 'Залишені правила Spotlight', 'Прибирає правила пошуку видалених застосунків'],
+  ['periodic_maintenance', 'Періодичне обслуговування', 'Запускає щоденні, щотижневі й щомісячні скрипти macOS, якщо вони прострочені'],
   ['shared_file_list_repair', 'Списки Finder', 'Ремонтує обране і недавні документи'],
   ['disk_verify', 'Перевірка диска', 'Перевіряє цілісність файлової системи (вмикається окремо)'],
   ['login_items_audit', 'Об’єкти входу', 'Шукає зламані об’єкти автозапуску'],
   ['quarantine_cleanup', 'База карантину', 'Очищає історію завантажень Gatekeeper'],
-  ['launch_agents_cleanup', 'Зламані LaunchAgents', 'Показує агенти, чиїх файлів уже немає'],
+  ['launch_agents_cleanup', 'Зламані LaunchAgents', 'Показує фонові помічники, які запускаються з Mac, але їхніх файлів уже немає'],
   ['notification_cleanup', 'Сповіщення', 'Прибирає старі доставлені сповіщення'],
   ['coreduet_cleanup', 'Дані використання', 'Прибирає старі дані відстеження використання'],
 ];
@@ -142,8 +142,8 @@ const OPT_OUT = {
   system_maintenance: ['applied', 'Кеш DNS оновлено, індекс Spotlight справний'], cache_refresh: ['applied', 'Мініатюри і кеш іконок оновлено'],
   saved_state_cleanup: ['applied', 'Прибрано 14 старих станів'], network_optimization: ['unchanged', 'Вже актуально'],
   sqlite_vacuum: ['attention', 'Закрийте Safari, щоб оптимізувати бази'], disk_verify: ['unavailable', 'Вимкнено: потрібен MOLE_ENABLE_DISK_VERIFY=1'],
-  spotlight_index_optimize: ['skipped', 'Пошук швидкий — перебудова не потрібна'], periodic_maintenance: ['applied', 'Щотижневий скрипт запущено'],
-  launch_agents_cleanup: ['skipped', 'Зламаних агентів не знайдено'],
+  spotlight_index_optimize: ['skipped', 'Пошук швидкий, перебудова не потрібна'], periodic_maintenance: ['applied', 'Щотижневий скрипт запущено'],
+  launch_agents_cleanup: ['skipped', 'Зламаних фонових помічників не знайдено'],
 };
 const OUT_PILL = { applied: ['good', 'Застосовано'], unchanged: ['neutral', 'Без змін'], skipped: ['neutral', 'Пропущено'], unavailable: ['warn', 'Недоступно'], attention: ['crit', 'Потребує уваги'], excluded: ['neutral', 'Виключено'] };
 
@@ -154,10 +154,10 @@ const HIST = [
   { id: 'h4', c: 'uninstall', when: '7 жовт., 11:30', dur: '9 с', mb: 4200, items: 31, a: [0, 31, 0, 0, 0], attr: 'run' },
   { id: 'h5', c: 'installer', when: '2 жовт., 16:12', dur: '6 с', mb: 3830, items: 5, a: [5, 0, 0, 0, 0], attr: 'run' },
   { id: 'h6', c: 'clean', when: '28 вер., 10:02', dur: '2 хв 10 с', mb: 9100, items: 356, a: [344, 0, 12, 0, 0], attr: 'command' },
-  { id: 'h7', c: 'clean', when: '19 вер., 08:47', dur: 'немає мітки завершення', mb: 2100, items: 88, a: [80, 0, 6, 2, 0], attr: 'ambiguous' },
+  { id: 'h7', c: 'clean', when: '19 вер., 08:47', dur: 'немає відмітки про завершення', mb: 2100, items: 88, a: [80, 0, 6, 2, 0], attr: 'ambiguous' },
 ];
 const CMD_COL = { clean: 'var(--c1)', purge: 'var(--c2)', uninstall: 'var(--c4)', installer: 'var(--c3)', optimize: 'var(--c5)' };
-const CMD_UA = { clean: 'Очищення', purge: 'Проєкти', uninstall: 'Деінсталяція', installer: 'Інсталятори', optimize: 'Оптимізація' };
+const CMD_UA = { clean: 'Очищення', purge: 'Проєкти', uninstall: 'Видалення', installer: 'Інсталятори', optimize: 'Оптимізація' };
 const CMD_IC = { clean: 'i-clean', purge: 'i-purge', uninstall: 'i-uninstall', installer: 'i-installer', optimize: 'i-optimize' };
 const HIST_DAYS = [0, 0, 2100, 0, 0, 0, 0, 0, 0, 9100, 0, 0, 0, 0, 3830, 0, 0, 0, 0, 4200, 0, 0, 6000, 0, 0, 0, 0, 0, 0, 12400];
 const HIST_DAY_CMD = [null, null, 'clean', null, null, null, null, null, null, 'clean', null, null, null, null, 'installer', null, null, null, null, 'uninstall', null, null, 'purge', null, null, null, null, null, null, 'clean'];
@@ -168,7 +168,7 @@ const DISK = T('Macintosh HD', 692600, [
   T('Домашня тека', 286400, [
     T('Projects', 84100, [T('ml-lab', 31200), T('website', 9800), T('rust-app', 7400), T('ios-app', 6100), T('Інше', 29600)], { path: '~/Projects' }),
     T('Movies', 62000, [T('Final Cut', 41800), T('Screen Recordings', 14600), T('Інше', 5600)], { path: '~/Movies' }),
-    T('Downloads', 41600, [T('Старші за 90 днів', 18200, null, { insight: 'Старі завантаження (90д+)' }), T('Інсталятори', 13500, null, { insight: 'див. Інсталятори' }), T('Інше', 9900)], { path: '~/Downloads' }),
+    T('Downloads', 41600, [T('Старші за 90 днів', 18200, null, { insight: 'Старі завантаження (понад 90 днів)' }), T('Інсталятори', 13500, null, { insight: 'див. Інсталятори' }), T('Інше', 9900)], { path: '~/Downloads' }),
     T('Documents', 38900, [T('Archive', 21000), T('Work', 12400), T('Інше', 5500)], { path: '~/Documents' }),
     T('Pictures', 31500, [T('Photos Library', 29800), T('Інше', 1700)], { path: '~/Pictures' }),
     T('Music', 12400, null, { path: '~/Music' }), T('Desktop', 9800, null, { path: '~/Desktop' }), T('Інше', 6100),
@@ -267,7 +267,7 @@ function ring(v, { size = 76, stroke = 7, color = 'var(--good)', label = '', sub
     <div class="rv"><b style="font-size:${Math.round(Math.min(22, size * 0.3))}px">${label}</b>${sub ? `<small>${sub}</small>` : ''}</div></div>`;
 }
 const healthCol = h => h >= 85 ? 'var(--good)' : h >= 65 ? 'var(--warn)' : 'var(--crit)';
-const healthWord = h => h >= 85 ? 'Добрий стан' : h >= 65 ? 'Є навантаження' : 'Потрібна увага';
+const healthWord = h => h >= 85 ? 'Добрий стан' : h >= 65 ? 'Під навантаженням' : 'Потрібна увага';
 
 // ---------- derived numbers ----------
 const cleanTotal = () => sum(CLEAN_ITEMS.filter(i => S.clean.sel.has(i.id) && (i.sec !== 'sys' || S.scen.admin)), i => i.mb);
@@ -285,13 +285,13 @@ function run(command, lines, { onLine, onDone, onStop, speed = 120 } = {}) {
   const step = () => {
     if (d.state !== 'run') return;
     if (i < lines.length) { const ln = lines[i]; d.lines.push(ln); onLine && onLine(i, ln); i++; paintDrawer(); d.timer = setTimeout(step, speed + Math.random() * speed); }
-    else { d.state = 'done'; d.lines.push(L('m', '— процес завершився з кодом 0')); paintDrawer(); onDone && onDone(); }
+    else { d.state = 'done'; d.lines.push(L('m', 'Процес завершився з кодом 0')); paintDrawer(); onDone && onDone(); }
   };
   paintDrawer(); step();
 }
 function paintDrawer() {
   const d = S.drawer;
-  $('#drawerCmd').textContent = d.cmd ? '$ ' + d.cmd : 'Консоль Mole — тут видно кожну команду, яку запускає Nora';
+  $('#drawerCmd').textContent = d.cmd ? '$ ' + d.cmd : 'Консоль Mole: тут видно кожну команду, яку запускає Nora';
   $('#drawerState').innerHTML = d.state === 'run' ? '<span class="row" style="gap:6px"><span class="spin"></span>виконується</span>' : d.state === 'done' ? 'завершено' : d.state === 'stopped' ? 'зупинено' : '';
   $('#stopBtn').hidden = d.state !== 'run';
   $('#drawerBtn').classList.toggle('on', d.state === 'run');
@@ -318,13 +318,13 @@ const MODS = {
 };
 const RAIL = ['overview', 'clean', 'uninstall', 'optimize', 'analyze', 'status', 'security', null, 'tools', 'history'];
 const LAND = {
-  overview: ['Одна перевірка охоплює кеші, проєкти, інсталятори й великі файли. Нічого не видаляється без вашого перегляду.', [['i-clean', 'Кеші та журнали'], ['i-purge', 'Артефакти проєктів'], ['i-installer', 'Забуті інсталятори'], ['i-analyze', 'Великі й старі файли']]],
+  overview: ['Одна перевірка охоплює кеші, проєкти, інсталятори й великі файли. Нічого не видаляється без вашого перегляду.', [['i-clean', 'Кеші та журнали'], ['i-purge', 'Файли збирання проєктів'], ['i-installer', 'Забуті інсталятори'], ['i-analyze', 'Великі й старі файли']]],
   clean: ['Приберіть кеші, журнали й залишки видалених програм. Кожен шлях можна переглянути до видалення.', [['i-clean', 'Кеші програм і браузерів'], ['i-purge', 'Інструменти розробника'], ['i-uninstall', 'Залишки видалених програм'], ['i-history', 'Журнали й Кошик']]],
   uninstall: ['Видаляйте програми разом із кешами, налаштуваннями та службами запуску. Особисті дані залишаються.', [['i-uninstall', 'Повне видалення із залишками'], ['i-folder', 'App Store, Homebrew і Steam'], ['i-shield', 'Спільні дані не чіпаються']]],
-  optimize: ['DNS, Spotlight, кеш Finder, бази даних і мережа. Mole пропускає те, що зараз не потрібно.', [['i-optimize', '20 задач обслуговування'], ['i-rocket', 'Зламані об’єкти автозапуску'], ['i-status', 'Діагностика продуктивності']]],
+  optimize: ['DNS, Spotlight, кеш Finder, бази даних і мережа. Mole пропускає те, що зараз не потрібно.', [['i-optimize', '20 задач обслуговування'], ['i-rocket', 'Зламані елементи автозапуску'], ['i-status', 'Діагностика продуктивності']]],
   analyze: ['Подивіться, що займає місце, і перейдіть у будь-яку теку кількома кліками.', [['i-analyze', 'Карта сховища'], ['i-folder', 'Великі файли'], ['i-warn', 'Старі завантаження й резервні копії']]],
-  purge: ['node_modules, target, build, .venv — усе, що відновлюється наступним збиранням.', [['i-purge', 'Групування за проєктами'], ['i-lock', 'Активні проєкти не чіпаються'], ['i-shield', 'Теки під Git захищені']]],
-  security: ['Перевірка на вимогу: автозапуск, підписи й нотаризація програм, правила Apple XProtect і рушій ClamAV. Без захисту в реальному часі — лише чесні сигнали для перегляду.', [['i-rocket', 'Автозапуск і фонові служби'], ['i-check', 'Підписи й нотаризація'], ['i-shield', 'Правила Apple XProtect'], ['i-search', 'Рушій ClamAV']]],
+  purge: ['node_modules, target, build, .venv: усе, що відновлюється наступним збиранням.', [['i-purge', 'Групування за проєктами'], ['i-lock', 'Активні проєкти не чіпаються'], ['i-shield', 'Теки під Git захищені']]],
+  security: ['Перевірка на вимогу: автозапуск, підписи й нотаризація програм, правила Apple XProtect і рушій ClamAV. Без захисту в реальному часі: лише сигнали для перегляду, без перебільшень.', [['i-rocket', 'Автозапуск і фонові служби'], ['i-check', 'Підписи й нотаризація'], ['i-shield', 'Правила Apple XProtect'], ['i-search', 'Рушій ClamAV']]],
   installer: ['Образи й пакети, які лишилися після встановлення програм.', [['i-installer', 'DMG, PKG, ISO, XIP, ZIP'], ['i-folder', 'Завантаження, iCloud, Пошта, Telegram'], ['i-check', 'Повторна перевірка перед видаленням']]],
 };
 
@@ -353,7 +353,7 @@ function canBack(key) {
 const resHead = (key, title, sub, right = '', st = 'idle') => `<div class="res-head fade-in">${canBack(key) ? `<button class="iconbtn back-btn" data-a="back" data-v="${key}" title="Назад · Esc" aria-label="Назад">${ic('i-back')}</button>` : ''}${hero(MODS[key].hero, st)}<div class="sp"><h1 class="res-title">${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>${right}</div>`;
 const donePanel = (key, big, sub, extra = '') => `<div class="panel done fade-in">${hero(MODS[key].hero, 'done')}<div>
   <h1 class="title" style="font-size:36px">Роботу виконано!</h1><div class="bigstat">${big}</div><div class="dim" style="margin-top:8px;font-size:15px">${sub}</div>${extra}
-  <div class="row" style="margin-top:28px;flex-wrap:wrap"><button class="btn ghost" data-a="drawer">${ic('i-term')}Переглянути лог</button><span class="sp"></span><button class="btn primary" data-a="doneOk" data-v="${key}">OK</button></div></div></div>`;
+  <div class="row" style="margin-top:28px;flex-wrap:wrap"><button class="btn ghost" data-a="drawer">${ic('i-term')}Переглянути журнал</button><span class="sp"></span><button class="btn primary" data-a="doneOk" data-v="${key}">OK</button></div></div></div>`;
 function progress(i, n, status, step) {
   S.prog = { pct: (i + 1) / n * 100, status, step };
   const btn = document.querySelector('.scan-btn.busy');
@@ -372,40 +372,40 @@ function progress(i, n, status, step) {
 
 // ---------- security (on-demand scan; never pre-selects findings) ----------
 const SEC_FIND = [
-  { id: 'f1', sev: 'crit', t: 'com.mac.updater.helper', p: '~/Library/LaunchAgents/com.mac.updater.helper.plist', why: 'Запускає непідписаний файл із /tmp і зараз завантажений', src: 'Аудит автозапуску', loaded: true },
+  { id: 'f1', sev: 'crit', t: 'com.mac.updater.helper', p: '~/Library/LaunchAgents/com.mac.updater.helper.plist', why: 'Запускає непідписаний файл із /tmp, і він зараз активний', src: 'Перевірка автозапуску', loaded: true },
   { id: 'f2', sev: 'crit', t: 'Setup_Player_Pro.dmg', p: '~/Downloads/Setup_Player_Pro.dmg', why: 'ClamAV: Osx.Adware.Bundlore', src: 'ClamAV 1.5.4' },
-  { id: 'f3', sev: 'warn', t: 'SearchHelper.app', p: '~/Applications/SearchHelper.app', why: 'Збіг із правилом Apple XProtect (сімейство Adload)', src: 'Apple XProtect' },
+  { id: 'f3', sev: 'warn', t: 'SearchHelper.app', p: '~/Applications/SearchHelper.app', why: 'Збігається з правилом Apple XProtect (сімейство Adload)', src: 'Apple XProtect' },
   { id: 'f4', sev: 'warn', t: 'Free Video Converter.app', p: '/Applications/Free Video Converter.app', why: 'Підпис дійсний, але програма не нотаризована Apple', src: 'Gatekeeper' },
-  { id: 'f5', sev: 'info', t: 'Розширення Chrome «Coupon Finder»', p: '~/Library/Application Support/Google/Chrome/Default/Extensions/…', why: 'Має доступ до всіх сайтів; встановлено не з Chrome Web Store', src: 'Аудит розширень' },
+  { id: 'f5', sev: 'info', t: 'Розширення Chrome «Coupon Finder»', p: '~/Library/Application Support/Google/Chrome/Default/Extensions/…', why: 'Має доступ до всіх сайтів; встановлено не з Chrome Web Store', src: 'Перевірка розширень' },
 ];
 const SEV = { crit: ['crit', 'Небезпечно'], warn: ['warn', 'Підозріло'], info: ['neutral', 'До уваги'] };
 function vSecurity() {
   const x = S.sec;
   const engines = `<div class="land-opts">
     <div class="tabs">${[['quick', 'Швидка'], ['full', 'Повна']].map(([k, n]) => `<button aria-selected="${x.scope === k}" data-a="secScope" data-v="${k}">${n}</button>`).join('')}</div>
-    <div class="land-opt">${ic('i-search')}<span class="sp">${x.clam ? 'ClamAV 1.5.4 · бази оновлено сьогодні' : 'ClamAV не встановлено <span class="muted">· ≈110 МБ баз</span>'}</span>${x.clam ? '<span class="pill good">готово</span>' : '<button class="btn sm" data-a="secInstall">Встановити</button>'}</div>
-    <div class="note">${x.scope === 'quick' ? 'Автозапуск, програми, Завантаження й Робочий стіл' : 'Уся домашня тека, крім хмарних файлів, що ще не завантажені'}. Перевірка на вимогу — без захисту в реальному часі.</div></div>`;
+    <div class="land-opt">${ic('i-search')}<span class="sp">${x.clam ? 'ClamAV 1.5.4 · бази оновлено сьогодні' : 'ClamAV не встановлено <span class="muted">· близько 110 МБ баз</span>'}</span>${x.clam ? '<span class="pill good">готово</span>' : '<button class="btn sm" data-a="secInstall">Встановити</button>'}</div>
+    <div class="note">${x.scope === 'quick' ? 'Автозапуск, програми, Завантаження й Робочий стіл' : 'Уся домашня тека, крім хмарних файлів, що ще не завантажені'}. Перевірка на вимогу: без захисту в реальному часі.</div></div>`;
   if (x.phase === 'landing') return landing('security', { action: 'secScan', extra: engines });
   if (x.phase === 'scan' || x.phase === 'run') return landing('security', { busy: true, status: S.prog.status, step: S.prog.step });
-  if (x.phase === 'done') return donePanel('security', `${x.moved} у карантині`, 'файли можна відновити з карантину будь-коли', `<div class="note" style="margin-top:10px">Перед переміщенням агент автозапуску вивантажено (<span class="mono">launchctl bootout</span>).</div>`);
+  if (x.phase === 'done') return donePanel('security', `${x.moved} у карантині`, 'файли можна відновити з карантину будь-коли', `<div class="note" style="margin-top:10px">Перед переміщенням фоновий помічник автозапуску вимкнено (<span class="mono">launchctl bootout</span>).</div>`);
   const list = SEC_FIND.filter(f => !x.q.includes(f.id));
   return `${resHead('security', `${list.length} знахідок для перегляду`, 'Жодна знахідка не позначена автоматично. Це сигнали, а не вирок: перевірте кожну.', `<button class="btn sm" data-a="secQuar">Карантин (${x.q.length})</button>`)}
-  <div class="row fade-in" style="flex-wrap:wrap;gap:6px;margin-bottom:12px"><span class="pill good">${ic('i-check')}Аудит: 64 елементи автозапуску</span><span class="pill good">${ic('i-check')}Підписи: 212 програм</span><span class="pill good">${ic('i-check')}XProtect: 506 правил</span>${x.clam ? `<span class="pill good">${ic('i-check')}ClamAV: 18 412 файлів</span>` : '<span class="pill neutral">ClamAV не встановлено</span>'}</div>
+  <div class="row fade-in" style="flex-wrap:wrap;gap:6px;margin-bottom:12px"><span class="pill good">${ic('i-check')}Перевірка: 64 елементи автозапуску</span><span class="pill good">${ic('i-check')}Підписи: 212 програм</span><span class="pill good">${ic('i-check')}XProtect: 506 правил</span>${x.clam ? `<span class="pill good">${ic('i-check')}ClamAV: 18 412 файлів</span>` : '<span class="pill neutral">ClamAV не встановлено</span>'}</div>
   <div class="list fade-in">${list.map(f => `<div class="app" style="grid-template-columns:auto minmax(0,1fr) auto auto;cursor:default">
       <input type="checkbox" class="cb" aria-label="${esc(f.t)}" data-a="secCheck" data-v="${f.id}" ${x.sel.has(f.id) ? 'checked' : ''}>
-      <div class="ell"><b>${esc(f.t)}</b> <span class="pill ${SEV[f.sev][0]}">${SEV[f.sev][1]}</span>${f.loaded ? ' <span class="pill warn">завантажений</span>' : ''}<div class="meta"><span>${esc(f.why)}</span></div><div class="mono muted ell" style="font-size:11px">${esc(f.p)}</div></div>
+      <div class="ell"><b>${esc(f.t)}</b> <span class="pill ${SEV[f.sev][0]}">${SEV[f.sev][1]}</span>${f.loaded ? ' <span class="pill warn">активний</span>' : ''}<div class="meta"><span>${esc(f.why)}</span></div><div class="mono muted ell" style="font-size:11px">${esc(f.p)}</div></div>
       <span class="tag">${f.src}</span><span class="row" style="gap:2px"><button class="iconbtn" title="Показати у Finder" data-a="toast" data-v="Відкрито у Finder">${ic('i-eye')}</button><button class="iconbtn" title="Ігнорувати" data-a="toast" data-v="Додано до винятків">${ic('i-x')}</button></span></div>`).join('') || '<div class="empty">Знахідок немає</div>'}</div>
   <div class="actionbar"><span class="tot">${x.sel.size ? `${x.sel.size} обрано` : 'Нічого не обрано'}</span><span class="dim">карантин зберігає шлях, власника й права для відновлення</span><span class="sp"></span><button class="btn danger" data-a="secMove" ${x.sel.size ? '' : 'disabled'}>${ic('i-shield')}У карантин</button></div>`;
 }
 
 // ---------- overview: smart care ----------
-const SMART = [['mo clean --dry-run', 'Кеші та журнали'], ['mo purge --dry-run', 'Артефакти проєктів'], ['mo installer --dry-run', 'Інсталятори'], ['mo analyze --json ~', 'Великі й старі файли']];
+const SMART = [['mo clean --dry-run', 'Кеші та журнали'], ['mo purge --dry-run', 'Файли збирання проєктів'], ['mo installer --dry-run', 'Інсталятори'], ['mo analyze --json ~', 'Великі й старі файли']];
 function vOverview() {
   const sm = S.smart;
   if (sm.phase === 'landing') return landing('overview', { action: 'smart', sub: 'лише перегляд' });
   if (sm.phase === 'run') return landing('overview', { busy: true, status: S.prog.status, step: S.prog.step });
-  if (sm.phase === 'done') return donePanel('overview', mb(sm.freed), 'звільнено безпечно · кеші, артефакти проєктів та інсталятори', `<div class="note" style="margin-top:10px">Великі файли Nora не чіпає автоматично — їх варто переглянути в «Аналізі диска».</div>`);
-  const tiles = [['clean', 'Кеші та журнали', cleanAvail()], ['purge', 'Артефакти проєктів', sum(ARTS.filter(artDefault), a => a.mb)], ['installer', 'Інсталятори', instTotal()], ['analyze', 'Великі й старі файли', 42800]];
+  if (sm.phase === 'done') return donePanel('overview', mb(sm.freed), 'звільнено безпечно · кеші, файли збирання проєктів та інсталятори', `<div class="note" style="margin-top:10px">Великі файли Nora не чіпає автоматично. Їх варто переглянути в «Аналізі диска».</div>`);
+  const tiles = [['clean', 'Кеші та журнали', cleanAvail()], ['purge', 'Файли збирання проєктів', sum(ARTS.filter(artDefault), a => a.mb)], ['installer', 'Інсталятори', instTotal()], ['analyze', 'Великі й старі файли', 42800]];
   const total = 994700, free = 302100, recl = smartSafe();
   const segs = [['Програми', 64800, 'var(--c3)'], ['Система', 52300, 'var(--c7)'], ['Інше', 120900, 'var(--c6)'], ['Бібліотека', 168200 - cleanAvail(), 'var(--c2)'], ['Домашня тека', 286400 - (recl - cleanAvail()), 'var(--c1)'], ['Можна звільнити', recl, 'repeating-linear-gradient(135deg,#ffd27a 0 4px,#ffb02e 4px 8px)']];
   return `<div class="fade-in">${resHead('overview', `Можна звільнити ${mb(recl)}`, 'Перегляньте категорію або запустіть безпечне очищення всього одразу.', `<span class="pill good">${ic('i-check')}перевірено щойно</span>`, sm.phase === 'runall' ? 'work' : 'idle')}
@@ -435,7 +435,7 @@ function vClean() {
       return `<div class="sec ${c.open.has(s.id) ? 'open' : ''}"><div class="sec-h" data-a="secToggle" data-v="${s.id}">${ic('i-chev', 'chev')}
         ${locked ? `<span class="muted">${ic('i-lock')}</span>` : `<input type="checkbox" class="cb" aria-label="Увесь розділ ${esc(s.name)}" data-a="secCheck" data-v="${s.id}" ${st}>`}
         <h4 class="sp">${s.name}</h4><span class="muted" style="font-size:12px">${locked ? 'потрібні права адміністратора' : `${selN} з ${its.length}`}</span><span class="sz">${locked ? '' : mb(secTot(s))}</span></div>
-        <div class="sec-b">${locked ? `<div class="locked">${ic('i-lock')}<div class="sp"><b>Без прав адміністратора системні шляхи не скануються</b><div class="note">Nora виконає <span class="mono">sudo -A -v</span> у тій самій сесії, що й Mole. Пароль не зберігається.</div></div><button class="btn sm primary" data-a="auth" data-v="cleanSys">${ic('i-touch')}Дозволити</button></div>` :
+        <div class="sec-b">${locked ? `<div class="locked">${ic('i-lock')}<div class="sp"><b>Без прав адміністратора системні шляхи не скануються</b><div class="note">Nora виконає <span class="mono">sudo -A -v</span> у тій самій сесії, що й Mole. Ваш пароль Mac не зберігається.</div></div><button class="btn sm primary" data-a="auth" data-v="cleanSys">${ic('i-touch')}Дозволити</button></div>` :
         its.map(i => { const dis = !selectable(i); return `<div class="item">
           <input type="checkbox" class="cb" aria-label="${esc(i.label)}" data-a="itemCheck" data-v="${i.id}" ${c.sel.has(i.id) ? 'checked' : ''} ${dis ? 'disabled' : ''}>
           <span class="lbl ell">${esc(i.label)} ${i.prot ? `<span class="pill neutral">${ic('i-shield')}${i.prot}</span>` : ''}${i.skip ? `<span class="pill warn">${i.skip}</span>` : ''}${i.unknown ? '<span class="pill neutral">розмір невідомий</span>' : ''}</span>
@@ -457,11 +457,11 @@ function vUninstall() {
   if (u.phase === 'landing') return landing('uninstall', { action: 'unScan' });
   if (u.phase === 'scan' || u.phase === 'run') return landing('uninstall', { busy: true, status: S.prog.status, step: S.prog.step });
   if (u.phase === 'done') return donePanel('uninstall', `${u.done.n} ${u.done.n === 1 ? 'програму' : 'програми'}`, `успішно видалено · ${mb(u.done.mb)} ${S.un.perm ? 'остаточно' : 'у Кошику'}`,
-    u.done.refs.length ? `<div class="card" style="margin-top:16px;padding:14px"><b>Згадки в конфігураціях</b><div class="note">Mole їх не редагує — перевірте вручну:</div>${u.done.refs.map(r => `<div class="mono" style="margin-top:4px">${esc(r)}</div>`).join('')}</div>` : '');
+    u.done.refs.length ? `<div class="card" style="margin-top:16px;padding:14px"><b>Згадки у файлах налаштувань</b><div class="note">Mole їх не змінює. Перевірте вручну:</div>${u.done.refs.map(r => `<div class="mono" style="margin-top:4px">${esc(r)}</div>`).join('')}</div>` : '');
   let apps = APPS.filter(a => (u.src === 'Усі' || a.src === u.src) && a.name.toLowerCase().includes(u.q.toLowerCase()));
   apps.sort(u.sort === 'size' ? (a, b) => b.mb - a.mb : u.sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => b.d - a.d);
   const f = APPS.find(a => a.id === u.focus) || apps[0], sel = APPS.filter(a => u.sel.has(a.id)), total = sum(sel, a => appFiles(a).total), fl = f ? appFiles(f) : null;
-  return `${resHead('uninstall', `${APPS.length} програм · ${mb(sum(APPS, a => a.mb))}`, 'Оберіть програми — праворуч видно, що саме буде видалено.')}
+  return `${resHead('uninstall', `${APPS.length} програм · ${mb(sum(APPS, a => a.mb))}`, 'Оберіть програми. Праворуч видно, що саме буде видалено.')}
   <div class="row fade-in" style="flex-wrap:wrap;margin-bottom:12px"><input class="field" id="unQ" style="width:220px" placeholder="Пошук програм" value="${esc(u.q)}" data-a="unQ">
     <div class="tabs">${['Усі', 'App Store', 'Homebrew', 'Вручну', 'Steam'].map(s => `<button aria-selected="${u.src === s}" data-a="unSrc" data-v="${s}">${s}</button>`).join('')}</div><span class="sp"></span>
     <select class="field" id="unSort" data-a="unSort" aria-label="Сортування"><option value="size" ${u.sort === 'size' ? 'selected' : ''}>За розміром</option><option value="name" ${u.sort === 'name' ? 'selected' : ''}>За назвою</option><option value="used" ${u.sort === 'used' ? 'selected' : ''}>Давно не відкривали</option></select></div>
@@ -473,7 +473,7 @@ function vUninstall() {
   ${f ? `<aside class="card sticky"><div class="row" style="gap:12px"><span class="appico lg" style="background:${grad(f.name)}">${initials(f.name)}</span><div class="sp ell"><h3 style="font-size:16px">${esc(f.name)}</h3><div class="mono muted ell">${esc(f.bid)}</div></div></div>
     <div class="hr"></div><div class="eyebrow" style="margin-bottom:6px">Буде видалено · ${mb(fl.total)}</div>
     ${fl.groups.map(g => `<div class="fgroup"><h5><span class="sp">${g.t}</span><span class="num">${g.mb ? mb(g.mb) : ''}</span></h5>${g.files.map(p => `<div class="p" title="${esc(p)}">${esc(p)}</div>`).join('')}</div>`).join('')}
-    <div class="hr"></div><div class="eyebrow" style="margin-bottom:6px">Особисті дані — залишаться</div>
+    <div class="hr"></div><div class="eyebrow" style="margin-bottom:6px">Особисті дані: залишаться</div>
     ${fl.kept.map(p => `<div class="fgroup" style="border:0;padding:1px 0"><div class="p">${esc(p)}</div></div>`).join('')}
     <button class="btn ghost sm" style="margin-top:8px" data-a="personalData">Обрати особисті дані…</button></aside>` : ''}</div>
   <div class="actionbar"><span class="tot">${sel.length ? `${sel.length} · ${mb(total)}` : 'Нічого не обрано'}</span>
@@ -488,7 +488,7 @@ function vOptimize() {
   if (o.phase === 'landing') return landing('optimize', { action: 'optScan' });
   if (o.phase === 'scan' || o.phase === 'run') return landing('optimize', { busy: true, status: S.prog.status, step: S.prog.step });
   if (o.phase === 'done') { const cnt = Object.values(o.out).reduce((m, [k]) => (m[k] = (m[k] || 0) + 1, m), {}); return donePanel('optimize', `${cnt.applied || 0} ${(cnt.applied || 0) === 1 ? 'задача' : 'задачі'}`, `застосовано · ${cnt.unchanged || 0} без змін · ${(cnt.skipped || 0) + (cnt.excluded || 0)} пропущено`, cnt.attention ? `<div class="banner" style="margin-top:14px">${ic('i-warn')}<span class="sp">Закрийте Safari, щоб оптимізувати бази даних</span></div>` : ''); }
-  return `${resHead('optimize', 'Діагностика готова', 'Тривалих перевантажень CPU немає. Вимкніть задачі, які не хочете запускати.', `<span class="pill good">${OPT.length - o.excl.size} з ${OPT.length} увімкнено</span>`)}
+  return `${resHead('optimize', 'Діагностика готова', 'Довгого перевантаження CPU немає. Вимкніть задачі, які не хочете запускати.', `<span class="pill good">${OPT.length - o.excl.size} з ${OPT.length} увімкнено</span>`)}
   <div class="list fade-in">${OPT.map(([id, n, d]) => { const on = !o.excl.has(id), out = o.out && o.out[id];
     return `<div class="task"><input type="checkbox" class="sw" aria-label="${esc(n)}" data-a="optToggle" data-v="${id}" ${on ? 'checked' : ''}>
       <span class="ell"><b>${n}</b></span><span>${!on ? '<span class="pill neutral">вимкнено</span>' : out ? `<span class="pill ${OUT_PILL[out[0]][0]}" title="${esc(out[1])}">${out[0] === 'applied' ? 'буде застосовано' : OUT_PILL[out[0]][1]}</span>` : ''}</span>
@@ -554,35 +554,35 @@ function vAnalyze() {
       <g class="center" data-a="anUp" data-v="${Math.max(0, crumbs.length - 2)}"><circle cx="200" cy="200" r="70" fill="rgba(12,4,30,.55)"/>
       <text x="200" y="194" text-anchor="middle" fill="#fff" style="font:500 19px var(--f-display)">${mb(node.s)}${node.partial ? '+' : ''}</text>
       <text x="200" y="215" text-anchor="middle" fill="rgba(255,255,255,.7)" style="font:12px var(--f-ui)">${esc(node.n.length > 22 ? node.n.slice(0, 21) + '…' : node.n)}</text>
-      ${a.path.length ? '<text x="200" y="234" text-anchor="middle" fill="#2ee6ff" style="font:11px var(--f-ui)">↑ рівнем вище</text>' : ''}</g></svg>`}
+      ${a.path.length ? '<text x="200" y="234" text-anchor="middle" fill="#2ee6ff" style="font:11px var(--f-ui)">↑ на рівень вище</text>' : ''}</g></svg>`}
     <div class="row" style="margin-top:8px;justify-content:center">${cmd(`mo analyze --json "${path}"`)}</div></div>
   <div><div class="list">${sorted.map(({ k, i }) => `<div class="entry" ${k.kids ? `data-a="anIn" data-v="${i}" style="cursor:pointer"` : ''}><span class="sw-dot" style="background:${AN_COL[i % AN_COL.length]}"></span>
       <span class="ell"><b>${esc(k.n)}</b> ${k.insight ? `<span class="pill amber">${esc(k.insight)}</span>` : ''}${k.clean ? '<span class="pill info">Mole може очистити</span>' : ''}${k.partial ? '<span class="pill neutral">частково</span>' : ''}${k.unavailable ? '<span class="pill neutral">не виміряно</span>' : ''}</span>
       <span class="num">${k.unavailable ? 'невідомо' : mb(k.s) + (k.partial ? '+' : '')}</span><div class="bar"><i style="width:${(k.s / tot * 100).toFixed(1)}%;background:${AN_COL[i % AN_COL.length]}"></i></div></div>`).join('')}</div>
     <div class="row" style="margin-top:10px;flex-wrap:wrap"><button class="btn sm" data-a="toast" data-v="Відкрито у Finder">${ic('i-eye')}У Finder</button><button class="btn sm" data-a="toast" data-v="Quick Look">Quick Look</button><button class="btn sm" data-a="anTrash">${ic('i-uninstall')}У Кошик…</button></div>
-    ${node.partial ? `<div class="banner" style="margin-top:10px">${ic('i-warn')}<span class="sp">Сканування часткове: «+» — нижня межа розміру.</span></div>` : ''}</div></div>`}</div>`;
+    ${node.partial ? `<div class="banner" style="margin-top:10px">${ic('i-warn')}<span class="sp">Сканування неповне: «+» показує мінімальний розмір.</span></div>` : ''}</div></div>`}</div>`;
 }
 
 // ---------- status ----------
 const LIVE = {
   stHead: () => { const h = live.health; return `<div class="row" style="gap:18px;flex-wrap:wrap">${ring(h, { size: 92, stroke: 8, color: healthCol(h), label: h, sub: 'здоров’я' })}
     <div class="sp" style="min-width:220px"><div style="font:500 20px var(--f-display)">${healthWord(h)}</div><div class="note">Помірне навантаження CPU; пам’ять у нормі; диск заповнено на 70 %</div>
-    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px"><span class="tag">MacBook Pro · M4 Pro</span><span class="tag">32 ГБ</span><span class="tag">macOS 26.4</span><span class="tag">аптайм 6 д</span></div></div></div>`; },
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px"><span class="tag">MacBook Pro · M4 Pro</span><span class="tag">32 ГБ</span><span class="tag">macOS 26.4</span><span class="tag">працює 6 д</span></div></div></div>`; },
   stCpu: () => `<div class="card-h">${ic('i-cpu')}<h3>Процесор</h3><span class="sp"></span><span class="muted num">3,82 / 3,41 / 3,07</span></div>
     <div class="row" style="align-items:flex-end;gap:16px"><div class="bigv">${nf0.format(live.cpu.at(-1))}<small>%</small></div><div class="sp">${spark(live.cpu, { max: 100, h: 56, color: '#ff5cb4' })}</div></div>
     <div class="cores" style="margin-top:12px">${live.cores.map((c, i) => `<i class="${i >= 10 ? 'e' : ''}" style="height:${c.toFixed(0)}%"></i>`).join('')}</div>`,
-  stMem: () => { const m = live.mem.at(-1); return `<div class="card-h">${ic('i-mem')}<h3>Пам’ять</h3><span class="sp"></span><span class="pill ${m > 75 ? 'warn' : 'good'}">${m > 75 ? 'тиск підвищений' : 'тиск нормальний'}</span></div>
+  stMem: () => { const m = live.mem.at(-1); return `<div class="card-h">${ic('i-mem')}<h3>Пам’ять</h3><span class="sp"></span><span class="pill ${m > 75 ? 'warn' : 'good'}">${m > 75 ? 'навантаження пам’яті підвищене' : 'навантаження пам’яті нормальне'}</span></div>
     <div class="row" style="align-items:flex-end;gap:16px"><div class="bigv">${nf0.format(m)}<small>%</small></div><div class="sp">${spark(live.mem, { max: 100, h: 56, color: '#2ee6ff' })}</div></div>
     <dl class="kv" style="margin-top:12px"><dt>Використано</dt><dd>${nf1.format(32 * m / 100)} з 32 ГБ</dd><dt>Своп</dt><dd>1,3 ГБ</dd></dl>`; },
   stDisk: () => `<div class="card-h">${ic('i-disk')}<h3>Диск</h3><span class="sp"></span><span class="pill good">SMART ок</span></div><div class="bigv">70<small>% · 302 ГБ вільно</small></div>
     <div class="row" style="margin-top:12px;font-size:12px"><span class="dim" style="width:50px">Читання</span><div class="sp">${spark(live.rd, { h: 26, color: '#2ee6ff' })}</div><span class="num" style="width:68px;text-align:right">${nf1.format(live.rd.at(-1))} МБ/с</span></div>
     <div class="row" style="font-size:12px"><span class="dim" style="width:50px">Запис</span><div class="sp">${spark(live.wr, { h: 26, color: '#ff5cb4' })}</div><span class="num" style="width:68px;text-align:right">${nf1.format(live.wr.at(-1))} МБ/с</span></div>`,
   stNet: () => `<div class="card-h">${ic('i-net')}<h3>Мережа</h3><span class="sp"></span><span class="tag">utun4</span></div>
-    <div class="row" style="gap:20px"><div><div class="muted" style="font-size:11.5px">↓ Завантаження</div><div class="bigv" style="font-size:20px">${nf1.format(live.down.at(-1))}<small>МБ/с</small></div></div><div><div class="muted" style="font-size:11.5px">↑ Віддача</div><div class="bigv" style="font-size:20px">${nf1.format(live.up.at(-1))}<small>МБ/с</small></div></div></div>
+    <div class="row" style="gap:20px"><div><div class="muted" style="font-size:11.5px">↓ Завантаження</div><div class="bigv" style="font-size:20px">${nf1.format(live.down.at(-1))}<small>МБ/с</small></div></div><div><div class="muted" style="font-size:11.5px">↑ Відправка</div><div class="bigv" style="font-size:20px">${nf1.format(live.up.at(-1))}<small>МБ/с</small></div></div></div>
     <div style="margin-top:10px;position:relative">${spark(live.down, { h: 40, color: '#ffb02e' })}<div style="position:absolute;inset:0">${spark(live.up, { h: 40, max: Math.max(...live.down) * 1.15, color: '#2ee6ff' })}</div></div>`,
   stPower: () => `<div class="card-h">${ic('i-battery')}<h3>Живлення</h3><span class="sp"></span><span class="pill good">заряджається</span></div><div class="bigv">${live.batt}<small>%</small></div>
     <div class="bar" style="margin:10px 0"><i style="width:${live.batt}%;background:linear-gradient(90deg,#62f5b5,#2ee6ff)"></i></div><dl class="kv"><dt>Стан</dt><dd>92 % · 423 цикли</dd><dt>Температура</dt><dd>31 °C</dd></dl>`,
-  stSensors: () => `<div class="card-h">${ic('i-thermo')}<h3>Температура</h3><span class="sp"></span><span class="pill good">штатно</span></div><dl class="kv"><dt>CPU</dt><dd>${nf0.format(live.temp)} °C</dd><dt>GPU</dt><dd>${nf0.format(live.temp - 6)} °C</dd><dt>Вентилятор</dt><dd>${nf0.format(live.fan)} об/хв</dd><dt>Графіка</dt><dd>${nf0.format(live.gpu)} %</dd></dl>`,
+  stSensors: () => `<div class="card-h">${ic('i-thermo')}<h3>Температура</h3><span class="sp"></span><span class="pill good">в нормі</span></div><dl class="kv"><dt>CPU</dt><dd>${nf0.format(live.temp)} °C</dd><dt>GPU</dt><dd>${nf0.format(live.temp - 6)} °C</dd><dt>Вентилятор</dt><dd>${nf0.format(live.fan)} об/хв</dd><dt>Графіка</dt><dd>${nf0.format(live.gpu)} %</dd></dl>`,
   stBt: () => `<div class="card-h">${ic('i-bt')}<h3>Bluetooth</h3></div>${[['AirPods Pro', 82], ['Magic Keyboard', 64], ['MX Master 3S', 18]].map(([n, v]) => `<div class="row" style="padding:4px 0"><span class="sp">${n}</span><div class="bar" style="width:70px"><i style="width:${v}%;background:${v < 20 ? 'var(--crit)' : 'var(--good)'}"></i></div><span class="num" style="width:38px;text-align:right">${v} %</span></div>`).join('')}`,
   stProcs: () => { const ps = [...live.procs].sort((a, b) => b[2] - a[2]).slice(0, 6), mx = Math.max(...ps.map(p => p[2]), 100);
     return `<div class="card-h"><h3>Процеси</h3><span class="sp"></span><span class="muted" style="font-size:12px">зомбі: 3 · Chrome for Testing</span></div><div class="tablewrap"><table class="ptable"><thead><tr><th>Процес</th><th>CPU</th><th class="r">%</th><th class="r">Пам’ять</th></tr></thead><tbody>
@@ -606,7 +606,7 @@ function mbTop(ps) {
   } else {
     const top = live.apps[0][2];
     body = `<div class="qm-meter" title="Програми ${nf1.format(used - cache)} ГБ · кеш ${nf1.format(cache)} ГБ · вільно ${nf1.format(total - used)} ГБ"><i class="apps" style="width:${(used - cache) / total * 100}%"></i><i class="cache" style="width:${cache / total * 100}%"></i></div>
-      <div class="row qm-memline"><span class="pill ${high ? 'warn' : 'good'}">тиск ${high ? 'підвищений' : 'нормальний'}</span><span class="sp num">${nf1.format(used)} з ${total} ГБ</span><span class="dim" title="Swap зменшиться, коли закриються програми, яким належать ці сторінки, або після перезавантаження">swap ${nf1.format(live.swap)} ГБ ⓘ</span></div>`
+      <div class="row qm-memline"><span class="pill ${high ? 'warn' : 'good'}" title="Навантаження пам’яті">${high ? 'високе' : 'у нормі'}</span><span class="sp num">${nf1.format(used)} з ${total} ГБ</span><span class="dim" title="Swap зменшиться, коли закриються програми, яким належать ці дані в пам’яті, або після перезавантаження">swap ${nf1.format(live.swap)} ГБ ⓘ</span></div>`
       + live.apps.map(a => item(esc(a[0]), `· ${a[1]} процесів`, nf1.format(a[2]) + ' ГБ', a[2] / top * 100, 'mem')).join('');
   }
   return `<div class="qm-top"><div class="row"><small class="dim sp">Найбільше навантажують</small><div class="seg seg-sm">${tab('mem', 'Пам’ять')}${tab('cpu', 'Процесор')}</div></div>${body}</div>`;
@@ -629,13 +629,13 @@ function vPurge() {
   const p = S.purge;
   if (p.phase === 'landing') return landing('purge', { action: 'purgeScan', extra: `<div class="land-opts"><div class="land-opt">${ic('i-folder')}<span class="sp mono">${S.prot.purgePaths.join(' · ')}</span><button class="btn sm" data-a="go" data-v="protect">Змінити</button></div></div>` });
   if (p.phase === 'scan' || p.phase === 'run') return landing('purge', { busy: true, status: S.prog.status, step: S.prog.step });
-  if (p.phase === 'done') return donePanel('purge', `≈ ${mb(p.freed)}`, `звільнено · ${p.items} артефактів видалено`);
+  if (p.phase === 'done') return donePanel('purge', `≈ ${mb(p.freed)}`, `звільнено · ${p.items} файлів збірки видалено`);
   const isDefault = ARTS.every(a => p.sel.has(a.id) === artDefault(a));
-  return `${resHead('purge', `${mb(sum(ARTS.filter(artDefault), a => a.mb))} у ${PROJECTS.length} проєктах`, 'Артефакти, що змінювалися менше ніж 7 днів тому, не позначені. Розмір — оцінка.', `<label class="row" style="font-size:12.5px"><input type="checkbox" class="sw" data-a="purgeEmpty" ${p.empty ? 'checked' : ''}>Порожні теж</label>`)}
+  return `${resHead('purge', `${mb(sum(ARTS.filter(artDefault), a => a.mb))} у ${PROJECTS.length} проєктах`, 'Файли збірки, змінені менш ніж 7 днів тому, не позначені. Розмір приблизний.', `<label class="row" style="font-size:12.5px"><input type="checkbox" class="sw" data-a="purgeEmpty" ${p.empty ? 'checked' : ''}>Порожні теж</label>`)}
   <div class="fade-in">${PROJECTS.map(pr => `<div class="proj"><div class="proj-h">${ic('i-folder')}<b class="sp ell mono" style="font-size:12px">${esc(pr.path)}</b><span class="num dim">${mb(sum(pr.arts, a => a.mb))}</span></div>
     ${pr.arts.map(a => `<div class="art"><input type="checkbox" class="cb" aria-label="${esc(a.k)}" data-a="purgeCheck" data-v="${a.id}" ${p.sel.has(a.id) ? 'checked' : ''}><span class="mono">${esc(a.k)}</span><span class="path muted ell" style="font-size:12px">змінено ${a.age} тому</span>
       <span class="flag">${a.recent ? '<span class="pill warn">активний</span>' : a.unverified ? '<span class="pill neutral">не перевірено</span>' : ''}</span><span class="num dim" style="text-align:right;min-width:70px">${a.mb != null ? mb(a.mb) : 'не виміряно'}</span></div>`).join('')}</div>`).join('')}</div>
-  <div class="actionbar"><span class="tot">${mb(purgeTotal())}</span><span class="dim">${p.sel.size} артефактів · видаляються остаточно</span><span class="sp"></span>${cmd(isDefault ? 'mo purge --yes' + (p.empty ? ' --include-empty' : '') : 'mo purge' + (p.empty ? ' --include-empty' : ''))}
+  <div class="actionbar"><span class="tot">${mb(purgeTotal())}</span><span class="dim">${p.sel.size} файлів збірки · видаляються остаточно</span><span class="sp"></span>${cmd(isDefault ? 'mo purge --yes' + (p.empty ? ' --include-empty' : '') : 'mo purge' + (p.empty ? ' --include-empty' : ''))}
     <button class="btn danger" data-a="purgeConfirm" ${p.sel.size ? '' : 'disabled'}>${ic('i-purge')}Видалити</button></div>`;
 }
 function vInstaller() {
@@ -643,7 +643,7 @@ function vInstaller() {
   if (s.phase === 'landing') return landing('installer', { action: 'instScan' });
   if (s.phase === 'scan' || s.phase === 'run') return landing('installer', { busy: true, status: S.prog.status, step: S.prog.step });
   if (s.phase === 'done') return donePanel('installer', mb(s.freed), `звільнено · ${s.items} інсталяторів видалено`);
-  return `${resHead('installer', `${INST.length} інсталяторів · ${mb(sum(INST, i => i.mb))}`, 'Кожен файл Mole ще раз перевіряє безпосередньо перед видаленням.', `<button class="btn sm ghost" data-a="instAll" data-v="1">Усі</button><button class="btn sm ghost" data-a="instAll" data-v="inv">Інвертувати</button>`)}
+  return `${resHead('installer', `${INST.length} інсталяторів · ${mb(sum(INST, i => i.mb))}`, 'Mole перевіряє кожен файл ще раз прямо перед видаленням.', `<button class="btn sm ghost" data-a="instAll" data-v="1">Усі</button><button class="btn sm ghost" data-a="instAll" data-v="inv">Інвертувати</button>`)}
   <div class="list fade-in">${INST.map(i => `<div class="inst"><input type="checkbox" class="cb" aria-label="${esc(i.name)}" data-a="instCheck" data-v="${i.id}" ${s.sel.has(i.id) ? 'checked' : ''}>
     <span class="ftype" style="background:${FT_COL[i.t]}">${i.t}</span><div class="ell"><b class="ell">${esc(i.name)}</b><div class="muted" style="font-size:11.5px">${i.age} тому</div></div><span class="tag src">${i.src}</span><span class="num dim" style="text-align:right;min-width:70px">${mb(i.mb)}</span></div>`).join('')}</div>
   <div class="actionbar"><span class="tot">${mb(instTotal())}</span><span class="dim">${s.sel.size} з ${INST.length}</span><span class="sp"></span>${cmd('mo installer')}<button class="btn danger" data-a="instConfirm" ${s.sel.size ? '' : 'disabled'}>${ic('i-installer')}Видалити</button></div>`;
@@ -653,17 +653,17 @@ function vInstaller() {
 function vTools() {
   const gi = k => `<img src="${glassSrc(k)}" alt="">`;
   const T2 = [
-    ['purge', 'Проєкти', 'Прибрати node_modules, target, build та інші артефакти збирання.', `<button class="btn primary sm" data-a="go" data-v="purge">Сканувати</button>`],
-    ['installer', 'Інсталятори', 'Знайти забуті DMG, PKG, ISO та XIP у Завантаженнях і хмарах.', `<button class="btn primary sm" data-a="go" data-v="installer">Сканувати</button>`],
-    ['protect', 'Захист', 'Кеші, шляхи й задачі, яких Mole ніколи не торкнеться.', `<button class="btn sm" data-a="go" data-v="protect">Відкрити</button>`],
+    ['purge', 'Проєкти', 'Прибрати node_modules, target, build та інші файли збірки.', `<button class="btn primary sm" data-a="go" data-v="purge">Сканувати</button>`],
+    ['installer', 'Інсталятори', 'Знайти забуті DMG, PKG, ISO та XIP у Завантаженнях і хмарних сховищах.', `<button class="btn primary sm" data-a="go" data-v="installer">Сканувати</button>`],
+    ['protect', 'Захист', 'Кеші, шляхи й задачі, яких Mole ніколи не чіпає.', `<button class="btn sm" data-a="go" data-v="protect">Відкрити</button>`],
     ['clean', 'Зовнішній диск', 'Прибрати .DS_Store і ._-файли з флешки чи зовнішнього диска.', `<button class="btn sm" data-a="extClean">Обрати диск…</button>`],
-    ['status', 'Touch ID для sudo', 'Підтверджувати системні дії відбитком замість пароля.', `<input type="checkbox" class="sw" aria-label="Touch ID для sudo" data-a="setToggle" data-v="touchid" ${S.set.touchid ? 'checked' : ''}>`],
+    ['status', 'Touch ID для пароля Mac', 'Підтверджувати системні дії відбитком замість пароля.', `<input type="checkbox" class="sw" aria-label="Touch ID для пароля Mac" data-a="setToggle" data-v="touchid" ${S.set.touchid ? 'checked' : ''}>`],
     ['settings', 'Оновлення Mole', 'Встановлено 1.59.1 через Homebrew. Доступна 1.60.0.', `<span class="pill amber">нове</span><button class="btn primary sm" data-a="cliUpdate">Оновити</button>`],
     ['history', 'Raycast і Alfred', 'П’ять швидких команд: очистити, видалити, оптимізувати, аналіз, стан.', `<button class="btn sm" data-a="toast" data-v="Команди Raycast додано">Налаштувати</button>`],
-    ['analyze', 'MCP для агентів', 'Агенти бачать стан системи й історію. Тільки читання — нічого не видаляє.', `<input type="checkbox" class="sw" aria-label="MCP-сервер" data-a="setToggle" data-v="mcp" ${S.set.mcp ? 'checked' : ''}>`],
-    ['settings', 'Налаштування', 'Mole CLI, доступ, розклад перевірок, меню-бар і мова.', `<button class="btn sm" data-a="go" data-v="settings">Відкрити</button>`],
+    ['analyze', 'MCP для агентів', 'Агенти бачать стан системи й історію. Тільки читання: нічого не видаляє.', `<input type="checkbox" class="sw" aria-label="MCP-сервер" data-a="setToggle" data-v="mcp" ${S.set.mcp ? 'checked' : ''}>`],
+    ['settings', 'Налаштування', 'Mole CLI, доступ, розклад перевірок, рядок меню і мова.', `<button class="btn sm" data-a="go" data-v="settings">Відкрити</button>`],
   ];
-  return `<div class="fade-in"><div class="res-head"><div class="sp"><h1 class="title" style="margin:0">Інструменти</h1><p class="lead" style="margin:8px 0 0">Точкові дії та налаштування Mole в одному місці.</p></div></div>
+  return `<div class="fade-in"><div class="res-head"><div class="sp"><h1 class="title" style="margin:0">Інструменти</h1><p class="lead" style="margin:8px 0 0">Окремі дії та налаштування Mole в одному місці.</p></div></div>
   <div class="tools">${T2.map(([k, t, d, f]) => `<div class="card tool">${gi(MODS[k].hero)}<h3>${t}</h3><p>${d}</p><div class="foot">${f}</div></div>`).join('')}</div></div>`;
 }
 
@@ -683,7 +683,7 @@ function vHistory() {
       ${HIST_DAYS.map((v, i) => v ? `<rect x="${(i * bw + 3).toFixed(1)}" y="${(H - v / mx * (H - 6)).toFixed(1)}" width="${(bw - 6).toFixed(1)}" height="${(v / mx * (H - 6)).toFixed(1)}" rx="3" fill="${CMD_COL[HIST_DAY_CMD[i]]}"><title>${CMD_UA[HIST_DAY_CMD[i]]}: ${mb(v)}</title></rect>` : '').join('')}
       <text x="0" y="${H + 22}" fill="rgba(255,255,255,.6)" style="font:18px var(--f-ui)">14 вер.</text><text x="${W}" y="${H + 22}" text-anchor="end" fill="rgba(255,255,255,.6)" style="font:18px var(--f-ui)">сьогодні</text></svg></div>
     <div class="card" style="grid-column:span 2"><div class="row" style="margin-bottom:8px"><b>Рекомендації: 3</b><span class="sp"></span></div>
-      ${[['i-cpu', 'Code Helper тримає CPU вище 100 % понад 5 хв', 'status', 'Переглянути'], ['i-uninstall', 'Кошик займає 1,1 ГБ', 'clean', 'Очистити'], ['i-refresh', 'Доступна Mole 1.60.0', 'tools', 'Оновити']].map(([i, t, g, b]) => `<div class="opt-row"><span class="bico" style="width:34px;height:34px;border-radius:10px">${ic(i)}</span><span class="sp">${t}</span><button class="btn sm" data-a="go" data-v="${g}">${b}</button></div>`).join('')}</div>
+      ${[['i-cpu', 'Code Helper понад 5 хв навантажує CPU вище 100 %', 'status', 'Переглянути'], ['i-uninstall', 'Кошик займає 1,1 ГБ', 'clean', 'Очистити'], ['i-refresh', 'Доступна Mole 1.60.0', 'tools', 'Оновити']].map(([i, t, g, b]) => `<div class="opt-row"><span class="bico" style="width:34px;height:34px;border-radius:10px">${ic(i)}</span><span class="sp">${t}</span><button class="btn sm" data-a="go" data-v="${g}">${b}</button></div>`).join('')}</div>
   </div>
   <div class="row" style="margin:20px 0 10px;flex-wrap:wrap"><b style="font:500 15px var(--f-display)">Сесії</b><span class="sp"></span><div class="tabs">${['all', 'clean', 'uninstall', 'purge', 'installer', 'optimize'].map(f => `<button aria-selected="${h.f === f}" data-a="histF" data-v="${f}">${f === 'all' ? 'Усі' : CMD_UA[f]}</button>`).join('')}</div></div>
   <div class="list">${list.map(x => `<div class="sess" data-a="histOpen" data-v="${x.id}"><span class="cmdi" style="color:${CMD_COL[x.c]}">${ic(CMD_IC[x.c])}</span>
@@ -708,7 +708,7 @@ const WL = [
 const WL_DEFAULT = new Set(['Gradle build cache', 'JetBrains IDEs cache', 'Моделі Ollama', 'Браузери Playwright']);
 function vProtect() {
   const p = S.prot, isOn = n => WL_DEFAULT.has(n) ? !p.off.has(n) : p.off.has('+' + n);
-  return `${resHead('protect', 'Що Mole ніколи не чіпатиме', '13 типових і 6 обов’язкових захистів. Nora переносить типові захисти у файл під час першого збереження, щоб вони не зникли.')}
+  return `${resHead('protect', 'Що Mole ніколи не чіпатиме', '13 типових і 6 обов’язкових захистів. Nora переносить типові захисти у файл під час першого збереження, щоб вони не пропали.')}
   <div class="tabs fade-in" style="margin-bottom:14px">${[['clean', 'Кеші'], ['custom', 'Власні шляхи'], ['optimize', 'Оптимізація'], ['purge', 'Проєкти']].map(([v, n]) => `<button aria-selected="${p.tab === v}" data-a="protTab" data-v="${v}">${n}</button>`).join('')}</div>
   ${p.tab === 'clean' ? `<div class="tools" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">${WL.map(([g, n, items]) => `<div class="card"><div class="card-h"><h3>${g}</h3><span class="sp"></span><span class="muted" style="font-size:12px">${n} правил</span></div>
       ${items.map(it => `<div class="opt-row"><input type="checkbox" class="sw" aria-label="${esc(it)}" data-a="wlToggle" data-v="${esc(it)}" ${isOn(it) ? 'checked' : ''}><span class="sp">${it}</span>${WL_DEFAULT.has(it) ? '<span class="pill neutral">типово</span>' : ''}</div>`).join('')}</div>`).join('')}</div>` : ''}
@@ -722,23 +722,23 @@ function vSettings() {
   const s = S.set, cli = S.scen.cli, sw = (k, id) => `<input type="checkbox" class="sw" id="${id}" data-a="setToggle" data-v="${k}" ${s[k] ? 'checked' : ''}>`;
   return `${resHead('settings', 'Налаштування', 'Mole CLI, доступ, автоматизація й вигляд.')}<div class="grid fade-in" style="max-width:860px">
   <div class="card"><div class="card-h"><h3>Mole CLI</h3><span class="sp"></span>${cli === 'ok' ? '<span class="pill good">працює</span>' : cli === 'old' ? '<span class="pill warn">застаріла версія</span>' : '<span class="pill crit">не знайдено</span>'}</div>
-    <div class="set-row"><div class="t"><b class="mono">${cli === 'missing' ? '—' : '/opt/homebrew/bin/mo'}</b><small>Знайдено в PATH вашої оболонки. Nora не вбудовує Mole.</small></div><button class="btn sm" data-a="toast" data-v="Оберіть файл mo">Інший шлях…</button></div>
-    <div class="set-row"><div class="t"><b>Версія ${cli === 'old' ? '1.42.0' : '1.59.1'} · Homebrew</b><small>Доступна 1.60.0 · мінімум для Nora 1.55</small></div><button class="btn sm primary" data-a="cliUpdate">Оновити</button></div>
+    <div class="set-row"><div class="t"><b class="mono">${cli === 'missing' ? '—' : '/opt/homebrew/bin/mo'}</b><small>Знайдено в PATH вашої оболонки. Nora не містить Mole.</small></div><button class="btn sm" data-a="toast" data-v="Оберіть файл mo">Інший шлях…</button></div>
+    <div class="set-row"><div class="t"><b>Версія ${cli === 'old' ? '1.42.0' : '1.59.1'} · Homebrew</b><small>Доступна 1.60.0 · Nora потребує версії 1.55 або новішої</small></div><button class="btn sm primary" data-a="cliUpdate">Оновити</button></div>
     <div class="set-row"><div class="t"><b>Можливості CLI</b><div class="caps" style="margin-top:8px">${[['status --watch', 1], ['analyze --json', 1], ['history --json', 1], ['uninstall --list', 1], ['purge --yes', 1], ['JSON для dry-run', 0]].map(([n, ok]) => `<span class="pill ${ok ? 'good' : 'neutral'}">${ic(ok ? 'i-check' : 'i-x')}${n}</span>`).join('')}</div></div></div></div>
   <div class="card"><div class="card-h"><h3>Оновлення</h3></div>
-    <div class="set-row"><div class="t"><b>Nora 0.1.0</b><small>Оновлюється сама через підписаний канал (Sparkle). Остання перевірка: сьогодні о 09:00</small></div><button class="btn sm" data-a="toast" data-v="У вас найновіша версія Nora">Перевірити зараз</button></div>
+    <div class="set-row"><div class="t"><b>Nora 0.1.0</b><small>Nora оновлюється сама через підписаний канал (Sparkle). Остання перевірка: сьогодні о 09:00</small></div><button class="btn sm" data-a="toast" data-v="У вас найновіша версія Nora">Перевірити зараз</button></div>
     <div class="set-row"><div class="t"><b>Встановлювати оновлення Nora автоматично</b></div>${sw('autoNora', 'stAutoNora')}</div>
-    <div class="set-row"><div class="t"><b>Оновлювати Mole автоматично</b><small>Через той канал, яким встановлено Mole (зараз — Homebrew)</small></div>${sw('autoMole', 'stAutoMole')}</div></div>
+    <div class="set-row"><div class="t"><b>Оновлювати Mole автоматично</b><small>Через той канал, яким встановлено Mole (зараз: Homebrew)</small></div>${sw('autoMole', 'stAutoMole')}</div></div>
   <div class="card"><div class="card-h"><h3>Доступ</h3></div>
-    <div class="set-row"><div class="t"><b>Touch ID для sudo</b><small><span class="mono">mo touchid ${s.touchid ? 'disable' : 'enable'}</span></small></div>${sw('touchid', 'stTouch')}</div>
-    <div class="set-row"><div class="t"><b>Повний доступ до диска</b><small>${S.scen.fda ? 'Надано' : 'Не надано — частина кешів не сканується'}</small></div><button class="btn sm" data-a="toast" data-v="Відкрито Параметри → Конфіденційність">${S.scen.fda ? 'Перевірити' : 'Надати…'}</button></div>
-    <div class="set-row"><div class="t"><b>Журнал операцій</b><small>Основа розділу «Історія»</small></div>${sw('oplog', 'stOp')}</div></div>
+    <div class="set-row"><div class="t"><b>Touch ID для пароля Mac</b><small><span class="mono">mo touchid ${s.touchid ? 'disable' : 'enable'}</span></small></div>${sw('touchid', 'stTouch')}</div>
+    <div class="set-row"><div class="t"><b>Повний доступ до диска</b><small>${S.scen.fda ? 'Надано' : 'Не надано: частина кешів не сканується'}</small></div><button class="btn sm" data-a="toast" data-v="Відкрито Параметри → Конфіденційність">${S.scen.fda ? 'Перевірити' : 'Надати…'}</button></div>
+    <div class="set-row"><div class="t"><b>Журнал операцій</b><small>Дає дані для розділу «Історія»</small></div>${sw('oplog', 'stOp')}</div></div>
   <div class="card"><div class="card-h"><h3>Автоматизація</h3></div>
-    <div class="set-row"><div class="t"><b>Перевірка за розкладом</b><small>Лише перегляд і сповіщення — без видалення</small></div><select class="field" data-a="setSched"><option value="off">Вимкнено</option><option value="daily" ${s.schedule === 'daily' ? 'selected' : ''}>Щодня</option><option value="weekly" ${s.schedule === 'weekly' ? 'selected' : ''}>Щотижня</option></select></div>
-    <div class="set-row"><div class="t"><b>Меню-бар</b><small>Що показувати поруч з іконкою · права кнопка — швидке меню · ⌥⌘N — відкрити</small>
+    <div class="set-row"><div class="t"><b>Перевірка за розкладом</b><small>Лише перегляд і сповіщення, без видалення</small></div><select class="field" data-a="setSched"><option value="off">Вимкнено</option><option value="daily" ${s.schedule === 'daily' ? 'selected' : ''}>Щодня</option><option value="weekly" ${s.schedule === 'weekly' ? 'selected' : ''}>Щотижня</option></select></div>
+    <div class="set-row"><div class="t"><b>Рядок меню</b><small>Що показувати поруч з іконкою · права кнопка: швидке меню · ⌥⌘N: відкрити</small>
       <div class="tabs" style="margin-top:8px">${[['icon', 'Іконка'], ['cpu', 'CPU'], ['spark', 'Графік'], ['multi', 'Кілька показників']].map(([k, n]) => `<button aria-selected="${S.set.mbMode === k}" data-a="mbMode" data-v="${k}">${n}</button>`).join('')}</div></div>${sw('menubar', 'stMb')}</div>
     <div class="set-row"><div class="t"><b>Запуск під час входу</b></div>${sw('login', 'stLogin')}</div></div>
-  <div class="note">Nora — незалежний застосунок, не пов’язаний з Mole і не схвалений ним. Mole CLI © tw93, GPL-3.0. Офіційний застосунок автора — mole.fit.</div></div>`;
+  <div class="note">Nora це незалежний застосунок. Він не пов’язаний з Mole і не схвалений ним. Mole CLI © tw93, GPL-3.0. Офіційний застосунок автора: mole.fit.</div></div>`;
 }
 
 // ---------- shell ----------
@@ -782,9 +782,9 @@ function authSheet(reason, then) {
 }
 function showCliMissing() {
   sheet(`<div class="eyebrow">Перше налаштування</div><h3>Nora встановить Mole сама</h3>
-  <p class="note" style="margin:0">Усю роботу з файлами виконує відкритий Mole CLI. Nora встановить його й надалі оновлюватиме — Термінал не потрібен.</p>
+  <p class="note" style="margin:0">Усю роботу з файлами виконує відкритий Mole CLI. Nora сама встановлює його і оновлює. Термінал не потрібен.</p>
   <div class="card" style="padding:12px"><div class="row"><b class="sp">Знайдено Homebrew</b><span class="pill good">буде використано</span></div><div style="margin-top:6px">${cmd('brew install mole')}</div>
-    <div class="note" style="margin-top:8px">Без Homebrew Nora завантажить офіційний інсталятор Mole закріпленої версії, перевірить контрольну суму й поставить у ~/.local/bin — без пароля адміністратора.</div></div>
+    <div class="note" style="margin-top:8px">Без Homebrew Nora завантажить офіційний інсталятор Mole визначеної версії, перевірить контрольну суму й поставить у ~/.local/bin, без пароля адміністратора.</div></div>
   <div class="inst-steps" id="instSteps" hidden></div>
   <div class="foot"><button class="btn" data-a="toast" data-v="Оберіть файл mo">Вказати шлях…</button><button class="btn primary" data-a="cliInstall" id="instBtn">Встановити Mole</button></div>`);
 }
@@ -820,7 +820,7 @@ function cleanScan() {
 function cleanRun() {
   closeSheet();
   const c = S.clean, total = cleanTotal(), unchecked = CLEAN_ITEMS.filter(i => selectable(i) && !c.sel.has(i.id)).length;
-  c.phase = 'run'; S.prog = { pct: 0, status: 'Готую whitelist…', step: 0 }; render();
+  c.phase = 'run'; S.prog = { pct: 0, status: 'Готую список захисту…', step: 0 }; render();
   const lines = [L('m', 'nora: backup ~/.config/mole/whitelist'), L('m', `nora: overlay +${unchecked} unchecked, +13 Mole defaults`), L('h', 'Clean Your Mac'), S.scen.admin ? L('g', '✓ Admin access available') : L('m', 'System caches need sudo → nora answers: Space (skip)')];
   CLEAN.forEach(s => { if (s.sudo && !S.scen.admin) return; lines.push(L('a', '➤ ' + s.name)); s.items.forEach(i => { if (c.sel.has(i.id)) lines.push(L('g', `  ✓ ${i.label} · ${mb(i.mb)}`)); }); });
   lines.push(L('h', 'Cleanup complete'), L('g', `Tracked cleanup: ${mb(total)} | Items cleaned: 412`), L('m', 'nora: overlay removed, whitelist restored'));
@@ -828,7 +828,7 @@ function cleanRun() {
   run(S.scen.admin ? 'sudo -A -v && mo clean' : 'mo clean', lines, { speed: 55,
     onLine: (i, ln) => { if (ln.s.startsWith('➤')) sec++; if (S.view === 'clean') progress(i, lines.length, `Очищую: ${CLEAN[Math.max(0, sec - 1)].name}`, Math.min(3, Math.floor(sec / 2.5))); },
     onDone: () => { c.phase = 'done'; c.result = { freed: total, items: 412, cats: CLEAN.filter(s => s.items.some(i => c.sel.has(i.id))).length }; if (S.view === 'clean') render(); },
-    onStop: () => { c.phase = 'review'; render(); toast('Зупинено. Whitelist відновлено.'); } });
+    onStop: () => { c.phase = 'review'; render(); toast('Зупинено. Список захисту відновлено.'); } });
 }
 function quickScan(key, state, command, lines, next, speed = 70) {
   state.phase = 'scan'; S.prog = { pct: 0, status: 'Сканую…', step: 0 }; render();
@@ -840,7 +840,7 @@ function unConfirm(dry) {
   if (dry) { run(unCmd().replace('mo uninstall', 'mo uninstall --dry-run'), [L('h', 'Uninstall preview'), ...sel.flatMap(a => { const f = appFiles(a); return [L('a', `✓ ${a.name}, ${mb(f.total)}`), ...f.groups.flatMap(g => g.files.map(p => L('m', '  ' + p)))]; }), L('w', 'Dry run: nothing removed')], { speed: 40 }); return; }
   sheet(`<h3>Видалити ${sel.length === 1 ? esc(sel[0].name) : sel.length + ' програми'}?</h3>
   <div class="legend">${sel.map(a => `<div><span class="appico" style="width:24px;height:24px;border-radius:7px;font-size:9px;background:${grad(a.name)}">${initials(a.name)}</span><span class="sp">${esc(a.name)}</span><span class="num dim">${mb(appFiles(a).total)}</span></div>`).join('')}</div>
-  <div class="note">${S.un.perm ? '<b>Остаточно</b> — без Кошика.' : 'Файли буде переміщено в <b>Кошик</b>.'} Особисті дані залишаться. Nora відповість «y» на запит Mole лише після звірки списку файлів.</div>
+  <div class="note">${S.un.perm ? '<b>Остаточно</b> : файли не потраплять у Кошик.' : 'Файли буде переміщено в <b>Кошик</b>.'} Особисті дані залишаться. Nora відповість «y» на запит Mole лише після того, як перевірить список файлів.</div>
   <div class="foot"><button class="btn" data-a="closeSheet">Скасувати</button><button class="btn ${S.un.perm ? 'danger' : 'primary'}" data-a="unRun">Видалити</button></div>`);
 }
 function unRun() {
@@ -853,7 +853,7 @@ function unRun() {
 function purgeRun() {
   closeSheet(); const p = S.purge, isDefault = ARTS.every(a => p.sel.has(a.id) === artDefault(a)), total = purgeTotal(), n = p.sel.size; p.phase = 'run'; render();
   const lines = [...(isDefault ? [] : [L('m', `nora: PTY menu driver — ${n} items, on-screen list verified ✓`)]), ...ARTS.filter(a => p.sel.has(a.id)).map(a => L('g', `  ✓ ${a.proj}/${a.k}`)), L('g', `Estimated space freed: ${mb(total)} | Items: ${n}`)];
-  run(isDefault ? 'mo purge --yes' : 'mo purge', lines, { speed: 110, onLine: i => { if (S.view === 'purge') progress(i, lines.length, 'Видаляю артефакти…', Math.min(2, Math.floor(i / lines.length * 3))); },
+  run(isDefault ? 'mo purge --yes' : 'mo purge', lines, { speed: 110, onLine: i => { if (S.view === 'purge') progress(i, lines.length, 'Видаляю файли збірки…', Math.min(2, Math.floor(i / lines.length * 3))); },
     onDone: () => { p.phase = 'done'; p.freed = total; p.items = n; if (S.view === 'purge') render(); }, onStop: () => { p.phase = 'list'; render(); } });
 }
 function instRun() {
@@ -879,7 +879,7 @@ const PAL = [
   ['Видалити програму…', 'mo uninstall', () => go('uninstall')], ['Аналіз диска', 'mo analyze --json', () => go('analyze')],
   ['Швидкодія', 'mo optimize', () => go('optimize')], ['Стан системи', 'mo status --watch', () => go('status')],
   ['Проєкти', 'mo purge --dry-run', () => go('purge')], ['Інсталятори', 'mo installer --dry-run', () => go('installer')],
-  ['Історія', 'mo history --json', () => go('history')], ['Touch ID для sudo', 'mo touchid enable', () => go('tools')],
+  ['Історія', 'mo history --json', () => go('history')], ['Touch ID для пароля Mac', 'mo touchid enable', () => go('tools')],
   ['Оновити Mole', 'mo update', () => cliUpdate()], ['Показати консоль', '', () => setDrawer(true)],
 ];
 function palRender() {
@@ -896,7 +896,7 @@ function renderScen() {
   $('#scen').innerHTML = `<h4>Стани для перевірки</h4>
     <div class="row"><label>Mole CLI</label><div class="seg" style="margin-left:auto">${radio('cli', 'ok', 'Є')}${radio('cli', 'old', 'Застарілий')}${radio('cli', 'missing', 'Немає')}</div></div>
     <div class="row"><label>Повний доступ до диска</label><div class="seg" style="margin-left:auto">${radio('fda', true, 'Так')}${radio('fda', false, 'Ні')}</div></div>
-    <div class="row"><label>Права адміністратора</label><div class="seg" style="margin-left:auto">${radio('admin', false, 'Немає')}${radio('admin', true, 'Сесія sudo')}</div></div>`;
+    <div class="row"><label>Права адміністратора</label><div class="seg" style="margin-left:auto">${radio('admin', false, 'Немає')}${radio('admin', true, 'Сесія з паролем')}</div></div>`;
 }
 // status item label by mode: icon only, icon + CPU, mini sparkline, several metrics
 function mbLabel() {
@@ -913,7 +913,7 @@ function showMbMenu(x) {
 }
 function renderMb() {
   const gi = k => glassSrc(MODS[k].hero);
-  $('#mbPop').innerHTML = `<div class="qm-head">${gi('overview') ? `<img src="${gi('overview')}" alt="">` : ''}<div class="sp"><b style="font:600 15px var(--f-display)">Nora</b><div class="note">MacBook Pro · аптайм 6 д</div></div><button class="iconbtn" title="Налаштування" data-a="mbAct" data-v="settings">${ic('i-settings')}</button></div>
+  $('#mbPop').innerHTML = `<div class="qm-head">${gi('overview') ? `<img src="${gi('overview')}" alt="">` : ''}<div class="sp"><b style="font:600 15px var(--f-display)">Nora</b><div class="note">MacBook Pro · працює 6 д</div></div><button class="iconbtn" title="Налаштування" data-a="mbAct" data-v="settings">${ic('i-settings')}</button></div>
   <div data-live="mb">${LIVE.mb()}</div>
   <div class="qm-call"><div class="sp"><small class="dim">Можна звільнити</small><div style="font:500 18px var(--f-display)">${mb(smartSafe())}</div></div><button class="btn primary sm" data-a="mbAct" data-v="smart">Очистити</button><button class="btn sm" data-a="mbAct" data-v="optimize">Оптимізувати</button></div>
   <div class="qm-nav">${['overview', 'clean', 'uninstall', 'optimize', 'analyze', 'status'].map(k => `<button class="qm-row" data-a="mbAct" data-v="${k}">${gi(k) ? `<img src="${gi(k)}" alt="">` : ic(MODS[k].ic)}<span class="ell">${MODS[k].n}</span></button>`).join('')}</div>
@@ -962,7 +962,7 @@ const A = {
   secToggle: (v, el, e) => { if (e.target.closest('input')) return; S.clean.open.has(v) ? S.clean.open.delete(v) : S.clean.open.add(v); render(true); },
   secCheck: (v, el) => { CLEAN.find(s => s.id === v).items.filter(selectable).forEach(i => el.checked ? S.clean.sel.add(i.id) : S.clean.sel.delete(i.id)); render(true); },
   itemCheck: (v, el) => { el.checked ? S.clean.sel.add(v) : S.clean.sel.delete(v); render(true); },
-  protectItem: v => { const i = CLEAN_ITEMS.find(x => x.id === v), p = i.path.split(' ·')[0]; S.clean.sel.delete(v); S.prot.custom.push(p); toast(`Додано до захисту: ${p}`); render(true); },
+  protectItem: v => { const i = CLEAN_ITEMS.find(x => x.id === v), p = i.path.split(' ·')[0]; S.clean.sel.delete(v); S.prot.custom.push(p); toast(`Додано до списку захисту: ${p}`); render(true); },
   unScan: () => quickScan('uninstall', S.un, 'mo uninstall --list', [L('m', 'Scanning /Applications, ~/Applications, Steam…'), ...APPS.map(a => L('g', `  ✓ ${a.name} · ${mb(a.mb)}`))], 'list', 45),
   unQ: (v, el) => { S.un.q = el.value; const pos = el.selectionStart; render(true); const n = $('#unQ'); n.focus(); n.setSelectionRange(pos, pos); },
   unSrc: v => { S.un.src = v; render(true); }, unSort: (v, el) => { S.un.sort = el.value; render(true); },
@@ -977,7 +977,7 @@ const A = {
   anVolSel: (v, el) => { S.an.vol = el.value; S.an.path = []; },
   anIn: v => { S.an.path = [...S.an.path, +v]; render(true); }, anUp: v => { S.an.path = S.an.path.slice(0, +v); render(true); },
   anMode: v => { S.an.mode = v; render(true); }, anReset: () => { S.an.phase = 'landing'; S.an.path = []; render(); },
-  anTrash: () => toast(`${anNode().n} — у Кошику`),
+  anTrash: () => toast(`${anNode().n} · у Кошику`),
   purgeScan: () => quickScan('purge', S.purge, 'mo purge --dry-run', [L('h', 'Purge Project Artifacts'), ...ARTS.map(a => L(a.recent ? 'w' : 'g', `  ${a.recent ? '○' : '✓'} ${a.proj}/${a.k}`))], 'list', 60),
   purgeCheck: (v, el) => { el.checked ? S.purge.sel.add(v) : S.purge.sel.delete(v); render(true); }, purgeEmpty: (v, el) => { S.purge.empty = el.checked; render(true); },
   purgeConfirm: () => purgeRun(), purgeRun: () => purgeRun(),
@@ -1000,7 +1000,7 @@ const A = {
     const paint = k => { box.innerHTML = steps.map((t, i) => `<div class="inst-step">${i < k ? `<span style="color:var(--good)">${ic('i-check')}</span>` : i === k ? '<span class="spin"></span>' : '<span style="width:16px"></span>'}<span class="${i > k ? 'muted' : ''}">${t}</span></div>`).join(''); };
     paint(0);
     run('brew install mole', [L('a', '==> Fetching mole'), L('a', '==> Installing mole'), L('g', '🍺  /opt/homebrew/Cellar/mole/1.59.1'), L('m', 'nora: mo --version → 1.59.1'), L('m', 'nora: capabilities 7/7 ok')], { speed: 380,
-      onLine: i => paint(Math.min(3, i)), onDone: () => { paint(4); setTimeout(() => { S.scen.cli = 'ok'; closeSheet(); if (S.scenOpen) renderScen(); render(); toast('Mole встановлено — Nora готова до роботи'); }, 500); } });
+      onLine: i => paint(Math.min(3, i)), onDone: () => { paint(4); setTimeout(() => { S.scen.cli = 'ok'; closeSheet(); if (S.scenOpen) renderScen(); render(); toast('Mole встановлено. Nora готова до роботи'); }, 500); } });
   },
 };
 document.addEventListener('click', e => {

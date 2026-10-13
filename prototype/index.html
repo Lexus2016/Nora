@@ -93,6 +93,7 @@ select option{background:#1b1033;color:#fff}
 .qm-meter .apps{background:linear-gradient(90deg,#2ee6ff,#4f8bff)}
 .qm-meter .cache{background:rgba(201,139,255,.55)}
 .qm-memline{gap:8px;font-size:12px}
+.qm-memline > *{white-space:nowrap}
 .qm-item{font-size:12px}
 .qm-item .num{font-variant-numeric:tabular-nums}
 .qm-track{height:3px;margin-top:4px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden}
@@ -522,7 +523,7 @@ body{font-size:14px;letter-spacing:-.005em;text-rendering:optimizeLegibility;fon
     <span class="sp"></span>
     <span class="proto-note">прототип · демо-дані</span>
     <button class="chipbtn" data-a="toggleScen" id="scenBtn" aria-pressed="false"><svg class="ic"><use href="#i-settings"/></svg>Сценарії</button>
-    <button class="mbitem" data-a="toggleMb" id="mbBtn" aria-pressed="false" title="Nora у меню-барі"><img id="mbIco" alt=""><span id="mbCpu" class="num">24 %</span></button>
+    <button class="mbitem" data-a="toggleMb" id="mbBtn" aria-pressed="false" title="Nora у рядку меню"><img id="mbIco" alt=""><span id="mbCpu" class="num">24 %</span></button>
     <svg class="ic" aria-hidden="true"><use href="#i-net"/></svg><svg class="ic" aria-hidden="true"><use href="#i-battery"/></svg>
     <span id="clock" class="num"></span>
     <div class="scen" id="scen" hidden></div>
