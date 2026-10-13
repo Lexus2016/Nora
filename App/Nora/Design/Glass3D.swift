@@ -27,17 +27,23 @@ struct Glass3D: View {
     /// Thickness of the side wall as a share of the size.
     var depth: CGFloat = 0.06
 
+    @Environment(\.controlActiveState) private var activeState
+    @State private var windowVisible = true
+
     var body: some View {
-        if amplitude == 0 {
+        if amplitude == 0 || !windowVisible {
             frame(angle: 0, tilt: 0, lift: 0)
+                .background(VisibilityProbe(visible: $windowVisible))
         } else {
-            TimelineView(.animation) { context in
+            // 30 fps is smooth for a slow swing and halves the cost of 60.
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: activeState == .inactive && amplitude < 15)) { context in
                 let t = context.date.timeIntervalSinceReferenceDate
                 let phase = sin(t * 2 * .pi / period)
                 frame(angle: amplitude * phase,
                       tilt: 5 * sin(t * 2 * .pi / (period * 1.7)),
                       lift: 6 * sin(t * 2 * .pi / (period * 1.3)))
             }
+            .background(VisibilityProbe(visible: $windowVisible))
         }
     }
 
@@ -45,7 +51,8 @@ struct Glass3D: View {
         let image = GlassLibrary.image(name)
         let radians = angle * .pi / 180
         let wall = size * depth
-        let layers = 12
+        // A slow idle swing shows little side wall, so it needs fewer layers.
+        let layers = amplitude >= 15 ? 12 : 4
         return ZStack {
             if let image {
                 // Side wall: copies receding along the depth axis, darker the deeper they go.
@@ -82,5 +89,36 @@ struct Glass3D: View {
         .shadow(color: .black.opacity(0.45), radius: size * 0.07, x: -CGFloat(sin(radians)) * size * 0.06, y: size * 0.06)
         .shadow(color: glow.opacity(0.4), radius: size * 0.12)
         .accessibilityHidden(true)
+    }
+}
+
+/// Reports whether the hosting window is on screen (not minimised, not fully covered), so
+/// animations stop when nobody can see them.
+private struct VisibilityProbe: NSViewRepresentable {
+    @Binding var visible: Bool
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        context.coordinator.attach(to: view, update: { visible = $0 })
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    @MainActor
+    final class Coordinator {
+        private var observer: NSObjectProtocol?
+
+        func attach(to view: NSView, update: @escaping @MainActor @Sendable (Bool) -> Void) {
+            DispatchQueue.main.async { [weak self, weak view] in
+                guard let window = view?.window else { return }
+                update(window.occlusionState.contains(.visible))
+                self?.observer = NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: window, queue: .main) { [weak window] _ in
+                    MainActor.assumeIsolated { update(window?.occlusionState.contains(.visible) ?? false) }
+                }
+            }
+        }
     }
 }
