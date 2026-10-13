@@ -44,7 +44,7 @@ struct OnboardingView: View {
             Text("Nora works with Mole \(Mole.minimumVersion) or newer. This Mac has \(mole.version).")
                 .font(.system(size: 15)).foregroundStyle(Palette.fg2)
             let command = MoleSetup.updateCommand(for: mole)
-            CommandPreview(command: command.description)
+            CommandPreview(command: command.description, always: true)
             Button("Update Mole") { perform([command]) }.buttonStyle(PrimaryButtonStyle(glow: palette.glow)).disabled(working)
         case .broken(let path, let reason):
             SceneTitle(text: "Mole does not start", glow: palette.glow)
@@ -63,7 +63,7 @@ struct OnboardingView: View {
             case .homebrew: Text("Nora will use Homebrew:").font(.system(size: 12)).foregroundStyle(Palette.muted)
             case .script: Text("Nora will run Mole's official installer into ~/.local/bin:").font(.system(size: 12)).foregroundStyle(Palette.muted)
             }
-            ForEach(commands, id: \.self) { CommandPreview(command: $0.description) }
+            ForEach(commands, id: \.self) { CommandPreview(command: $0.description, always: true) }
             HStack(spacing: 10) {
                 Button {
                     perform(commands)

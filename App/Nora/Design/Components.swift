@@ -109,6 +109,9 @@ struct InfoRow: View {
 /// Terminal form: `sudo -A` needs Nora's password dialog, so it is copied as plain `sudo`.
 struct CommandPreview: View {
     let command: String
+    /// Shown whatever the setting says: the first-launch install runs code from the internet,
+    /// and that is always visible before the click.
+    var always = false
     /// Settings → Mole → Commands. Off by default; the console always has the commands.
     static let settingKey = "showCommands"
     @AppStorage(CommandPreview.settingKey) private var visible = false
@@ -148,7 +151,7 @@ struct CommandPreview: View {
     }
 
     var body: some View {
-        if visible {
+        if visible || always {
             chip
         }
     }
