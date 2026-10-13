@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img alt="Status: design approved, app in development" src="https://img.shields.io/badge/status-design%20approved%20·%20app%20in%20development-ff3ea5?style=flat-square">
+  <img alt="Status: app built, first release pending" src="https://img.shields.io/badge/status-app%20built%20·%20first%20release%20pending-ff3ea5?style=flat-square">
   <img alt="Platform: macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-7b2ff7?style=flat-square&logo=apple&logoColor=white">
   <img alt="Built with SwiftUI" src="https://img.shields.io/badge/SwiftUI-native-2ee6ff?style=flat-square&logo=swift&logoColor=white">
   <img alt="License: PolyForm Noncommercial" src="https://img.shields.io/badge/license-PolyForm_Noncommercial-ffb02e?style=flat-square">
@@ -27,9 +27,9 @@
 ![Nora: Smart Care](docs/screenshots/en/01-smart-care.webp)
 
 > [!NOTE]
-> **Project status.** The design and the interactive prototype are approved. The native SwiftUI app is in development. Signed DMG builds will be published on the [Releases](https://github.com/Lexus2016/Nora/releases) page. Watch the repo to get notified.
+> **Project status.** The native SwiftUI app is built, and `scripts/build-dmg.sh` makes a signed and notarized DMG. The first public release is not out yet. It will appear on the [Releases](https://github.com/Lexus2016/Nora/releases) page. Watch the repo to get notified.
 >
-> The prototype follows your Mac's language: English, Ukrainian or Russian. Any other language gets English. The screenshots are in English.
+> Nora and the prototype follow your Mac's language: English, Ukrainian or Russian. Any other language gets English. The screenshots show the approved browser prototype in English. The app keeps its design, with an icon rail in place of the labelled sidebar.
 
 ## Why Nora
 
@@ -98,7 +98,7 @@ The menu bar item (<kbd>⌥⌘N</kbd>) shows live stats. Right-click it for quic
 ## Install
 
 > [!IMPORTANT]
-> The app is not released yet. When it is, download `Nora.dmg` from [Releases](https://github.com/Lexus2016/Nora/releases), open it, and drag **Nora** to **Applications**.
+> The first release is not published yet. When it is, download `Nora.dmg` from [Releases](https://github.com/Lexus2016/Nora/releases), open it, and drag **Nora** to **Applications**. To build it yourself, see [docs/BUILD.md](docs/BUILD.md).
 
 - macOS 14 Sonoma or later, Apple silicon or Intel.
 - [Mole](https://github.com/tw93/Mole) 1.55 or later. Nora installs or updates it for you.
@@ -116,18 +116,19 @@ Use the **Scenarios** button in the top bar to see the first-run, outdated-Mole,
 ## Documentation
 
 - **Design & architecture:** [English](docs/en/DESIGN.md) · [Українська](docs/uk/DESIGN.md) · [Русский](docs/ru/DESIGN.md). Covers the full Mole feature inventory, every reference project and what we take from it, the coverage matrix and the mechanism behind each checkbox, the architecture, the design system, the roadmap and the risks.
+- **Building:** [docs/BUILD.md](docs/BUILD.md) covers requirements, tests, signing, notarization and releasing an update.
 - App icon sources: [`Design/AppIcon/`](Design/AppIcon/)
 
 ## Roadmap
 
 - [x] Research: Mole internals, 4 GUI wrappers, 20+ open-source references
 - [x] Approved design and interactive prototype
-- [ ] **M0** Spike: PTY driver (a pseudo-terminal driver), whitelist overlay with crash recovery, `sudo -A` in PTY. *In progress: [MoleKit](MoleKit) PTY core, installer and uninstall drivers and the whitelist overlay pass end-to-end tests against Mole 1.59.1, and `sudo -A` in the PTY is confirmed. The purge driver is next.*
-- [ ] **M1** Read-only: MoleKit, System Status (NDJSON), Space Map, History, menu bar
-- [ ] **M2** Cleaning: Cleanup, Applications, Projects, Installers, Performance, Protection
-- [ ] **M3** Look & feel: neon design system, realistic 3D glass assets, Smart Care, onboarding, EN/UK/RU copy
-- [ ] **M4** Release: signed and notarized DMG, Sparkle updates
-- [ ] **M5** Security module (ClamAV + XProtect YARA + persistence audit), scheduled checks, read-only MCP
+- [x] **M0** Spike: PTY driver (a pseudo-terminal driver), whitelist overlay with crash recovery, `sudo -A` in PTY. Verified end to end against Mole 1.59.1 in [MoleKit](MoleKit).
+- [x] **M1** Read-only: MoleKit, System Status (NDJSON), Space Map, History, menu bar
+- [x] **M2** Cleaning: Cleanup, Applications, Projects, Installers, Performance, Protection
+- [x] **M3** Look & feel: neon design system, realistic 3D glass assets, Smart Care, onboarding, EN/UK/RU copy
+- [ ] **M4** Release: signed and notarized DMG, Sparkle updates. *The DMG builds, is notarized and stapled. The first GitHub Release and the update feed are not published yet.*
+- [ ] **M5** Security module (ClamAV + XProtect YARA + persistence audit), scheduled checks, read-only MCP. *Security and scheduled checks are in the app. The read-only MCP server is not built yet.*
 
 ## Credits & trademarks
 
