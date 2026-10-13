@@ -28,6 +28,7 @@ struct ModuleScene<Content: View>: View {
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
             Color.clear.frame(height: orb == nil ? 16 : OrbController.clearance)
         }
+        .background(alignment: .top) { HeaderShade(palette: module.palette) }
         .onAppear { app.orb.publish(orb, palette: module.palette, owner: owner) }
         .onChange(of: orb?.signature) { app.orb.publish(orb, palette: module.palette, owner: owner) }
         .onDisappear { app.orb.withdraw(owner: owner) }
@@ -360,6 +361,8 @@ struct Notice: View {
         Label { Text(text) } icon: { Image(systemName: symbol) }
             .font(.system(size: 12))
             .foregroundStyle(color)
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(VolumeFill(radius: 9))
     }
 }
 
@@ -372,8 +375,10 @@ struct ReviewFooter: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             if let command { CommandPreview(command: command).frame(maxWidth: 520) }
-            if let note { Text(note).font(.system(size: 11)).foregroundStyle(Palette.muted) }
+            if let note { Text(note).font(.system(size: 11)).foregroundStyle(Palette.fg2).padding(.horizontal, 4) }
         }
+        .padding(8)
+        .background(VolumeFill(radius: 14))
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

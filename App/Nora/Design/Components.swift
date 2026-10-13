@@ -108,6 +108,8 @@ struct InfoRow: View {
 /// Terminal form: `sudo -A` needs Nora's password dialog, so it is copied as plain `sudo`.
 struct CommandPreview: View {
     let command: String
+    /// Dark enough for the command text to keep 4.5:1 on the brightest scene (SceneContrastTests).
+    static let chipOpacity = 0.5
 
     var body: some View {
         HStack(spacing: 8) {
@@ -124,7 +126,7 @@ struct CommandPreview: View {
         .foregroundStyle(Palette.fg2)
         .padding(.horizontal, 12)
         .frame(height: 30)
-        .background(Color.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .background(Color.black.opacity(Self.chipOpacity), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
     }
 }
 

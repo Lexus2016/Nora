@@ -21,6 +21,48 @@ final class SceneContrastTests: XCTestCase {
         print(report.joined(separator: "\n"))
     }
 
+    /// Text that sits on the scene itself: the header subtitle over HeaderShade, the command line
+    /// on its dark chip, and notices on their glass chip.
+    func testTextOnSceneContrast() throws {
+        let size = CGSize(width: 1180, height: 780)
+        for module in Module.allCases {
+            let palette = module.palette
+            let header = ZStack(alignment: .top) {
+                SceneBackground(palette: palette)
+                HeaderShade(palette: palette)
+            }
+            .frame(width: size.width, height: size.height)
+            let headWorst = try brightest(header, x: 180...1150, y: 60...150)
+            let subtitle = Contrast.ratio(Contrast.blend(.white, alpha: 0.82, over: headWorst), over: headWorst)
+            XCTAssertGreaterThanOrEqual(subtitle, 4.5, "\(module) header subtitle")
+
+            let plain = SceneBackground(palette: palette).frame(width: size.width, height: size.height)
+            let sceneWorst = try brightest(plain, x: 110...1150, y: 200...700)
+            let chip = Contrast.blend(Contrast.RGB(r: 0, g: 0, b: 0), alpha: CommandPreview.chipOpacity, over: sceneWorst)
+            let command = Contrast.ratio(Contrast.blend(.white, alpha: 0.82, over: chip), over: chip)
+            XCTAssertGreaterThanOrEqual(command, 4.5, "\(module) command line")
+
+            let card = try brightestCardPixel(palette)
+            let warn = Contrast.ratio(Contrast.RGB(r: 1, g: 0.827, b: 0.431), over: card)
+            XCTAssertGreaterThanOrEqual(warn, 4.5, "\(module) notice on its chip")
+            print(String(format: "TEXT %@: subtitle %.2f command %.2f notice %.2f", "\(module)", subtitle, command, warn))
+        }
+    }
+
+    private func brightest(_ view: some View, x: ClosedRange<Int>, y: ClosedRange<Int>) throws -> Contrast.RGB {
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1
+        let pixels = try Contrast.pixels(try XCTUnwrap(renderer.cgImage))
+        var worst = Contrast.RGB(r: 0, g: 0, b: 0)
+        for py in stride(from: y.lowerBound, through: y.upperBound, by: 6) {
+            for px in stride(from: x.lowerBound, through: x.upperBound, by: 6) {
+                let p = pixels(px, py)
+                if Contrast.luminance(p) > Contrast.luminance(worst) { worst = p }
+            }
+        }
+        return worst
+    }
+
     /// Renders the scene with a card fill over the content area and returns the brightest pixel
     /// in the region where cards sit (right of the rail, below the title).
     private func brightestCardPixel(_ palette: ScenePalette) throws -> Contrast.RGB {

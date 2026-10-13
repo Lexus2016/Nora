@@ -75,6 +75,21 @@ struct SceneBackground: View {
     }
 }
 
+/// Darkens the top of a module scene behind its header with the same depth colour and opacity
+/// as the cards, so header subtitles keep 4.5:1 on bright scenes (SceneContrastTests).
+struct HeaderShade: View {
+    let palette: ScenePalette
+
+    var body: some View {
+        let shade = palette.depth.opacity(palette.cardScrim)
+        LinearGradient(stops: [.init(color: shade, location: 0), .init(color: shade, location: 0.62),
+                               .init(color: palette.depth.opacity(0), location: 1)],
+                       startPoint: .top, endPoint: .bottom)
+            .frame(height: 250)
+            .allowsHitTesting(false)
+    }
+}
+
 /// Large light heading with the module's glow (prototype `.title`).
 struct SceneTitle: View {
     let text: LocalizedStringKey

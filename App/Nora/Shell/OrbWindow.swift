@@ -14,6 +14,7 @@ final class OrbController {
     @ObservationIgnored private var panel: NSPanel?
     @ObservationIgnored private weak var parent: NSWindow?
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
+    @ObservationIgnored private var mouseMonitor: Any?
 
     static let diameter: CGFloat = 104
     /// Large enough for the orb's glow (shadow radius up to 46 pt on hover) so it is never clipped.
@@ -28,13 +29,22 @@ final class OrbController {
         self.owner = owner
         self.action = action
         self.palette = palette
-        panel?.ignoresMouseEvents = action == nil
+        updateHitArea()
     }
 
     func withdraw(owner: UUID) {
         guard self.owner == owner else { return }
         action = nil
-        panel?.ignoresMouseEvents = true
+        updateHitArea()
+    }
+
+    /// The panel is mostly glow, so it takes the mouse only while the cursor is over the orb
+    /// itself; everywhere else clicks reach the content underneath (the review footer, list rows).
+    func updateHitArea() {
+        guard let panel else { return }
+        let mouse = NSEvent.mouseLocation
+        let distance = hypot(mouse.x - panel.frame.midX, mouse.y - panel.frame.midY)
+        panel.ignoresMouseEvents = action == nil || hidden || distance > Self.diameter / 2 + 6
     }
 
     func attach(to window: NSWindow, app: AppModel) {
@@ -48,6 +58,9 @@ final class OrbController {
         panel.isMovable = false
         panel.becomesKeyOnlyIfNeeded = true
         panel.collectionBehavior = [.fullScreenAuxiliary, .transient]
+        panel.ignoresMouseEvents = true
+        panel.acceptsMouseMovedEvents = true
+        window.acceptsMouseMovedEvents = true
         let host = NSHostingView(rootView: OrbHost().environment(app))
         host.frame = panel.contentRect(forFrameRect: panel.frame)
         panel.contentView = host
@@ -59,6 +72,10 @@ final class OrbController {
             observers.append(center.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.reposition() }
             })
+        }
+        mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
+            MainActor.assumeIsolated { self?.updateHitArea() }
+            return event
         }
         reposition()
     }
