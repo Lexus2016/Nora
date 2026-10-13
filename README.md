@@ -122,7 +122,7 @@ Use **Scenarios** («Сценарії») in the top bar to see the first-run, ou
 
 - [x] Research: Mole internals, 4 GUI wrappers, 20+ open-source references
 - [x] Approved design and interactive prototype
-- [ ] **M0** Spike: PTY driver, whitelist overlay with crash recovery, `sudo -A` in PTY
+- [ ] **M0** Spike: PTY driver, whitelist overlay with crash recovery, `sudo -A` in PTY. *In progress: [MoleKit](MoleKit) PTY core, installer driver and whitelist overlay pass end-to-end tests against Mole 1.59.1; uninstall and purge drivers are next.*
 - [ ] **M1** Read-only: MoleKit, System Status (NDJSON), Space Map, History, menu bar
 - [ ] **M2** Cleaning: Cleanup, Applications, Projects, Installers, Performance, Protection
 - [ ] **M3** Look & feel: neon design system, realistic 3D glass assets, Smart Care, onboarding, EN/UK/RU copy
