@@ -10,7 +10,7 @@
 - **Stack:** native SwiftUI + AppKit, macOS 14+. Mole is macOS-only, and both strongest references (MangelSP/MoleUI, Burrow) are native. The Tauri wrappers lose on feel and on safety (`csp: null`, merged stdout/stderr).
 - **Mole is not bundled.** Nora finds it, offers to install it and updates it through the user's own channel. This avoids GPL redistribution duties and a broken update path.
 - **Installs and updates Mole by itself:** Homebrew, or Mole's official installer at a pinned version with checksum verification into `~/.local/bin`, with no Terminal and no admin password. **Updates itself** with Sparkle 2.
-- **Menu bar quick menu:** live system metrics, reclaimable space, jumps to every section, Mole status and updates. A "What's using the Mac" block switches between *Memory* (pressure, used / cache / free, swap, top three apps with their helper processes counted into the owning app) and *CPU*. It is read-only by the owner's decision (2026-10-13): it explains where memory goes and never frees, quits or kills anything. Mole itself cannot free memory; it dropped swap cleanup as a crash risk. GPU and fan moved out of the popover to the System Status page to keep the menu compact.
+- **Menu bar quick menu:** live system metrics, reclaimable space, jumps to every section, Mole status and updates. A *Highest load* block switches between *Memory* (pressure, used / cache / free, swap, top three apps with their helper processes counted into the owning app) and *CPU*. It is read-only by the owner's decision (2026-10-13): it explains where memory goes and never frees, quits or kills anything. Mole itself cannot free memory; it dropped swap cleanup as a crash risk. The popover shows four metric tiles: CPU, memory, network and disk by default; in Settings the user picks any four of CPU, memory, network, disk, GPU and fan (owner decision, 2026-10-13). Everything else lives on the System Status page.
 - **Mole's machine interface is partial.** `status`, `analyze`, `history` and `uninstall --list` return JSON; everything else is text plus TUI prompts. The integration layer therefore has three modes: JSON pipe, NDJSON stream, and a PTY with an auto-responder.
 - **Core principle:** a checkbox only appears where we know how Mole will honour it. §4 names the mechanism for every selection. None of the four reference wrappers does this.
 - **Design:** CleanMyMac's structure. Each module has its own scene with a large glass 3D object, a short description and a round *Scan* button. The palette is neon, inspired by Hotline Miami. The UI stays simple: *Scan → Review → Done*, and the complex parts live in the console and in *Tools*.
@@ -43,7 +43,7 @@
 Key facts from the source:
 - `mo clean` has **no per-item selection**: `--select/--categories/--exclude` were removed (`bin/clean.sh:2116`).
 - **Whitelist trap:** while `~/.config/mole/whitelist` does not exist, 13 default protections apply (`lib/core/base.sh:168`: `~/.ollama/models`, Gradle, JetBrains, Playwright, iCloud…). Any written file **replaces** them (`lib/manage/whitelist.sh:206`). Mandatory safety rules (FontRegistry, Spotlight, CloudKit…) are always merged in.
-- `clean` and `purge` delete **permanently** (`MOLE_DELETE_MODE=permanent`); `uninstall` uses the Trash.
+- `clean` and `purge` delete **permanently** (`safe_remove`, no Trash option). `installer` deletes permanently by default but honours the undocumented `MOLE_DELETE_MODE=trash` (`installer.sh` → `mole_delete`), which Nora sets. `uninstall` uses the Trash unless `--permanent`.
 - sudo is tied to the TTY: `adopt_sudo_session` uses `sudo -n`. Without a TTY, Mole shows its own osascript dialog (`lib/core/sudo.sh:95`).
 - `MOLE_PRESELECTED_INDICES` is honoured by `menu_paginated`/`menu_simple` (app selection) but not by the `installer` menu.
 - Operations log: `~/Library/Logs/mole/operations.log`.
@@ -74,8 +74,8 @@ Key facts from the source:
 | Live CPU/network charts (MangelSP, Zhili) | **In Nora**: sparklines (M1) |
 | Long-term metric history from 5 min to 90 days, retention, sampling rate (Burrow) | **In Nora**: SQLite, M5 |
 | Sorting and pinning processes (Burrow, MangelSP) | **In Nora**, read-only |
-| Killing processes, restarting apps, ports, per-app network (MangelSP) | **Optional** (§4.3), always with confirmation; some MangelSP actions ran without one |
-| Fan control Silent/Auto/Full via `pmset` (MangelSP) | **Optional** (§4.3) |
+| Killing processes, restarting apps, ports, per-app network (MangelSP) | Ports and per-app network: **in Nora**, read-only, in System Status (§4.3). Killing and restarting processes: **rejected** (memory decision of 2026-10-13) |
+| Fan control Silent/Auto/Full via `pmset` (MangelSP) | **In Nora** as the macOS energy mode switch in System Status (§4.3) |
 | "Free RAM" via `purge` with admin rights (MangelSP) | **Rejected**: macOS manages memory itself; the effect is short-lived and needs admin rights |
 | Dev Junk catalog and `docker system prune -a --volumes`, `simctl`, `brew cleanup`, `npm cache clean`, `gradle --stop` (MangelSP) | Caches are already covered by `mo clean` (*Developer tools* section) and `mo purge`. Separate destructive commands such as `prune --volumes` are **rejected**: they delete data volumes |
 | Disk explorer with move to Trash (MangelSP), Disk Map list (Zhili), donut chart (gokuscraper), treemap (Burrow) | **In Nora**: rings + tiles + list + *Move to Trash* |
@@ -96,7 +96,7 @@ Key facts from the source:
 | Optimize diagnosis verdict (gokuscraper) | **In Nora** |
 | Light/dark theme switch (gokuscraper) | **Rejected**: one neon world |
 | Language picker (Zhili, gokuscraper, Burrow) | **Rejected** per requirement: EN/UK/RU chosen automatically (§6) |
-| App updates tab: Mac apps + `brew outdated` (Burrow) | **Optional** (§4.3) |
+| App updates tab: Mac apps + `brew outdated` (Burrow) | **In Nora** for Homebrew apps only: the *Updates* filter in Applications (§4.3) |
 | Activity log (Burrow) | **In Nora**: console + *History* |
 | Menu bar HUD (Burrow, MangelSP) | **In Nora** |
 | MCP server (Burrow) | **In Nora**, read-only, M5 |
@@ -140,7 +140,7 @@ Key facts from the source:
 | App list | Applications | `uninstall --list` → JSON | ✅ |
 | Removing several apps | Applications | `mo uninstall "A" "B"`; the PTY checks the preview against the selection and answers `y`; any mismatch stops the run | ✅ |
 | `--permanent`, `--dry-run` | Applications | flags | ✅ |
-| Personal data selection (`D`) | Applications | Phase 1: embedded terminal; phase 2: upstream flag | ✅ (terminal) |
+| Personal data selection (`D`) | Applications | Phase 1: embedded terminal; phase 2: the PTY driver presses `D` | ✅ (terminal) |
 | References in configs | Applications → Done | parse output | ✅ |
 | Optimize and its outcomes | Performance | `--dry-run` → list; run → outcome badges | ✅ |
 | Task exclusions | Performance / Protection | `whitelist_optimize` | ✅ |
@@ -166,28 +166,35 @@ Key facts from the source:
 
 One-click Mole installation and automatic Mole updates (through the install channel); Nora self-updates (Sparkle 2, signed feed on GitHub Releases); the menu bar quick menu; *Smart Care*: four checks, then *Run* = `clean` + `purge --yes` + `installer`. Also: ⌘K, a console with the exact command and *Copy*, *Activity History* with charts and recommendations, scheduled checks (preview + notification only), onboarding (CLI install, Full Disk Access), CLI version and capability checks, read-only MCP server, three UI languages (§6).
 
-### 4.3. Beyond Mole (optional, needs your decision)
+### 4.3. Beyond Mole (approved 2026-10-13)
 
-Ports, processes, per-app network, fan control (as in MangelSP); app updates via Homebrew (Burrow, Applite); Apple silicon power draw (macmon).
+Only Security has its own sidebar section, and it already exists. The rest goes into existing screens:
+- **Security** with an antivirus scan (§4.4).
+- **App updates** in Applications: an *Updates* filter lists outdated Homebrew apps (`brew outdated --cask`) and updates the selected ones (`brew upgrade --cask <token>`). Homebrew apps only; App Store and self-updating apps are out of scope.
+- **Power and temperature** in System Status, read-only: CPU/GPU watts and Apple silicon temperatures without a password, as in macmon. It relies on the undocumented IOReport API; if that breaks, the cards say *unavailable* instead of showing wrong numbers.
+- **Energy mode** in System Status: Low Power / Automatic / High Power, the same switch as System Settings → Battery → Energy Mode (`pmset -a powermode` or `lowpowermode`, as in MangelSP). *High Power* appears only where the Mac reports a `powermode` key. Every change asks for a password or Touch ID through `sudo -A`.
+- **Ports and network** in System Status, read-only: listening ports and per-app traffic, as in MangelSP. No process killing.
+- **Rejected:** direct fan control through the SMC (needs a privileged helper; on Apple silicon the firmware runs the fans) and a process manager (memory decision of 2026-10-13).
 
-**Security module** (now planned for M5; recommended approach after analysing MacSai):
+**Security module** (planned for M5; approach chosen after analysing MacSai):
 - read-only persistence audit: LaunchAgents/LaunchDaemons, Login Items, browser extensions;
 - for every item, check the code signature, Gatekeeper status and notarization via `Security.framework` (`SecStaticCodeCheckValidity`, `SecAssessment`) and explain each finding;
 - Apple's own rules from the local `XProtect.yara` via `yara` (without redistributing them) and the ClamAV engine as an external `clamd`/`clamscan` (GPLv2 stays outside the app), installed and updated on request;
 - findings are never pre-selected; a loaded agent is unloaded (`launchctl bootout`) before its file is moved to quarantine or the Trash, after confirmation;
-- no "antivirus" marketing and no real-time protection claims.
+- the scanner may be called an antivirus scan, with no claims of full real-time protection and never "virus-free".
 
 ### 4.4. Security module design (ClamAV + Apple XProtect + native audit)
 
 Researched on 2026-10-13. Every item marked *verify* is tested in the M5 spike before release.
 
-- **Positioning.** On-demand scan, **no real-time protection** (ClamAV's on-access scanner is Linux-only). The UI says "signals to review", never "virus-free" or "protected". Findings are never pre-selected.
+- **Positioning.** An antivirus scan on demand and on a schedule, plus an opt-in Downloads watch. **No full real-time protection:** ClamAV's on-access scanner is Linux-only, and Endpoint Security needs an Apple entitlement and a system extension. The UI says "signals to review", never "virus-free" or "protected". Findings are never pre-selected.
 - **Pipeline:**
   1. **Native audit.** LaunchAgents/LaunchDaemons, login and background items (BTM), configuration profiles and browser extensions. Code signature via `SecStaticCodeCheckValidity` with `kSecCSCheckAllArchitectures`, notarization via `spctl -a -vv` (`source=Notarized Developer ID`), quarantine xattr. Every finding carries a reason.
   2. **Apple XProtect rules.** `yara` 4.5.8 (BSD-3) runs against the local `XProtect.yara` (≈1 MB, 506 rules), which is read at runtime and never copied or bundled. *Verify* that it compiles with stock yara.
-  3. **ClamAV 1.5.4** (GPLv2, Homebrew; the formula also installs yara). During a scan session Nora starts `clamd --foreground` as a child process, scans with `clamdscan --fdpass` and stops it afterwards, so no resident process holds 1.2 GiB or more of RAM. `freshclam` runs at most once a day, with a manual *Update now* and back-off on HTTP 429. The databases are about 107 MB (main 85 MiB, daily 22 MiB). Nora keeps its own configs in `~/Library/Application Support/Nora/clamav`. *Verify* that the child inherits Full Disk Access.
+  3. **ClamAV 1.5.4** (GPLv2, Homebrew; the formula also installs yara). During a scan session Nora starts `clamd --foreground` as a child process, scans with `clamdscan --fdpass` and stops it afterwards, so no resident process holds 1.2 GiB or more of RAM unless the Downloads watch is on. `freshclam` runs at most once a day, with a manual *Update now* and back-off on HTTP 429. The databases are about 107 MB (main 85 MiB, daily 22 MiB). Nora keeps its own configs in `~/Library/Application Support/Nora/clamav`. *Verify* that the child inherits Full Disk Access.
   4. **Optional hash reputation.** Opt-in, SHA-256 only, and only for files that already have a finding: CIRCL hashlookup suppresses known-good files, and MalwareBazaar or VirusTotal work with the user's own key.
 - **Scopes.** *Quick* covers launch items, BTM targets, `/Applications`, Downloads and Desktop. *Full* covers `$HOME`, excluding iCloud/CloudStorage placeholders, and reports how many items were skipped.
+- **Schedule and Downloads watch.** Both are off by default and turned on in Settings. The schedule runs a Quick or Full scan daily or weekly. The Downloads watch follows `~/Downloads` with FSEvents and scans each new file once it has finished downloading (no `.download`, `.crdownload` or `.part` suffix, size stable). While it is on, `clamd` stays resident: about 1 GiB of RAM and up to 2.4 GiB during the daily database reload (ClamAV docs). Settings shows this next to the toggle. A detection sends a notification; the file goes to quarantine only after the user confirms.
 - **Quarantine.** `~/Library/Application Support/Nora/Quarantine/<uuid>/` holds the file and a `meta.json` (SHA-256, original path, owner, mode, xattrs, rule or detection name). Restore takes one click; permanent deletion is a separate, confirmed action. A loaded agent is unloaded first (`launchctl bootout gui/$UID/<label>`). Apple-signed items, `/System` and `/usr` are never touched.
 - **Licensing.** Never link `libclamav`; run ClamAV only as separate processes. Do not bundle the ClamAV databases, XProtect rules or Elastic-licensed rules. Third-party rule sets (signature-base DRL-1.1, YARA Forge packages) stay out until their per-rule licenses are verified.
 - **Not doing.** No name-substring "signatures" (the MacSai pattern), no auto-remediation, no automatic uploads of files, no API keys embedded in the app.
@@ -239,18 +246,18 @@ Tests: parser tests on fixtures recorded from real runs (CI matrix with `brew in
 - **Menu bar** (based on MangelSP, Burrow and Stats; Zhili and gokuscraper have no menu bar):
   - implementation: `NSStatusItem` + `NSPopover` with SwiftUI via `NSHostingController`, not `MenuBarExtra` (no right-click, no programmatic open, no composed images, and on macOS 26 with the `.accessory` policy the item can disappear); an anchor window for auto-hiding menu bars (Burrow's technique);
   - item modes: icon only · icon + CPU · mini chart · up to three metrics (value / bar / sparkline / speed) coloured by thresholds; the image is drawn into an `NSImage` and redrawn only when the value changes;
-  - quick menu: health + Mole's verdict, 6 tiles (CPU, memory, network, disk, GPU, fan) with 120-point sparklines, battery and temperature, top processes and CPU alerts (only while open), reclaimable space + *Clean* / *Optimize*, jumps to 6 sections, Mole version and update, *Open Nora*, *Quit*;
+  - quick menu: health + Mole's verdict, 4 tiles with 120-point sparklines (CPU, memory, network and disk by default; any four of CPU, memory, network, disk, GPU and fan in Settings), battery and temperature, the read-only *Highest load* block (§0, only read while open), reclaimable space + *Clean* / *Optimize*, jumps to 6 sections, Mole version and update, *Open Nora*, *Quit*;
   - right-click: a short menu (open, sections, pause updates, settings, quit); global hotkey ⌥⌘N (Carbon `RegisterEventHotKey`, no dependencies); launch at login via `SMAppService.mainApp`; `.accessory` policy, `.regular` while the window is open;
   - data: one actor reads `mo status --watch --interval 1s` (NDJSON) for both the window and the menu bar; when nothing is visible the interval grows and processes are not read; last values are persisted for an instant first paint; `toolTip`/accessibility labels; respects *Reduce motion*.
 - **Typography:** large light headings in SF Pro Display (Onest on other systems), body in SF Pro Text, figures in SF Pro Rounded, code in JetBrains Mono. Buttons: a glossy white primary button, frosted-glass secondary buttons and a glossy pink button for destructive actions; the round *Scan* button is a glass orb with a specular highlight.
-- **Languages:** English, Ukrainian and Russian. The language follows the system (`Bundle.preferredLocalizations` among `en`/`uk`/`ru`); any other system language falls back to English. There is no in-app language picker; macOS's per-app language setting (*System Settings → General → Language & Region → Applications*) works on its own. Strings live in a String Catalog (`.xcstrings`), sizes and numbers use `ByteCountFormatter`/`Measurement`, with correct plural forms for uk/ru. The prototype is shown in Ukrainian; English and Russian copy is produced in M3.
+- **Languages:** English, Ukrainian and Russian. The language follows the system (`Bundle.preferredLocalizations` among `en`/`uk`/`ru`); any other system language falls back to English. There is no in-app language picker; macOS's per-app language setting (*System Settings → General → Language & Region → Applications*) works on its own. Strings live in a String Catalog (`.xcstrings`), sizes and numbers use `ByteCountFormatter`/`Measurement`, with correct plural forms for uk/ru.
 - **Simplicity:** a module screen has 3–4 bullets and one button. Dense data appears only in review. The console stays closed until opened.
 
 ### 6.1. Navigation: three clicks at most
 
 Every action is at most three clicks from opening Nora or the menu bar, and every step has an obvious way back (owner decision, 2026-10-13).
 
-- **The review screen is the confirmation.** Its *Clean / Remove* button acts at once, with no second "Are you sure?" dialog. The list, sizes, command and any permanent-deletion warning are already on screen, and *Stop* and the console stay available while it runs.
+- **The review screen is the confirmation.** Its *Clean / Remove* button acts at once, with no second "Are you sure?" dialog. The list, sizes, command and any permanent-deletion warning are already on screen, and *Stop* and the console stay available while it runs. **One exception** (owner decision, 2026-10-13): when the user picks *Delete permanently* for apps, Nora asks once more. Everything else needs no dialog: installers and apps go to the Trash, and caches, logs and build files are recreated by their apps and builds. A fixture test checks for every supported Mole version that `MOLE_DELETE_MODE=trash` still reaches the Trash; if it does not, Installers falls back to permanent deletion and says so on the review screen.
 - **Applications** opens straight on the list: `mo uninstall --list` is read-only and fast.
 - **Smart Care tiles** open the module's review directly, without a second scan.
 - **Back:** a ← arrow in the header of every step after the start screen, plus Esc and ⌘[. A step opened from elsewhere (a tile, the menu bar) returns there. The sidebar is always one click away.
@@ -260,7 +267,7 @@ Every action is at most three clicks from opening Nora or the menu bar, and ever
 | Clean everything safe | Scan → Run | 2 |
 | The same from the menu bar | icon → Clean → Run | 3 |
 | Cleanup with selection | Cleanup → Scan → Clean | 3 |
-| Uninstall an app | Applications → ☑ app → Uninstall | 3 |
+| Uninstall an app | Applications → ☑ app → Uninstall | 3 (+1 for *Delete permanently*) |
 | Installers / project artifacts | Scan → tile → Remove | 3 |
 | Maintenance | Performance → Scan → Run | 3 |
 | Space Map item to Trash | Space Map → Scan → item → Move to Trash | 3 + folder depth |
@@ -287,15 +294,15 @@ Every action is at most three clicks from opening Nora or the menu bar, and ever
 
 1. ~~Name~~ — **Nora**, approved.
 2. ~~License~~ — **PolyForm Noncommercial 1.0.0**, approved: Nora's code may be reused for noncommercial purposes only. MIT/BSD/Apache code is borrowed with its copyright notices kept in `THIRD_PARTY_NOTICES.md`; GPL projects are ideas only. Commits up to and including `6b840c6` were published under GPL-3.0.
-3. **Minimum macOS:** 14+ (recommended) or 26 only (full Liquid Glass).
-4. **3D:** AI-generated premium art with a strict style guide and/or Blender renders; live RealityKit later.
-5. **Upstream PR to Mole:** `--json` for dry-runs of clean/purge/installer/optimize and a path-selection flag. This would remove the PTY driver. Opening the PR is your call.
-6. **Beyond-Mole modules** (§4.3): which ones to include.
+3. ~~Minimum macOS~~ is **14 Sonoma**, approved. On 26 the app uses Liquid Glass (`glassEffect`); on 14–15 it falls back to `.ultraThinMaterial`. Both looks are tested.
+4. ~~3D~~ uses the **generated objects**, approved: the 12 glass objects in `Design/Glass/`, animated with plain SwiftUI (float, cursor tilt, glow pulse). New objects follow the same style guide. Blender and live RealityKit only if something is missing.
+5. ~~Upstream PR to Mole~~: **not doing it**, decided. Nora relies on the PTY driver and text parsing, with golden fixtures for every supported Mole version.
+6. ~~Beyond-Mole modules~~ are **approved** (§4.3): Security with an antivirus scan, app updates (Homebrew), power and temperature, energy mode, ports and network. Direct fan control through the SMC and a process manager are rejected.
 7. ~~Signing and notarization~~ — an Apple Developer ID is available: the DMG is signed with Developer ID, notarized with `notarytool` and stapled; Sparkle updates are EdDSA-signed.
 
 ## 10. Risks
 
-- **CLI drift:** text parsers break with new versions. Mitigation: capability probing, golden fixtures, CI against the current Mole, upstream JSON.
+- **CLI drift:** text parsers break with new versions. Mitigation: capability probing, golden fixtures, CI against the current Mole.
 - **PTY driver** is brittle. Mitigation: on-screen verification before confirming, fallback embedded terminal.
 - **Competitors:** mole.fit (official, $19) and Burrow (free, MIT). Our edge: honest selection, a neon 3D design and full CLI coverage without our own engine.
 - **Permissions:** Full Disk Access, notarization, the askpass helper (signed, minimal), and Automation access to System Events (`NSAppleEventsUsageDescription`): every real `mo uninstall` removes login items through AppleScript, so macOS asks on the first uninstall.

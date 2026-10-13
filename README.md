@@ -90,7 +90,7 @@ The menu bar item (<kbd>⌥⌘N</kbd>) shows live stats. Right-click it for quic
 ## Safety
 
 - Nora never deletes on its own. Deletion always comes after a review and an explicit confirmation.
-- Caches and logs removed by `mo clean`, and project build files removed by `mo purge`, are deleted permanently. Mole checks every path again before removing it. Uninstalled apps go to the Trash by default.
+- Caches and logs removed by `mo clean`, and project build files removed by `mo purge`, are deleted permanently. Mole checks every path again before removing it. Installers and uninstalled apps go to the Trash. Deleting an app permanently asks once more.
 - Mole's 13 default protections (Ollama models, Gradle and JetBrains caches, Playwright browsers, iCloud…) and its mandatory safety rules stay in place when Nora edits the protected list.
 - Administrator rights (your Mac password) are requested through the system dialog or Touch ID. Nora uses them only within the same session as the Mole command, and never stores them.
 - No telemetry, so no usage data is sent. The only network calls are update checks (Nora and Mole) and the Mole installer download. You can see all of them in the console.
