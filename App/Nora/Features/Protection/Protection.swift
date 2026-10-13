@@ -223,7 +223,7 @@ struct ProtectionView: View {
                 ForEach(model.tasks, id: \.id) { task in
                     Toggle(isOn: Binding(get: { !model.excludedTasks.contains(task.id) }, set: { model.setTask(task.id, excluded: !$0) })) {
                         HStack {
-                            Text(task.name).font(.system(size: 14, weight: .medium))
+                            Text(OptimizeText.title(task.name)).font(.system(size: 14, weight: .medium))
                             Spacer()
                             Text(task.id).font(.mono).foregroundStyle(Palette.muted)
                         }

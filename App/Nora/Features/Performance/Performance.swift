@@ -155,14 +155,14 @@ private struct PerformanceReview: View {
                             diagnosisCard(report?.diagnosis ?? [])
                             HStack(spacing: 18) {
                                 if let first = attention.first {
-                                    CategoryCard(value: first.title, caption: Self.clean(first.lines.first ?? ""),
+                                    CategoryCard(value: OptimizeText.title(first.title), caption: OptimizeText.reason(first.lines.first ?? ""),
                                                  symbol: "exclamationmark.triangle", tint: Palette.warn, review: { showAll = true })
                                 }
                                 if let loginItems {
                                     let line = Self.clean(loginItems.lines.first ?? "")
                                     let count = line.range(of: #"\((\d+) checked\)"#, options: .regularExpression).map { String(line[$0]).filter(\.isNumber) }
                                     CategoryCard(value: count.map { String(localized: "\($0) login items") } ?? String(localized: "Login items"),
-                                                 caption: line.replacingOccurrences(of: #"\s*\(\d+ checked\)"#, with: "", options: .regularExpression),
+                                                 caption: OptimizeText.reason(line.replacingOccurrences(of: #"\s*\(\d+ checked\)"#, with: "", options: .regularExpression)),
                                                  symbol: "person.badge.key", tint: module.palette.glow, review: { showAll = true })
                                 }
                             }
@@ -175,8 +175,7 @@ private struct PerformanceReview: View {
     }
 
     private func diagnosisCard(_ diagnosis: [String]) -> some View {
-        let main = diagnosis.filter { $0.hasPrefix("◎") || $0.hasPrefix("⊙") }.map(Self.clean)
-        let processes = diagnosis.filter { !$0.hasPrefix("◎") && !$0.hasPrefix("⊙") }
+        let text = DiagnosisText.split(diagnosis)
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -184,14 +183,14 @@ private struct PerformanceReview: View {
                 Spacer()
                 FeatureDisc(symbol: "stethoscope", tint: module.palette.glow, size: 44)
             }
-            ForEach(Array(main.prefix(3).enumerated()), id: \.offset) { _, line in
-                Text(line).font(.system(size: 13)).foregroundStyle(Palette.fg2).lineLimit(2)
+            ForEach(Array(text.lines.prefix(3).enumerated()), id: \.offset) { _, line in
+                Text(verbatim: line).font(.system(size: 13)).foregroundStyle(Palette.fg2).lineLimit(2)
             }
-            if !processes.isEmpty {
+            if !text.holders.isEmpty {
                 HStack(spacing: 14) {
-                    ForEach(Array(processes.prefix(3).enumerated()), id: \.offset) { _, line in
-                        Text(line.split(separator: " ", omittingEmptySubsequences: true).joined(separator: " "))
-                            .font(.system(size: 11, design: .monospaced)).foregroundStyle(Palette.muted).lineLimit(1)
+                    ForEach(text.holders.prefix(3), id: \.self) { holder in
+                        Text(verbatim: "\(holder.name) \(holder.size)")
+                            .font(.system(size: 12)).monospacedDigit().foregroundStyle(Palette.muted).lineLimit(1)
                     }
                 }
             }
@@ -237,15 +236,21 @@ private struct PerformanceReview: View {
         }
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(task.title).font(.system(size: 14, weight: .semibold))
+                Text(OptimizeText.title(task.title)).font(.system(size: 14, weight: .semibold))
                 Spacer()
                 if let badge {
                     Text(badge.0).font(.system(size: 10, weight: .semibold)).padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(badge.1.opacity(0.2))).foregroundStyle(badge.1)
                 }
             }
-            ForEach(Array(task.lines.prefix(3).enumerated()), id: \.offset) { _, line in
-                Text(Self.clean(line)).font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(2)
+            let detail = OptimizeText.description(task.title)
+            if let detail { Text(detail).font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(2) }
+            // Mole's own line only where it explains something: why a task needs attention or was
+            // skipped, or a task Nora does not know yet.
+            if badge != nil || detail == nil {
+                ForEach(Array(task.lines.prefix(2).enumerated()), id: \.offset) { _, line in
+                    Text(OptimizeText.reason(line)).font(.system(size: 12)).foregroundStyle(detail == nil ? Palette.fg2 : Palette.muted).lineLimit(2)
+                }
             }
         }
         .padding(14).frame(maxWidth: .infinity, minHeight: 84, alignment: .topLeading)

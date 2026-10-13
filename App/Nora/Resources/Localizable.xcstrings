@@ -49,6 +49,22 @@
         }
       }
     },
+    "%@ has used %@ h of processor time in %@ h of running (about %@%%)": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ использовал %@ ч процессорного времени за %@ ч работы (около %@%%)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ використав %@ год процесорного часу за %@ год роботи (близько %@%%)"
+          }
+        }
+      }
+    },
     "%@ is no longer in quarantine.": {
       "localizations": {
         "ru": {
@@ -1695,6 +1711,22 @@
         }
       }
     },
+    "A corporate security agent is busy. Nora and Mole do not stop such agents; a restart or a policy check has to happen outside Nora.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корпоративный агент безопасности сильно нагружает систему. Nora и Mole такие агенты не останавливают: перезапуск или проверка политик делается вне Nora."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корпоративний агент безпеки сильно навантажує систему. Nora і Mole такі агенти не зупиняють: перезапуск або перевірка політик робиться поза Nora."
+          }
+        }
+      }
+    },
     "A file already exists at %@. Move it away first.": {
       "localizations": {
         "ru": {
@@ -1707,6 +1739,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "Файл уже існує в %@. Спершу перемістіть його."
+          }
+        }
+      }
+    },
+    "A mounted disk image slows down app checks:": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключённый образ диска замедляет проверку программ:"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підключений образ диска сповільнює перевірку програм:"
+          }
+        }
+      }
+    },
+    "A virtual machine holds %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виртуальная машина занимает %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Віртуальна машина займає %@"
+          }
+        }
+      }
+    },
+    "A virtual machine holds %@ with no containers running, most likely Docker Desktop": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виртуальная машина занимает %@, хотя ни один контейнер не запущен. Скорее всего, это Docker Desktop"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Віртуальна машина займає %@, хоча жоден контейнер не запущено. Найімовірніше, це Docker Desktop"
+          }
+        }
+      }
+    },
+    "A virtual machine uses %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виртуальная машина использует %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Віртуальна машина використовує %@"
+          }
+        }
+      }
+    },
+    "A virtual machine uses %@, containers running: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виртуальная машина использует %@, запущено контейнеров: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Віртуальна машина використовує %@, запущено контейнерів: %@"
           }
         }
       }
@@ -1791,6 +1903,38 @@
         }
       }
     },
+    "All login items work": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все объекты входа работают"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Усі об’єкти входу працюють"
+          }
+        }
+      }
+    },
+    "All login items work (%@ checked)": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все объекты входа работают (проверено: %@)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Усі об’єкти входу працюють (перевірено: %@)"
+          }
+        }
+      }
+    },
     "All tasks": {
       "localizations": {
         "ru": {
@@ -1819,6 +1963,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Уже в порядку: %lld"
+          }
+        }
+      }
+    },
+    "Also busy for a long time:": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Также долго нагружают:"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Також довго навантажують:"
           }
         }
       }
@@ -1999,6 +2159,38 @@
         }
       }
     },
+    "Background agents": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фоновые агенты"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фонові агенти"
+          }
+        }
+      }
+    },
+    "Background agents pointing at a missing app: %@. They are still in ~/Library/LaunchAgents.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фоновых агентов, чья программа исчезла: %@. Они всё ещё лежат в ~/Library/LaunchAgents."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фонових агентів, чия програма зникла: %@. Вони досі лежать у ~/Library/LaunchAgents."
+          }
+        }
+      }
+    },
     "Battery and power": {
       "localizations": {
         "ru": {
@@ -2043,6 +2235,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bluetooth"
+          }
+        }
+      }
+    },
+    "Broken login item: %@ (the app is gone)": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неработающий объект входа: %@ (программы уже нет)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Непрацюючий об’єкт входу: %@ (програми вже немає)"
+          }
+        }
+      }
+    },
+    "Broken login items: %@. Remove them in System Settings → General → Login Items.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неработающих объектов входа: %@. Уберите их в Системных настройках → Основные → Объекты входа."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Непрацюючих об’єктів входу: %@. Приберіть їх у Системних параметрах → Загальні → Об’єкти входу."
+          }
+        }
+      }
+    },
+    "Broken settings repair": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ремонт повреждённых настроек"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ремонт пошкоджених налаштувань"
           }
         }
       }
@@ -2335,6 +2575,22 @@
         }
       }
     },
+    "Check Docker Desktop, UTM or other virtual machine apps: they may free memory.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте Docker Desktop, UTM или другие программы виртуальных машин: они могут освободить память."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірте Docker Desktop, UTM чи інші програми віртуальних машин: вони можуть звільнити пам’ять."
+          }
+        }
+      }
+    },
     "Check again": {
       "localizations": {
         "ru": {
@@ -2475,6 +2731,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевіряє елементи автозапуску та їхні підписи, далі запускає правила Apple XProtect і антивірусне сканування ClamAV. Результати є сигналами для перегляду. Без вашого підтвердження нічого не переміщується."
+          }
+        }
+      }
+    },
+    "Checks the file system.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверяет файловую систему."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевіряє файлову систему."
           }
         }
       }
@@ -2815,6 +3087,22 @@
         }
       }
     },
+    "Clears Gatekeeper's record of downloaded files.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очищает журнал Gatekeeper о загруженных файлах."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очищає журнал Gatekeeper про завантажені файли."
+          }
+        }
+      }
+    },
     "Commands": {
       "localizations": {
         "ru": {
@@ -2827,6 +3115,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Команди"
+          }
+        }
+      }
+    },
+    "Compacts the Mail, Safari and Messages databases while those apps are closed.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сжимает базы данных Почты, Safari и Сообщений, пока эти программы закрыты."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стискає бази даних Пошти, Safari і Повідомлень, поки ці програми закриті."
           }
         }
       }
@@ -2875,6 +3179,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Копіювати команду"
+          }
+        }
+      }
+    },
+    "CoreSimulator disk images": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Образы дисков CoreSimulator"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Образи дисків CoreSimulator"
           }
         }
       }
@@ -2943,6 +3263,22 @@
         }
       }
     },
+    "DNS and Spotlight check": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка DNS и Spotlight"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка DNS і Spotlight"
+          }
+        }
+      }
+    },
     "DNS, Spotlight and Finder caches": {
       "localizations": {
         "ru": {
@@ -2971,6 +3307,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Щодня"
+          }
+        }
+      }
+    },
+    "Database optimization": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оптимизация баз данных"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оптимізація баз даних"
+          }
+        }
+      }
+    },
+    "Database optimization did not finish.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оптимизация баз данных не завершилась."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оптимізація баз даних не завершилася."
           }
         }
       }
@@ -3151,6 +3519,38 @@
         }
       }
     },
+    "Disk check is off by default in Mole.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В Mole проверка диска по умолчанию выключена."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У Mole перевірку диска типово вимкнено."
+          }
+        }
+      }
+    },
+    "Disk health": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Состояние диска"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стан диска"
+          }
+        }
+      }
+    },
     "Disk images and installers you no longer need.": {
       "localizations": {
         "ru": {
@@ -3259,6 +3659,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отримання"
+          }
+        }
+      }
+    },
+    "Download history": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "История загрузок"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Історія завантажень"
           }
         }
       }
@@ -3503,6 +3919,54 @@
         }
       }
     },
+    "Finder cache refresh": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновление кэша Finder"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлення кешу Finder"
+          }
+        }
+      }
+    },
+    "Finder lists": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Списки Finder"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Списки Finder"
+          }
+        }
+      }
+    },
+    "Finder lists could not be read. Give Nora Full Disk Access.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось прочитать списки Finder. Дайте Nora полный доступ к диску."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося прочитати списки Finder. Надайте Nora повний доступ до диска."
+          }
+        }
+      }
+    },
     "Finding every file…": {
       "localizations": {
         "ru": {
@@ -3515,6 +3979,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Шукаю всі файли…"
+          }
+        }
+      }
+    },
+    "Fixes damaged preference files.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Исправляет повреждённые файлы настроек."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виправляє пошкоджені файли налаштувань."
+          }
+        }
+      }
+    },
+    "Fixes permission problems in your home folder.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Исправляет проблемы с правами доступа в домашней папке."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виправляє проблеми з правами доступу в домашній теці."
+          }
+        }
+      }
+    },
+    "Flushes the routing table and ARP cache to fix network trouble.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очищает таблицу маршрутизации и кэш ARP, чтобы устранить проблемы с сетью."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очищає таблицю маршрутизації та кеш ARP, щоб усунути проблеми з мережею."
           }
         }
       }
@@ -3643,6 +4155,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Температура GPU"
+          }
+        }
+      }
+    },
+    "Gatekeeper is busy checking app signatures.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gatekeeper активно проверяет подписи программ."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gatekeeper активно перевіряє підписи програм."
+          }
+        }
+      }
+    },
+    "Gatekeeper: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gatekeeper: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gatekeeper: %@"
           }
         }
       }
@@ -3951,6 +4495,22 @@
         }
       }
     },
+    "If this is Docker Desktop, quitting it frees all of this memory: it keeps it even when idle.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если это Docker Desktop, выход из него освободит всю эту память: он держит её даже без работы."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Якщо це Docker Desktop, вихід із нього звільнить усю цю пам’ять: він тримає її навіть без роботи."
+          }
+        }
+      }
+    },
     "Include system caches (asks for your password)": {
       "localizations": {
         "ru": {
@@ -4127,6 +4687,22 @@
         }
       }
     },
+    "It has done this since it started. If it is not doing real work, stop it: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Так продолжается с самого запуска. Если он не делает полезной работы, остановите его: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Так триває від самого запуску. Якщо він не виконує корисної роботи, зупиніть його: %@"
+          }
+        }
+      }
+    },
     "Junk: caches, logs and leftovers": {
       "localizations": {
         "ru": {
@@ -4283,6 +4859,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Залишки видалених програм"
+          }
+        }
+      }
+    },
+    "Likely cause: %@, about %@%% of the processor for a long time": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вероятная причина: %@, долго занимает около %@%% процессора"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ймовірна причина: %@, тривало займає близько %@%% процесора"
           }
         }
       }
@@ -4447,6 +5039,22 @@
         }
       }
     },
+    "Look through these mounted disk images and detach the ones you no longer need.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрите подключённые образы дисков и отключите те, что больше не нужны."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перегляньте підключені образи дисків і від’єднайте ті, що вже не потрібні."
+          }
+        }
+      }
+    },
     "Looking at your apps…": {
       "localizations": {
         "ru": {
@@ -4539,6 +5147,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Шукаю сигнали…"
+          }
+        }
+      }
+    },
+    "Looks for login items that no longer work.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ищет объекты входа, которые больше не работают."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шукає об’єкти входу, які вже не працюють."
           }
         }
       }
@@ -4731,6 +5355,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пам’ять"
+          }
+        }
+      }
+    },
+    "Memory is spread across many small processes.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Память распределена между множеством мелких процессов."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пам’ять розподілена між багатьма дрібними процесами."
+          }
+        }
+      }
+    },
+    "Memory is tight: swap %@ of %@ in use (%@%%), %@%% of memory free": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Памяти не хватает: swap занят на %@ из %@ (%@%%), свободно %@%% памяти"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пам’яті замало: своп зайнято %@ з %@ (%@%%), вільно %@%% пам’яті"
           }
         }
       }
@@ -5071,6 +5727,38 @@
         }
       }
     },
+    "Mounted disk images slow down app checks:": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключённые образы дисков замедляют проверку программ:"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підключені образи дисків сповільнюють перевірку програм:"
+          }
+        }
+      }
+    },
+    "Mounted disk images that could be detached: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключённых образов дисков, которые можно отключить: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підключених образів дисків, які можна від’єднати: %@"
+          }
+        }
+      }
+    },
     "Mounted disk images were left as they are. Eject them in Finder if you no longer need them.": {
       "localizations": {
         "ru": {
@@ -5297,6 +5985,22 @@
         }
       }
     },
+    "Network cache refresh": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновление сетевого кэша"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлення мережевого кешу"
+          }
+        }
+      }
+    },
     "Network stack and services": {
       "localizations": {
         "ru": {
@@ -5313,6 +6017,22 @@
         }
       }
     },
+    "Network stack refresh": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перезапуск сетевого стека"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перезапуск мережевого стеку"
+          }
+        }
+      }
+    },
     "Neural Engine": {
       "localizations": {
         "ru": {
@@ -5325,6 +6045,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Neural Engine"
+          }
+        }
+      }
+    },
+    "No .DS_Store on drives": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без .DS_Store на дисках"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без .DS_Store на дисках"
           }
         }
       }
@@ -5681,6 +6417,22 @@
         }
       }
     },
+    "Not available on this version of macOS.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Недоступно в этой версии macOS."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Недоступно на цій версії macOS."
+          }
+        }
+      }
+    },
     "Not downloaded yet": {
       "localizations": {
         "ru": {
@@ -5827,6 +6579,22 @@
         }
       }
     },
+    "Nothing has kept the processor busy for long.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ничто не нагружает процессор долгое время."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ніщо не навантажує процесор тривалий час."
+          }
+        }
+      }
+    },
     "Nothing in quarantine.": {
       "localizations": {
         "ru": {
@@ -5923,6 +6691,22 @@
         }
       }
     },
+    "Notifications": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уведомления"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сповіщення"
+          }
+        }
+      }
+    },
     "OK": {
       "localizations": {
         "ru": {
@@ -5971,6 +6755,22 @@
         }
       }
     },
+    "Old app states": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Старые состояния программ"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Старі стани програм"
+          }
+        }
+      }
+    },
     "Old build folders": {
       "localizations": {
         "ru": {
@@ -5999,6 +6799,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Старі теки збірки ваших проєктів: node_modules, target, build."
+          }
+        }
+      }
+    },
+    "Old tweak leftovers": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остатки старых твикеров"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Залишки старих твікерів"
           }
         }
       }
@@ -6063,6 +6879,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Показано лише програми, встановлені через Homebrew. Нічого іншого не оновлюється."
+          }
+        }
+      }
+    },
+    "Only the system's own simulator images are mounted. Nothing to detach.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подключены только системные образы симуляторов. Отключать ничего не нужно."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підключено лише системні образи симуляторів. Від’єднувати нічого не треба."
           }
         }
       }
@@ -6223,6 +7055,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Швидкодія"
+          }
+        }
+      }
+    },
+    "Periodic maintenance": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Плановое обслуживание"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Планове обслуговування"
+          }
+        }
+      }
+    },
+    "Permission repair": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ремонт прав доступа"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ремонт прав доступу"
           }
         }
       }
@@ -6451,6 +7315,22 @@
         }
       }
     },
+    "Quit these apps first: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сначала закройте эти программы: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спершу закрийте ці програми: %@"
+          }
+        }
+      }
+    },
     "Read %@ MB/s": {
       "localizations": {
         "ru": {
@@ -6547,6 +7427,22 @@
         }
       }
     },
+    "Rebuilds the search index only if search is slow.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перестраивает поисковый индекс, только если поиск медленный."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перебудовує пошуковий індекс, лише якщо пошук повільний."
+          }
+        }
+      }
+    },
     "Recent sessions": {
       "localizations": {
         "ru": {
@@ -6607,6 +7503,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновіть кеші та служби й дізнайтеся, що сповільнює Mac."
+          }
+        }
+      }
+    },
+    "Refreshes Quick Look thumbnails and the icon cache.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновляет миниатюры Quick Look и кэш иконок."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлює мініатюри Quick Look і кеш іконок."
+          }
+        }
+      }
+    },
+    "Refreshes the DNS cache and checks Spotlight.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновляет кэш DNS и проверяет Spotlight."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлює кеш DNS і перевіряє Spotlight."
+          }
+        }
+      }
+    },
+    "Refreshes the DNS cache.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновляет кэш DNS."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлює кеш DNS."
           }
         }
       }
@@ -6771,6 +7715,22 @@
         }
       }
     },
+    "Removes hidden App Nap and disk-image settings left by old tweak tools.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Убирает скрытые настройки App Nap и образов дисков, оставленные старыми твикерами."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибирає приховані налаштування App Nap і образів дисків, залишені старими твікерами."
+          }
+        }
+      }
+    },
     "Removes macOS metadata such as .DS_Store and ._ files from a drive you plug in.": {
       "localizations": {
         "ru": {
@@ -6783,6 +7743,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видаляє метадані macOS, як-от файли .DS_Store і ._, з підключеного диска."
+          }
+        }
+      }
+    },
+    "Removes old delivered notifications to keep their database small.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаляет старые доставленные уведомления, чтобы их база не разрасталась."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видаляє старі доставлені сповіщення, щоб їхня база не розросталася."
+          }
+        }
+      }
+    },
+    "Removes old usage tracking data.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаляет старые данные отслеживания использования."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видаляє старі дані відстеження використання."
+          }
+        }
+      }
+    },
+    "Removes saved app states older than 30 days.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаляет сохранённые состояния программ старше 30 дней."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видаляє збережені стани програм, старші за 30 днів."
+          }
+        }
+      }
+    },
+    "Removes search rules of apps that are no longer installed.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаляет правила поиска программ, которых уже нет."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видаляє правила пошуку програм, яких уже немає."
           }
         }
       }
@@ -6815,6 +7839,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видаляю теки збірки…"
+          }
+        }
+      }
+    },
+    "Repairs damaged Finder favorites and recent documents.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстанавливает повреждённое избранное и недавние документы в Finder."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відновлює пошкоджені обрані й недавні документи у Finder."
+          }
+        }
+      }
+    },
+    "Reports background agents whose app is gone.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывает фоновые агенты, чья программа исчезла."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показує фонові агенти, чия програма зникла."
           }
         }
       }
@@ -7087,6 +8143,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "ClamAV працює у фоні й надсилає сповіщення, коли щось знаходить. Без вашого підтвердження нічого не переміщується."
+          }
+        }
+      }
+    },
+    "Runs macOS daily, weekly and monthly maintenance if it is overdue.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запускает ежедневное, еженедельное и ежемесячное обслуживание macOS, если оно просрочено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запускає щоденне, щотижневе й щомісячне обслуговування macOS, якщо воно прострочене."
           }
         }
       }
@@ -7685,6 +8757,38 @@
         }
       }
     },
+    "Skipped: the database is busy. Try again later.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропущено: база данных занята. Попробуйте позже."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропущено: база даних зайнята. Спробуйте пізніше."
+          }
+        }
+      }
+    },
+    "Skipped: this needs administrator rights.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропущено: нужны права администратора."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропущено: потрібні права адміністратора."
+          }
+        }
+      }
+    },
     "Smaller Mole commands, each with the exact command it runs.": {
       "localizations": {
         "ru": {
@@ -7893,6 +8997,86 @@
         }
       }
     },
+    "Spotlight indexing": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Индексирование Spotlight"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Індексування Spotlight"
+          }
+        }
+      }
+    },
+    "Spotlight is indexing files and using the processor.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spotlight индексирует файлы и нагружает процессор."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spotlight індексує файли й навантажує процесор."
+          }
+        }
+      }
+    },
+    "Spotlight leftovers": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остатки Spotlight"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Залишки Spotlight"
+          }
+        }
+      }
+    },
+    "Spotlight search is slow, so its index is rebuilt. This can take 1–2 hours.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поиск Spotlight медленный, поэтому его индекс перестраивается. Это может занять 1–2 часа."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пошук Spotlight повільний, тож його індекс перебудовується. Це може тривати 1–2 години."
+          }
+        }
+      }
+    },
+    "Spotlight speed": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скорость Spotlight"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Швидкість Spotlight"
+          }
+        }
+      }
+    },
     "Start over": {
       "localizations": {
         "ru": {
@@ -7937,6 +9121,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Стоп"
+          }
+        }
+      }
+    },
+    "Stops Finder from writing .DS_Store files on network and USB drives.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запрещает Finder создавать файлы .DS_Store на сетевых и USB-дисках."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Забороняє Finder створювати файли .DS_Store на мережевих і USB-дисках."
           }
         }
       }
@@ -8309,6 +9509,22 @@
         }
       }
     },
+    "The disk has problems. Run in Terminal: sudo diskutil repairVolume /": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На диске есть проблемы. Выполните в Терминале: sudo diskutil repairVolume /"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На диску є проблеми. Виконайте в Терміналі: sudo diskutil repairVolume /"
+          }
+        }
+      }
+    },
     "The drive was unplugged or changed since the preview. Preview it again.": {
       "localizations": {
         "ru": {
@@ -8353,6 +9569,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вибраних тек уже немає, тож нічого не видалено."
+          }
+        }
+      }
+    },
+    "The network check took too long.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка сети заняла слишком много времени."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка мережі тривала задовго."
           }
         }
       }
@@ -8449,6 +9681,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Програма розміщена в прихованій теці."
+          }
+        }
+      }
+    },
+    "The system is busy drawing windows. If something else is higher, this is more likely a symptom than the cause.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Система активно отрисовывает окна. Если что-то другое нагружает сильнее, это скорее следствие, чем причина."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Система активно малює вікна. Якщо щось інше навантажує більше, це скоріше наслідок, ніж причина."
           }
         }
       }
@@ -9029,6 +10277,22 @@
         }
       }
     },
+    "Usage data": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Данные использования"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дані використання"
+          }
+        }
+      }
+    },
     "Used %@ · cache %@": {
       "localizations": {
         "ru": {
@@ -9411,6 +10675,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Правила XProtect: %@"
+          }
+        }
+      }
+    },
+    "Xcode simulator disk-image services are running.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Работают службы образов дисков симуляторов Xcode."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Працюють служби образів дисків симуляторів Xcode."
           }
         }
       }
@@ -9843,6 +11123,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "сесій"
+          }
+        }
+      }
+    },
+    "sqlite3 is not available on this Mac.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом Mac нет sqlite3."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На цьому Mac немає sqlite3."
           }
         }
       }
