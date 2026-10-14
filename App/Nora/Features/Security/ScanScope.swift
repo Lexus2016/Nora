@@ -78,6 +78,21 @@ enum ScanPlanner {
         return ScanPlan(roots: unique(roots), skippedICloud: skipped)
     }
 
+    /// The roots with `excluded` folders cut out: a root that contains one is replaced by its
+    /// children, down to the excluded folder's siblings. yara cannot skip a folder itself, so
+    /// Nora's own quarantine and database are left out this way; a root inside one is dropped.
+    static func excluding(_ excluded: [String], from roots: [String], fileManager: FileManager = .default) -> [String] {
+        let excluded = excluded.map { $0.hasSuffix("/") ? String($0.dropLast()) : $0 }
+        var out: [String] = []
+        func add(_ root: String) {
+            if excluded.contains(where: { root == $0 || root.hasPrefix($0 + "/") }) { return }
+            guard excluded.contains(where: { $0.hasPrefix(root + "/") }) else { return out.append(root) }
+            for name in childNames(of: URL(fileURLWithPath: root), fileManager) { add(root + "/" + name) }
+        }
+        roots.forEach(add)
+        return out
+    }
+
     /// Names, not URLs: `contentsOfDirectory` may return a resolved path (/private/var for /var), and the
     /// roots must stay under the home folder the caller passed in.
     private static func childNames(of directory: URL, _ fileManager: FileManager) -> [String] {

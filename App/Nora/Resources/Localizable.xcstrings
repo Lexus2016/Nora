@@ -81,6 +81,22 @@
         }
       }
     },
+    "%@ is already in quarantine.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ уже в карантине."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ уже в карантині."
+          }
+        }
+      }
+    },
     "%@ is no longer in Mole's list. Scan again.": {
       "localizations": {
         "ru": {
@@ -10229,6 +10245,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Деякі теки збірки пропущено або не вдалося видалити."
+          }
+        }
+      }
+    },
+    "Some folders could not be checked: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Некоторые папки не удалось проверить: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Деякі папки не вдалося перевірити: %@"
           }
         }
       }

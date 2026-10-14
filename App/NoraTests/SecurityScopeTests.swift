@@ -44,6 +44,17 @@ final class SecurityScopeTests: XCTestCase {
         XCTAssertFalse(plan.roots.contains { $0.hasSuffix("/CloudStorage") || $0.hasSuffix("/Mobile Documents") })
     }
 
+    /// S4: Nora's own quarantine is cut out of the roots; its siblings are still scanned.
+    func testOwnFoldersAreCutOutOfTheRoots() throws {
+        let support = home.appendingPathComponent("Library/Application Support")
+        for name in ["Nora/Quarantine/x", "Nora/clamav", "Nora/other", "Other"] {
+            try FileManager.default.createDirectory(at: support.appendingPathComponent(name), withIntermediateDirectories: true)
+        }
+        let own = [support.appendingPathComponent("Nora/Quarantine").path, support.appendingPathComponent("Nora/clamav").path]
+        let roots = ScanPlanner.excluding(own, from: [support.path, own[0] + "/x"])
+        XCTAssertEqual(roots, [support.appendingPathComponent("Nora/other").path, support.appendingPathComponent("Other").path])
+    }
+
     func testQuickScopeDedupesAndNeverScansSystemPaths() throws {
         try makeFolders(["Downloads", "Desktop"])
         let program = home.appendingPathComponent("Downloads/agent").path

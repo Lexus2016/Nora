@@ -846,5 +846,7 @@
   "Homebrew no longer describes this app the way the scan saw it. Scan again.": "Homebrew теперь описывает эту программу иначе, чем при сканировании. Просканируйте снова.",
   "It changed since the scan. Scan again.": "Программа изменилась после сканирования. Просканируйте снова.",
   "Nothing was changed: %@": "Ничего не изменено: %@",
-  "CPU temperature unavailable right now": "Температура процессора сейчас недоступна"
+  "CPU temperature unavailable right now": "Температура процессора сейчас недоступна",
+  "%@ is already in quarantine.": "%@ уже в карантине.",
+  "Some folders could not be checked: %@": "Некоторые папки не удалось проверить: %@"
 }

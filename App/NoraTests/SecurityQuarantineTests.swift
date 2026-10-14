@@ -41,7 +41,7 @@ final class SecurityQuarantineTests: XCTestCase {
     func testMovedFileLosesExecuteBitsUntilRestored() throws {
         let file = try makeFile("runnable.sh")
         let entry = try store.move(file, detection: "Fixture.Signature")
-        let stored = root.appendingPathComponent("Quarantine/\(entry.id.uuidString)/runnable.sh")
+        let stored = root.appendingPathComponent("Quarantine/\(entry.id.uuidString)/payload/runnable.sh")
         XCTAssertEqual(try mode(of: stored), 0o600)
         try store.restore(entry)
         XCTAssertEqual(try mode(of: file), 0o755)
@@ -71,5 +71,34 @@ final class SecurityQuarantineTests: XCTestCase {
         try store.delete(entry)
         XCTAssertTrue(store.list().isEmpty)
         XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    /// X02: a file named meta.json is quarantined and restored like any other.
+    func testAFileNamedMetaJSONRoundTrips() throws {
+        let file = try makeFile("meta.json")
+        let entry = try store.move(file, detection: "Fixture.Signature")
+        XCTAssertEqual(store.list().map(\.id), [entry.id])
+        try store.restore(entry)
+        XCTAssertEqual(try Data(contentsOf: file), Data("abc".utf8))
+    }
+
+    /// Entries written before the payload folder keep the file next to meta.json.
+    func testOldLayoutIsStillRestored() throws {
+        let file = try makeFile("old.bin")
+        let entry = try store.move(file, detection: "Fixture.Signature")
+        let folder = root.appendingPathComponent("Quarantine/\(entry.id.uuidString)")
+        try FileManager.default.moveItem(at: folder.appendingPathComponent("payload/old.bin"), to: folder.appendingPathComponent("old.bin"))
+        try FileManager.default.removeItem(at: folder.appendingPathComponent("payload"))
+        try store.restore(entry)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    /// S4: a file inside the quarantine is never moved again, which would split its entry.
+    func testAQuarantinedFileCannotBeQuarantinedAgain() throws {
+        let entry = try store.move(try makeFile("twice.bin"), detection: "Fixture.Signature")
+        XCTAssertThrowsError(try store.move(store.storedFile(entry), detection: "Fixture.Signature")) { error in
+            guard case QuarantineError.alreadyQuarantined = error else { return XCTFail("wrong error \(error)") }
+        }
+        XCTAssertEqual(store.list().count, 1)
     }
 }

@@ -178,9 +178,9 @@ private struct SecurityResults: View {
             case .ran(let matches):
                 value = "\(matches)"
                 detail = String(localized: "Matches of Apple's XProtect rules.")
-            case .failed(let message):
-                value = String(localized: "Failed")
-                detail = message
+            case .partial(let matches, let message):
+                value = matches == 0 ? String(localized: "Failed") : "\(matches)"
+                detail = String(localized: "Some folders could not be checked: \(message)")
             }
         }
         return CategoryCard(value: value, caption: String(localized: "XProtect rules"), detail: detail,

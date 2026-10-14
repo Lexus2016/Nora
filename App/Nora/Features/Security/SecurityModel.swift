@@ -65,7 +65,8 @@ enum SecurityNotifier {
 @MainActor @Observable
 final class SecurityModel {
     enum ListMode: Equatable { case findings, quarantine }
-    enum XProtectState: Equatable { case notRun, ran(matches: Int), failed(String) }
+    /// `partial`: yara failed on some folders; the matches it found elsewhere are listed.
+    enum XProtectState: Equatable { case notRun, ran(matches: Int), partial(matches: Int, String) }
 
     var stage: FlowStage = .start
     var scope: ScanScope = .quick
@@ -116,10 +117,13 @@ final class SecurityModel {
     @ObservationIgnored private var lastUpdateAttempt: Date?
 
     private static let systemPrefixes = ["/System/", "/usr/", "/bin/", "/sbin/", "/Library/Apple/"]
+    /// Nora's quarantine and ClamAV folders, left out of every scan.
+    @ObservationIgnored let ownFolders: [String]
 
     /// Cheap by design: no scans, processes or permission prompts happen here.
     init(home: URL = FileManager.default.homeDirectoryForCurrentUser, support: URL? = nil) {
         let base = support ?? home.appendingPathComponent("Library/Application Support/Nora", isDirectory: true)
+        self.ownFolders = [base.appendingPathComponent("Quarantine").path, base.appendingPathComponent("clamav").path]
         let layout = ClamAVLayout(root: base.appendingPathComponent("clamav", isDirectory: true))
         self.home = home
         self.layout = layout
@@ -188,7 +192,10 @@ final class SecurityModel {
                 let report = await LaunchAudit.scan(LaunchAudit.defaultDirectories)
                 self.launchItems = report.items
                 self.scanFindings = report.items.compactMap(Self.launchFinding)
-                let plan = ScanPlanner.plan(scope, home: home, launchPaths: report.items.compactMap(\.program))
+                var plan = ScanPlanner.plan(scope, home: home, launchPaths: report.items.compactMap(\.program))
+                // Nora's own quarantine and virus database are never scanned: a quarantined file
+                // would come back as a new finding, and the database is full of signatures.
+                plan.roots = ScanPlanner.excluding(self.ownFolders, from: plan.roots)
                 self.skippedICloud = plan.skippedICloud
                 try await self.runXProtect(plan.roots, app)
                 try await self.runClamAV(plan, app)
@@ -218,24 +225,32 @@ final class SecurityModel {
             xprotect = .notRun
             return
         }
-        var hits: [SecurityFinding] = []
+        // Each root's matches are kept as soon as yara reports them, so a later root that fails,
+        // or a stop, never loses what was found. Any failure marks the run partial.
+        var matches = 0
+        var problem: String?
+        defer { xprotect = problem.map { .partial(matches: matches, $0) } ?? .ran(matches: matches) }
         for root in roots {
             try Task.checkCancellation()
             progress = String(localized: "XProtect rules: \(Self.shortPath(root))")
             let result = try await runLogged(ShellCommand(yara.path, XProtect.arguments(rules: rules, root: root)), app, qos: .utility)
-            if result.status != 0 && result.stdout.isEmpty {
-                xprotect = .failed(Self.lastLine(result.stderr, fallback: String(localized: "yara stopped.")))
-                return
-            }
-            hits += YaraParser.parse(result.stdout).map { match in
+            let hits = YaraParser.parse(result.stdout).filter { !self.isOwn($0.path) }.map { match in
                 SecurityFinding(id: UUID(), source: .xprotect,
                                 title: URL(fileURLWithPath: match.path).lastPathComponent, path: match.path,
                                 reasons: [String(localized: "Matched Apple XProtect rule \(match.rule).")],
                                 launchLabel: nil, canQuarantine: true)
             }
+            scanFindings += hits
+            matches += hits.count
+            if result.status != 0, problem == nil {
+                problem = Self.lastLine(result.stderr, fallback: String(localized: "yara stopped."))
+            }
         }
-        scanFindings += hits
-        xprotect = .ran(matches: hits.count)
+    }
+
+    /// True for a path inside Nora's quarantine or virus database.
+    private func isOwn(_ path: String) -> Bool {
+        ownFolders.contains { path.hasPrefix($0 + "/") }
     }
 
     private func runClamAV(_ plan: ScanPlan, _ app: AppModel) async throws {
@@ -281,7 +296,7 @@ final class SecurityModel {
         app.console.finish(id, status: status)
         try Task.checkCancellation()
         let output = ClamScanParser.parse(lines.joined(separator: "\n"))
-        scanFindings += output.detections.map(Self.detectionFinding)
+        scanFindings += output.detections.filter { !isOwn($0.path) }.map(Self.detectionFinding)
         unreadableCount += output.errors
         // Exit 2 or more: errors or unread files. Zero findings then does not mean a clean scan.
         clamavIncomplete = status >= 2
