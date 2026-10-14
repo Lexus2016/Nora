@@ -210,7 +210,7 @@ struct ToolsView: View {
             HStack {
                 Text(model.touchIDEnabled == nil ? "Checking…" : model.touchIDEnabled == true ? "On" : "Off").font(.system(size: 15, weight: .semibold))
                 Spacer()
-                if model.touchIDBusy { ProgressView().controlSize(.small) }
+                if model.touchIDBusy { Spinner() }
                 Button(model.touchIDEnabled == true ? "Turn off" : "Turn on") { model.setTouchID(model.touchIDEnabled != true, app) }
                     .buttonStyle(PrimaryButtonStyle()).disabled(model.touchIDEnabled == nil || model.touchIDBusy)
             }
@@ -226,7 +226,7 @@ struct ToolsView: View {
             InfoRow(label: "Latest release", value: latest ?? "…")
             HStack {
                 Spacer()
-                if model.updateBusy { ProgressView().controlSize(.small) }
+                if model.updateBusy { Spinner() }
                 Button(behind ? "Update Mole" : "Reinstall") { model.updateMole(app) }.buttonStyle(PrimaryButtonStyle()).disabled(model.updateBusy)
             }
         }
@@ -247,7 +247,7 @@ struct ToolsView: View {
             }
             HStack {
                 Spacer()
-                if model.externalBusy || model.externalCleaning { ProgressView().controlSize(.small) }
+                if model.externalBusy || model.externalCleaning { Spinner() }
                 Button("Preview") { model.previewExternal(app) }.buttonStyle(GlassButtonStyle())
                     .disabled(model.externalVolume == nil || model.externalCleaning)
                 Button("Clean") { model.cleanExternal(app) }.buttonStyle(PrimaryButtonStyle())

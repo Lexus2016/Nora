@@ -199,3 +199,21 @@ struct HealthRing: View {
         .animation(.easeOut(duration: 0.6), value: score)
     }
 }
+
+/// A small spinner drawn by SwiftUI, for busy states inside cards. AppKit's ProgressView inside
+/// a lazy grid locked the window in an endless layout update when the screen faded out
+/// (System Status ↔ Smart Care on macOS 26); this has no AppKit view to re-measure.
+struct Spinner: View {
+    var size: CGFloat = 14
+    @State private var spin = false
+
+    var body: some View {
+        Circle().trim(from: 0, to: 0.72)
+            .stroke(.white, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+            .frame(width: size, height: size)
+            .rotationEffect(.degrees(spin ? 360 : 0))
+            .animation(.linear(duration: 0.8).repeatForever(autoreverses: false), value: spin)
+            .onAppear { spin = true }
+            .accessibilityLabel(Text("Loading"))
+    }
+}

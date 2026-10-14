@@ -38,7 +38,7 @@ struct StatusView: View {
                 } else if let error = store.lastError {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(Palette.warn)
                 } else {
-                    ProgressView().controlSize(.small).tint(.white)
+                    Spinner()
                 }
                 CommandPreview(command: "mo status --watch --interval 1s")
             }
@@ -225,7 +225,7 @@ struct StatusView: View {
         Card(title: "Energy mode", symbol: "leaf") {
             switch live.energy {
             case .pending:
-                ProgressView().controlSize(.small).tint(.white)
+                Spinner()
             case .unavailable:
                 Text("Energy mode is not reported on this Mac.").font(.system(size: 12)).foregroundStyle(Palette.fg2)
             case .value(let state):
@@ -247,7 +247,7 @@ struct StatusView: View {
                         Button("Cancel") { live.cancelPending() }
                             .buttonStyle(GlassButtonStyle())
                             .disabled(live.isApplying)
-                        if live.isApplying { ProgressView().controlSize(.small).tint(.white) }
+                        if live.isApplying { Spinner() }
                     }
                 }
                 if let message = live.applyMessage {
@@ -290,7 +290,7 @@ struct StatusView: View {
         Card(title: "Network by app", symbol: "arrow.up.arrow.down") {
             switch live.traffic {
             case .pending:
-                ProgressView().controlSize(.small).tint(.white)
+                Spinner()
             case .unavailable:
                 Text("nettop did not return data.").font(.system(size: 12)).foregroundStyle(Palette.fg2)
             case .value(let report):
@@ -317,7 +317,7 @@ struct StatusView: View {
         Card(title: "Listening ports", symbol: "point.3.connected.trianglepath.dotted") {
             switch live.ports {
             case .pending:
-                ProgressView().controlSize(.small).tint(.white)
+                Spinner()
             case .unavailable:
                 Text("lsof did not return data.").font(.system(size: 12)).foregroundStyle(Palette.fg2)
             case .value(let ports):

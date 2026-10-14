@@ -784,5 +784,6 @@
   "databases optimized: %@": "оптимізовано баз даних: %@",
   "partly measured": "виміряно частково",
   "settings repaired: %@": "виправлено налаштувань: %@",
-  "Run does every ticked task, one after another.": "«Запустити» виконає всі позначені задачі по черзі."
+  "Run does every ticked task, one after another.": "«Запустити» виконає всі позначені задачі по черзі.",
+  "Loading": "Завантаження"
 }

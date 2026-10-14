@@ -274,6 +274,7 @@
  "Live CPU, memory, disk, network, battery and temperatures.",
  "Live data stopped: %@. The values below are from %@.",
  "Load %@ · %@ · %@",
+ "Loading",
  "Location",
  "Login items",
  "Login items and launch agents",

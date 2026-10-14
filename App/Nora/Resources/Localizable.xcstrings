@@ -5391,6 +5391,22 @@
         }
       }
     },
+    "Loading": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завантаження"
+          }
+        }
+      }
+    },
     "Location": {
       "localizations": {
         "ru": {

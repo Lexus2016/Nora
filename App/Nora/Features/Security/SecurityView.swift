@@ -82,7 +82,7 @@ private struct SecurityStart: View {
                         .buttonStyle(GlassButtonStyle())
                         .disabled(model.installing != nil)
                     if model.installing == formula {
-                        ProgressView().controlSize(.small).tint(.white)
+                        Spinner()
                         Text(model.downloadingDatabase ? "Downloading the virus database…" : "Installing…").font(.system(size: 12)).foregroundStyle(Palette.fg2)
                     }
                 }
