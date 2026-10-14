@@ -14,6 +14,9 @@ final class MenuBarController: NSObject {
     private var hotKey: EventHotKeyRef?
     private var titleTimer: Timer?
     private var retainedStatus = false
+    private let temperatureSampler = TemperatureSampler()
+    /// CPU average from the chip's sensors, or Mole's reading where the sensors are not readable.
+    private var cpuTemperature: Double?
 
     init(app: AppModel) {
         self.app = app
@@ -31,6 +34,7 @@ final class MenuBarController: NSObject {
     @objc private func defaultsChanged() { apply() }
 
     private var style: MenuBarStyle { MenuBarStyle(rawValue: UserDefaults.standard.string(forKey: "menuBarStyle") ?? "") ?? .icon }
+    private var showsTemperature: Bool { UserDefaults.standard.bool(forKey: MenuBarStyle.temperatureKey) }
 
     private func apply() {
         let show = UserDefaults.standard.object(forKey: "showMenuBar") as? Bool ?? true
@@ -54,12 +58,25 @@ final class MenuBarController: NSObject {
             if wantsStream { app.status.retain() } else { app.status.release() }
         }
         titleTimer?.invalidate()
-        if wantsStream {
+        titleTimer = nil
+        let wantsTemperature = show && showsTemperature
+        if !wantsTemperature { cpuTemperature = nil }
+        if wantsStream || wantsTemperature {
             titleTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
-                MainActor.assumeIsolated { self?.updateTitle() }
+                MainActor.assumeIsolated { self?.tick(temperature: wantsTemperature) }
             }
         }
+        tick(temperature: wantsTemperature)
+    }
+
+    private func tick(temperature: Bool) {
         updateTitle()
+        guard temperature else { return }
+        Task {
+            let reading = await temperatureSampler.read()
+            cpuTemperature = reading.cpu?.average ?? app.status.snapshot?.thermal?.cpuTemp
+            updateTitle()
+        }
     }
 
     private func updateTitle() {
@@ -72,7 +89,26 @@ final class MenuBarController: NSObject {
         case .memory: " \(mem)"
         case .both: " \(cpu) · \(mem)"
         }
-        button.attributedTitle = NSAttributedString(string: text, attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)])
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        let title = NSMutableAttributedString(string: text, attributes: [.font: font])
+        if showsTemperature, let celsius = cpuTemperature {
+            // A coloured dot for how hot, the number in the menu bar's own colour.
+            title.append(NSAttributedString(string: " ●", attributes: [.font: NSFont.systemFont(ofSize: 9), .foregroundColor: Self.color(HeatLevel(celsius: celsius)),
+                                                                        .baselineOffset: 1]))
+            title.append(NSAttributedString(string: " \(Int(celsius.rounded()))°", attributes: [.font: font]))
+            button.toolTip = String(localized: "Nora: system status and quick actions") + "\n" + String(localized: "CPU \(Int(celsius.rounded())) °C")
+        } else {
+            button.toolTip = String(localized: "Nora: system status and quick actions")
+        }
+        button.attributedTitle = title
+    }
+
+    static func color(_ level: HeatLevel) -> NSColor {
+        switch level {
+        case .normal: .systemGreen
+        case .warm: .systemOrange
+        case .hot: .systemRed
+        }
     }
 
     @objc private func clicked(_ sender: NSStatusBarButton) {

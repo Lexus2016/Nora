@@ -124,4 +124,13 @@ final class StatusSensorMathTests: XCTestCase {
         XCTAssertEqual(group?.sensors, 3)
         XCTAssertNil(SensorMath.group(means: [], rawMax: nil))
     }
+
+    func testHeatLevelThresholdsForTheMenuBarDot() {
+        XCTAssertEqual(HeatLevel(celsius: 45), .normal)
+        XCTAssertEqual(HeatLevel(celsius: 69.9), .normal)
+        XCTAssertEqual(HeatLevel(celsius: 70), .warm)
+        XCTAssertEqual(HeatLevel(celsius: 89.9), .warm)
+        XCTAssertEqual(HeatLevel(celsius: 90), .hot)
+        XCTAssertEqual(HeatLevel(celsius: 104), .hot)
+    }
 }

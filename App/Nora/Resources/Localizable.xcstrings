@@ -1905,6 +1905,22 @@
         }
       }
     },
+    "A dot shows how hot it runs: green below 70 °C, orange from 70 °C, red from 90 °C.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Точка показывает, насколько он горячий: зелёная ниже 70 °C, оранжевая от 70 °C, красная от 90 °C."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Крапка показує, наскільки він гарячий: зелена нижче 70 °C, помаранчева від 70 °C, червона від 90 °C."
+          }
+        }
+      }
+    },
     "A file already exists at %@. Move it away first.": {
       "localizations": {
         "ru": {
@@ -2589,6 +2605,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "CPU"
+          }
+        }
+      }
+    },
+    "CPU %lld °C": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Процессор %lld °C"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Процесор %lld °C"
           }
         }
       }
@@ -9601,6 +9633,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Показати журнал"
+          }
+        }
+      }
+    },
+    "Show the CPU temperature": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывать температуру процессора"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показувати температуру процесора"
           }
         }
       }

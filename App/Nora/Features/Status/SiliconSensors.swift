@@ -38,6 +38,19 @@ struct TemperatureReading: Sendable, Equatable {
     var hasAny: Bool { cpu != nil || gpu != nil }
 }
 
+/// How hot the CPU runs, for the menu bar dot. Apple silicon sits near 90 °C under sustained
+/// load and slows itself down above 100 °C, so red means hot, not merely busy.
+enum HeatLevel: Equatable, Sendable {
+    case normal, warm, hot
+
+    static let warmFrom = 70.0
+    static let hotFrom = 90.0
+
+    init(celsius: Double) {
+        self = celsius >= Self.hotFrom ? .hot : celsius >= Self.warmFrom ? .warm : .normal
+    }
+}
+
 /// One channel of the IOReport "Energy Model" group, already read out of a delta sample.
 struct EnergyChannel: Sendable, Equatable {
     let name: String

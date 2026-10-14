@@ -823,5 +823,8 @@
   "It is running. Quit it and try again.": "Программа открыта. Закройте её и попробуйте ещё раз.",
   "Only the selected apps are updated. An app from a download goes to the Trash first and comes back if Homebrew fails.": "Обновляются только выбранные программы. Программа из интернета сначала уходит в Корзину и возвращается на место, если Homebrew не справится.",
   "Open": "Открыть",
-  "Remove an app with its helpers, caches and settings, update your apps, and find the ones you no longer open.": "Удалите программу вместе с вспомогательными файлами, кэшами и настройками, обновите программы и найдите те, которые вы больше не открываете."
+  "Remove an app with its helpers, caches and settings, update your apps, and find the ones you no longer open.": "Удалите программу вместе с вспомогательными файлами, кэшами и настройками, обновите программы и найдите те, которые вы больше не открываете.",
+  "A dot shows how hot it runs: green below 70 °C, orange from 70 °C, red from 90 °C.": "Точка показывает, насколько он горячий: зелёная ниже 70 °C, оранжевая от 70 °C, красная от 90 °C.",
+  "CPU %lld °C": "Процессор %lld °C",
+  "Show the CPU temperature": "Показывать температуру процессора"
 }

@@ -2,6 +2,11 @@
 
 Changes to the Nora app, newest first. Work that is merged but not released yet goes under **Unreleased**; at release time it becomes the next version's section and its release notes.
 
+## Unreleased
+
+### Added
+- Settings → General → Menu bar can show the CPU temperature next to the Nora icon, with a coloured dot for how hot it runs: green below 70 °C, orange from 70 °C, red from 90 °C. Off by default; the tooltip gives the exact value.
+
 ## 1.1.0 (2026-10-14)
 
 ### Added

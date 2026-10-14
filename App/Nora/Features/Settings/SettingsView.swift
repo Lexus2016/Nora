@@ -62,6 +62,9 @@ enum MenuTile: String, CaseIterable, Identifiable {
 enum MenuBarStyle: String, CaseIterable, Identifiable {
     case icon, cpu, memory, both
     var id: String { rawValue }
+
+    /// The CPU temperature with a coloured dot, next to any style. Off by default.
+    static let temperatureKey = "menuBarTemperature"
     var title: LocalizedStringKey {
         switch self {
         case .icon: "Icon only"
@@ -75,6 +78,7 @@ enum MenuBarStyle: String, CaseIterable, Identifiable {
 private struct GeneralSettings: View {
     @AppStorage("showMenuBar") private var showMenuBar = true
     @AppStorage("menuBarStyle") private var style = MenuBarStyle.icon.rawValue
+    @AppStorage(MenuBarStyle.temperatureKey) private var showTemperature = false
     @AppStorage("menuTiles") private var tilesRaw = MenuTile.defaults.map(\.rawValue).joined(separator: ",")
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
@@ -98,6 +102,12 @@ private struct GeneralSettings: View {
                 Toggle("Show Nora in the menu bar", isOn: $showMenuBar)
                 Picker("Menu bar item", selection: $style) {
                     ForEach(MenuBarStyle.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                .disabled(!showMenuBar)
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Show the CPU temperature", isOn: $showTemperature)
+                    Text("A dot shows how hot it runs: green below 70 °C, orange from 70 °C, red from 90 °C.")
+                        .font(.system(size: 12)).foregroundStyle(.secondary)
                 }
                 .disabled(!showMenuBar)
                 VStack(alignment: .leading, spacing: 6) {
