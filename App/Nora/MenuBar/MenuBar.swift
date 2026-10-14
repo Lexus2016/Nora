@@ -136,7 +136,17 @@ final class MenuBarController: NSObject {
 struct QuickMenu: View {
     let close: () -> Void
     @Environment(AppModel.self) private var app
-    @State private var tab = 0
+    @State private var tab = Self.initialTab
+
+    /// Memory first. Screenshots open the CPU tab (`-NoraPopoverTab 1`): it lists the processes
+    /// Mole reports, while the memory list comes from this Mac's own process table.
+    private static var initialTab: Int {
+        #if DEBUG
+        UserDefaults.standard.integer(forKey: "NoraPopoverTab")
+        #else
+        0
+        #endif
+    }
 
     var body: some View {
         let s = app.status.snapshot

@@ -343,7 +343,8 @@ struct StatusView: View {
         }
     }
 
-    /// Unsupported API: "unavailable". Supported but no counter step yet: "waiting for update".
+    /// Unsupported API: "unavailable". Supported but no counter step pair yet: "measuring…".
+    /// The CPU counter can take minutes to step twice, and an idle Neural Engine may never step.
     private func powerText(_ pick: (PowerReading) -> Double?) -> String {
         switch live.power {
         case .pending:
@@ -351,7 +352,7 @@ struct StatusView: View {
         case .unavailable:
             return String(localized: "unavailable")
         case .value(let reading):
-            guard let value = pick(reading) else { return String(localized: "waiting for update") }
+            guard let value = pick(reading) else { return String(localized: "measuring…") }
             return "\(Format.number(value, digits: 2)) W"
         }
     }

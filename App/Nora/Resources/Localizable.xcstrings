@@ -12007,6 +12007,22 @@
         }
       }
     },
+    "measuring…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "измеряю…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "вимірюю…"
+          }
+        }
+      }
+    },
     "nettop did not return data.": {
       "localizations": {
         "ru": {
@@ -12243,22 +12259,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "кеші віртуалізації"
-          }
-        }
-      }
-    },
-    "waiting for update": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ожидаю обновления"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "чекаю на оновлення"
           }
         }
       }

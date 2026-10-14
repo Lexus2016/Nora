@@ -22,7 +22,13 @@ final class SpaceMapModel {
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var forward: [URL] = []
 
-    init() { root = FileManager.default.homeDirectoryForCurrentUser }
+    init() {
+        root = FileManager.default.homeDirectoryForCurrentUser
+        #if DEBUG
+        // Screenshots: `-NoraSpaceMapRoot /` starts on the disk instead of the home folder.
+        if let path = UserDefaults.standard.string(forKey: "NoraSpaceMapRoot") { root = URL(fileURLWithPath: path) }
+        #endif
+    }
 
     var current: URL? { path.last }
     var analysis: DiskAnalysis? { current.flatMap { cache[$0] } }

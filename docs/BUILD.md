@@ -43,7 +43,7 @@ A module that is not finished is absent from the sidebar. There are no mock scre
 ## Releasing an update
 
 1. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `App/Config/Nora.xcconfig`.
-2. `scripts/build-dmg.sh` → `dist/Nora-<version>.dmg`, signed, notarized and stapled.
+2. `scripts/build-dmg.sh` → `dist/Nora-<version>.dmg`, signed, notarized and stapled. Keep the Mac unlocked: `notarytool` reads the `nora-notary` profile from the keychain only while the Mac is unlocked.
 3. Make the Sparkle feed: `build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast dist/`. It signs each archive with the EdDSA private key in the login keychain and writes `dist/appcast.xml`.
 4. Upload the DMG to a GitHub Release and publish `appcast.xml` at `https://lexus2016.github.io/Nora/appcast.xml` (the `SUFeedURL` in `Info.plist`), with the enclosure URL pointing at the release asset.
 5. Back up the Sparkle private key once: `generate_keys -x sparkle_private_key` (the file name is gitignored), then store it somewhere safe and delete the export. Without this key, installed copies cannot verify future updates.

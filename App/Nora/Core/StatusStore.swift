@@ -118,8 +118,17 @@ final class StatusStore {
 enum Format {
     static func bytes(_ value: Int64?) -> String {
         guard let value else { return "—" }
+        // "0 KB", not the formatter's "Zero KB".
+        guard value != 0 else { return zero }
         return ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
     }
+
+    private static let zero: String = {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        formatter.allowsNonnumericFormatting = false
+        return formatter.string(fromByteCount: 0)
+    }()
 
     static func bytes(_ value: Int?) -> String { bytes(value.map(Int64.init)) }
 
