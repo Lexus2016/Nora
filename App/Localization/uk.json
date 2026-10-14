@@ -803,5 +803,25 @@
   "YARA by VirusTotal (BSD-3-Clause) runs Apple's XProtect rules. Updates come through Sparkle (sparkle-project.org, MIT).": "YARA від VirusTotal (BSD-3-Clause) запускає правила Apple XProtect. Оновлення надходять через Sparkle (sparkle-project.org, MIT).",
   "brew install %@ was stopped. Install again when you are ready.": "brew install %@ зупинено. Встановіть знову, коли будете готові.",
   "measuring…": "вимірюю…",
-  "not started, you pressed Stop": "не запущено, ви натиснули «Стоп»"
+  "not started, you pressed Stop": "не запущено, ви натиснули «Стоп»",
+  "%@ → %@ · from a download, Homebrew installs it": "%@ → %@ · з інтернету, встановить Homebrew",
+  "%@ → %@ · updates itself": "%@ → %@ · оновлюється сама",
+  "%lld apps have a newer version": {
+    "one": "%lld програма має новішу версію",
+    "few": "%lld програми мають новішу версію",
+    "many": "%lld програм мають новішу версію",
+    "other": "%lld програми мають новішу версію"
+  },
+  "Apps with a newer version, including the ones you downloaded yourself.": "Програми з новішою версією, зокрема ті, що ви завантажили самі.",
+  "Checking for updates": "Перевіряю оновлення",
+  "Every app is up to date.": "Усі програми актуальні.",
+  "Homebrew cannot install this app.": "Homebrew не може встановити цю програму.",
+  "Homebrew could not install it. The old version is back in place.": "Homebrew не зміг її встановити. Стару версію повернуто на місце.",
+  "Homebrew could not install it. The old version is in the Trash.": "Homebrew не зміг її встановити. Стара версія лежить у Кошику.",
+  "Homebrew is not installed. Open an app to let it install its update.": "Homebrew не встановлено. Відкрийте програму, і вона сама встановить оновлення.",
+  "Homebrew's app list has no newer version yet. Run brew update and try again.": "У списку Homebrew ще немає новішої версії. Виконайте brew update і спробуйте ще раз.",
+  "It is running. Quit it and try again.": "Програма відкрита. Закрийте її і спробуйте ще раз.",
+  "Only the selected apps are updated. An app from a download goes to the Trash first and comes back if Homebrew fails.": "Оновлюються лише вибрані програми. Програма з інтернету спершу йде в Кошик і повертається на місце, якщо Homebrew не впорається.",
+  "Open": "Відкрити",
+  "Remove an app with its helpers, caches and settings, update your apps, and find the ones you no longer open.": "Видаліть програму разом із допоміжними файлами, кешами й налаштуваннями, оновіть програми і знайдіть ті, які ви більше не відкриваєте."
 }

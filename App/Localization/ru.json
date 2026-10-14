@@ -803,5 +803,25 @@
   "YARA by VirusTotal (BSD-3-Clause) runs Apple's XProtect rules. Updates come through Sparkle (sparkle-project.org, MIT).": "YARA от VirusTotal (BSD-3-Clause) запускает правила Apple XProtect. Обновления приходят через Sparkle (sparkle-project.org, MIT).",
   "brew install %@ was stopped. Install again when you are ready.": "brew install %@ остановлен. Установите снова, когда будете готовы.",
   "measuring…": "измеряю…",
-  "not started, you pressed Stop": "не запущено, вы нажали «Стоп»"
+  "not started, you pressed Stop": "не запущено, вы нажали «Стоп»",
+  "%@ → %@ · from a download, Homebrew installs it": "%@ → %@ · из интернета, установит Homebrew",
+  "%@ → %@ · updates itself": "%@ → %@ · обновляется сама",
+  "%lld apps have a newer version": {
+    "one": "%lld программа имеет более новую версию",
+    "few": "%lld программы имеют более новую версию",
+    "many": "%lld программ имеют более новую версию",
+    "other": "%lld программы имеют более новую версию"
+  },
+  "Apps with a newer version, including the ones you downloaded yourself.": "Программы с более новой версией, в том числе те, что вы скачали сами.",
+  "Checking for updates": "Проверяю обновления",
+  "Every app is up to date.": "Все программы актуальны.",
+  "Homebrew cannot install this app.": "Homebrew не может установить эту программу.",
+  "Homebrew could not install it. The old version is back in place.": "Homebrew не смог её установить. Старая версия возвращена на место.",
+  "Homebrew could not install it. The old version is in the Trash.": "Homebrew не смог её установить. Старая версия лежит в Корзине.",
+  "Homebrew is not installed. Open an app to let it install its update.": "Homebrew не установлен. Откройте программу, и она сама установит обновление.",
+  "Homebrew's app list has no newer version yet. Run brew update and try again.": "В списке Homebrew ещё нет более новой версии. Выполните brew update и попробуйте ещё раз.",
+  "It is running. Quit it and try again.": "Программа открыта. Закройте её и попробуйте ещё раз.",
+  "Only the selected apps are updated. An app from a download goes to the Trash first and comes back if Homebrew fails.": "Обновляются только выбранные программы. Программа из интернета сначала уходит в Корзину и возвращается на место, если Homebrew не справится.",
+  "Open": "Открыть",
+  "Remove an app with its helpers, caches and settings, update your apps, and find the ones you no longer open.": "Удалите программу вместе с вспомогательными файлами, кэшами и настройками, обновите программы и найдите те, которые вы больше не открываете."
 }

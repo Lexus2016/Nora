@@ -9,6 +9,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 - Settings → Credits has a **Third-party licenses** button that opens the bundled license texts.
 - Stop in every operation that can end safely: Cleanup, Projects and Installers runs, Smart Care's Run, the Applications removal and updates and Security's quarantine (these two finish the item in progress first), `brew install` and the virus database download, and the external drive clean.
 - The ClamAV database update shows that it is downloading.
+- Applications finds updates for apps installed from a download (a DMG or a zip), not only for Homebrew apps. It reads each app's own update feed and Homebrew's public app list; an app counts as a Homebrew app only when both its name and its bundle ID match. When Homebrew can take an app over, Update moves the old copy to the Trash, installs the new version with `brew install --cask` and puts the old copy back if that fails; after that Homebrew keeps the app up to date. Other apps get an **Open** button and install the update themselves.
 
 ### Changed
 - Menu and scene icons match: each section's icon in the sidebar and the menu bar draws the same object as its scene. New glass objects for Cleanup (a trash can instead of a star with a white ball), Applications (four app tiles instead of a tile with a trash can, so it no longer looks like Cleanup), Projects (a clean `</>`), Performance (a bolt instead of a shield), History (a clock with a back arrow) and Tools (a wrench and a screwdriver instead of a gear).

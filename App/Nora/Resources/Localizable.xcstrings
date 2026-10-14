@@ -273,6 +273,38 @@
         }
       }
     },
+    "%@ → %@ · from a download, Homebrew installs it": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ → %@ · из интернета, установит Homebrew"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ → %@ · з інтернету, встановить Homebrew"
+          }
+        }
+      }
+    },
+    "%@ → %@ · updates itself": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ → %@ · обновляется сама"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ → %@ · оновлюється сама"
+          }
+        }
+      }
+    },
     "%@%@ · %lld files": {
       "localizations": {
         "ru": {
@@ -608,6 +640,88 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld програми"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld apps have a newer version": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld app has a newer version"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld apps have a newer version"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld программы имеют более новую версию"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld программ имеют более новую версию"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld программа имеет более новую версию"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld программы имеют более новую версию"
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld програми мають новішу версію"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld програм мають новішу версію"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld програма має новішу версію"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld програми мають новішу версію"
                 }
               }
             }
@@ -2191,6 +2305,22 @@
         }
       }
     },
+    "Apps with a newer version, including the ones you downloaded yourself.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Программы с более новой версией, в том числе те, что вы скачали сами."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Програми з новішою версією, зокрема ті, що ви завантажили самі."
+          }
+        }
+      }
+    },
     "Automatic": {
       "localizations": {
         "ru": {
@@ -2843,6 +2973,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевіряю оновлення Homebrew"
+          }
+        }
+      }
+    },
+    "Checking for updates": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверяю обновления"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевіряю оновлення"
           }
         }
       }
@@ -4047,6 +4193,22 @@
         }
       }
     },
+    "Every app is up to date.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все программы актуальны."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Усі програми актуальні."
+          }
+        }
+      }
+    },
     "Every task was checked.": {
       "localizations": {
         "ru": {
@@ -4799,6 +4961,22 @@
         }
       }
     },
+    "Homebrew cannot install this app.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не может установить эту программу."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не може встановити цю програму."
+          }
+        }
+      }
+    },
     "Homebrew check failed. See the console.": {
       "localizations": {
         "ru": {
@@ -4811,6 +4989,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевірка Homebrew не вдалася. Деталі в консолі."
+          }
+        }
+      }
+    },
+    "Homebrew could not install it. The old version is back in place.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не смог её установить. Старая версия возвращена на место."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не зміг її встановити. Стару версію повернуто на місце."
+          }
+        }
+      }
+    },
+    "Homebrew could not install it. The old version is in the Trash.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не смог её установить. Старая версия лежит в Корзине."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не зміг її встановити. Стара версія лежить у Кошику."
           }
         }
       }
@@ -4847,6 +5057,22 @@
         }
       }
     },
+    "Homebrew is not installed. Open an app to let it install its update.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не установлен. Откройте программу, и она сама установит обновление."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не встановлено. Відкрийте програму, і вона сама встановить оновлення."
+          }
+        }
+      }
+    },
     "Homebrew not found": {
       "localizations": {
         "ru": {
@@ -4875,6 +5101,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Homebrew не знайдено. Спершу встановіть Homebrew."
+          }
+        }
+      }
+    },
+    "Homebrew's app list has no newer version yet. Run brew update and try again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В списке Homebrew ещё нет более новой версии. Выполните brew update и попробуйте ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У списку Homebrew ще немає новішої версії. Виконайте brew update і спробуйте ще раз."
           }
         }
       }
@@ -5211,6 +5453,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Так триває від самого запуску. Якщо він не виконує корисної роботи, зупиніть його: %@"
+          }
+        }
+      }
+    },
+    "It is running. Quit it and try again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Программа открыта. Закройте её и попробуйте ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Програма відкрита. Закрийте її і спробуйте ще раз."
           }
         }
       }
@@ -7603,6 +7861,22 @@
         }
       }
     },
+    "Only the selected apps are updated. An app from a download goes to the Trash first and comes back if Homebrew fails.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновляются только выбранные программы. Программа из интернета сначала уходит в Корзину и возвращается на место, если Homebrew не справится."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлюються лише вибрані програми. Програма з інтернету спершу йде в Кошик і повертається на місце, якщо Homebrew не впорається."
+          }
+        }
+      }
+    },
     "Only the system's own simulator images are mounted. Nothing to detach.": {
       "localizations": {
         "ru": {
@@ -7615,6 +7889,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Підключено лише системні образи симуляторів. Від’єднувати нічого не треба."
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відкрити"
           }
         }
       }
@@ -8383,6 +8673,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видаліть програму разом із допоміжними файлами, кешами й налаштуваннями, оновіть програми Homebrew і знайдіть ті, які ви більше не відкриваєте."
+          }
+        }
+      }
+    },
+    "Remove an app with its helpers, caches and settings, update your apps, and find the ones you no longer open.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалите программу вместе с вспомогательными файлами, кэшами и настройками, обновите программы и найдите те, которые вы больше не открываете."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видаліть програму разом із допоміжними файлами, кешами й налаштуваннями, оновіть програми і знайдіть ті, які ви більше не відкриваєте."
           }
         }
       }

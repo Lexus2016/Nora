@@ -32,14 +32,14 @@ struct AppsResults: View {
     }
 
     private var updatesCard: some View {
-        let count = model.updates.count
-        return CategoryCard(value: model.brewFound ? "\(count)" : "—",
-                            caption: model.brewFound ? String(localized: "Updates available") : String(localized: "Homebrew not found"),
-                            detail: model.updatesNote ?? String(localized: "Homebrew apps with a newer version. Apps outside Homebrew are not checked."),
+        let count = model.updateCount
+        return CategoryCard(value: "\(count)",
+                            caption: String(localized: "Updates available"),
+                            detail: model.updatesNote ?? String(localized: "Apps with a newer version, including the ones you downloaded yourself."),
                             symbol: "arrow.triangle.2.circlepath", tint: module.palette.glow, large: true, glass: module.glass,
-                            actionTitle: count > 0 ? "Update" : nil,
+                            actionTitle: model.updatableIDs.isEmpty ? nil : "Update",
                             review: { model.openUpdates(all: false) },
-                            action: count > 0 ? { model.openUpdates(all: true) } : nil)
+                            action: model.updatableIDs.isEmpty ? nil : { model.openUpdates(all: true) })
     }
 
     private var unusedCard: some View {

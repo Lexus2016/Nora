@@ -11,6 +11,10 @@
     "one": "%lld app",
     "other": "%lld apps"
   },
+  "%lld apps have a newer version": {
+    "one": "%lld app has a newer version",
+    "other": "%lld apps have a newer version"
+  },
   "%lld apps moved to the Trash": {
     "one": "%lld app moved to the Trash",
     "other": "%lld apps moved to the Trash"

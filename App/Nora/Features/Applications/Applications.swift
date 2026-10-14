@@ -2,9 +2,9 @@ import MoleKit
 import Observation
 import SwiftUI
 
-/// Applications. The scan (`mo uninstall --list`, bundle sizes, last-used dates and Homebrew cask
-/// updates) leads to results and to three places: the full app list, the Homebrew updates, and
-/// uninstalling. Uninstalling is unchanged: each app's plan comes from `mo uninstall --dry-run`,
+/// Applications. The scan (`mo uninstall --list`, bundle sizes, last-used dates, Homebrew cask
+/// updates and updates for apps from a download) leads to results and to three places: the full
+/// app list, the updates, and uninstalling. Uninstalling is unchanged: each app's plan comes from `mo uninstall --dry-run`,
 /// and the driver answers only when Mole's plan matches it. Apps go to the Trash by default.
 @MainActor @Observable
 final class AppsModel {
@@ -28,9 +28,13 @@ final class AppsModel {
     var unusedPaths: Set<String> = []
     var brewFound = false
     var updates: [Homebrew.Update] = []
+    /// Apps installed outside Homebrew and the App Store that have a newer version.
+    var outside: [OutsideApps.Update] = []
     /// Why the updates are missing: Homebrew not found, or its check failed.
     var updatesNote: String?
     var selected: Set<String> = []
+    /// Cask tokens of Homebrew apps and paths of apps from a download. A path starts with "/",
+    /// a token never does.
     var selectedUpdates: Set<String> = []
     var search = ""
     var plans: [Plan] = []
@@ -62,6 +66,10 @@ final class AppsModel {
     var chosen: [InstalledApp] { apps.filter { selected.contains($0.path) } }
     var selectedSize: Int64 { chosen.reduce(0) { $0 + (sizes[$1.path] ?? 0) } }
     var selectedTokens: [String] { updates.map(\.token).filter { selectedUpdates.contains($0) } }
+    var selectedOutside: [OutsideApps.Update] { outside.filter { $0.token != nil && selectedUpdates.contains($0.path) } }
+    /// Everything Update can install: Homebrew apps, and apps from a download Homebrew can take over.
+    var updatableIDs: [String] { updates.map(\.token) + outside.filter { $0.token != nil }.map(\.path) }
+    var updateCount: Int { updates.count + outside.count }
 
     private func bySize(_ list: [InstalledApp]) -> [InstalledApp] {
         list.sorted { (sizes[$0.path] ?? -1) > (sizes[$1.path] ?? -1) }
@@ -74,6 +82,8 @@ final class AppsModel {
             parts.append(Homebrew.command(path, Homebrew.outdatedArguments()).description)
             parts.append(Homebrew.command(path, Homebrew.infoArguments()).description)
         }
+        if let cache = try? OutsideApps.cacheURL() { parts.append(OutsideApps.catalogCommand(cache: cache).description) }
+        parts.append("curl -fsSL --max-time 20 <SUFeedURL>")
         return parts.joined(separator: "; ")
     }
 
@@ -96,8 +106,10 @@ final class AppsModel {
                 scanStep = String(localized: "Measuring sizes and last use")
                 await inspect()
                 try Task.checkCancellation()
-                scanStep = String(localized: "Checking Homebrew updates")
+                scanStep = String(localized: "Checking for updates")
                 await checkUpdates(app)
+                try Task.checkCancellation()
+                await checkOutside(app)
                 try Task.checkCancellation()
                 let now = Date()
                 unusedPaths = Set(apps.filter { AppUsage.isUnused(lastUsed: lastUsed[$0.path], now: now) }.map(\.path))
@@ -143,7 +155,7 @@ final class AppsModel {
         selectedUpdates = []
         guard let path = Homebrew.executable() else {
             brewFound = false
-            updatesNote = String(localized: "Homebrew is not installed. Only Homebrew apps can be updated here.")
+            updatesNote = String(localized: "Homebrew is not installed. Open an app to let it install its update.")
             return
         }
         brewFound = true
@@ -162,14 +174,66 @@ final class AppsModel {
         return Homebrew.merge(outdated: outdated, info: info)
     }
 
-    /// One read-only brew call, logged to the console with its exit status.
+    /// Apps outside Homebrew and the App Store: each one's own update feed, and Homebrew's public
+    /// catalog. When the download fails, the catalog from the last scan is used; with neither,
+    /// these apps are simply not listed.
+    private func checkOutside(_ app: AppModel) async {
+        outside = []
+        let me = Bundle.main.bundleIdentifier
+        let candidates = apps.filter { $0.source != "Homebrew" }
+        let locals = await Task.detached {
+            candidates.compactMap { OutsideApps.local(path: $0.path, name: $0.name, excluding: me) }
+        }.value
+        guard !locals.isEmpty else { return }
+        let index = await loadCatalog(app)
+        let feeds = await loadFeeds(app, locals)
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        let system = [os.majorVersion, os.minorVersion, os.patchVersion]
+        let brew = brewFound
+        outside = locals.compactMap { local in
+            let cask = OutsideApps.match(local, in: index).flatMap { OutsideApps.update(local, cask: $0, brewFound: brew) }
+            let feed = feeds[local.path].flatMap { OutsideApps.update(local, feed: $0, system: system) }
+            return OutsideApps.choose(feed: feed, cask: cask)
+        }
+        .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func loadCatalog(_ app: AppModel) async -> [String: [OutsideApps.Cask]] {
+        guard let cache = try? OutsideApps.cacheURL() else { return [:] }
+        _ = try? await read(app, OutsideApps.catalogCommand(cache: cache), environment: ProcessInfo.processInfo.environment)
+        let casks = await Task.detached { (try? Data(contentsOf: cache)).flatMap { try? OutsideApps.parseCatalog($0) } ?? [] }.value
+        return OutsideApps.index(casks)
+    }
+
+    /// Every app's feed at once; a feed that fails or does not parse just gives no update.
+    private func loadFeeds(_ app: AppModel, _ locals: [OutsideApps.Local]) async -> [String: [OutsideApps.FeedItem]] {
+        let environment = ProcessInfo.processInfo.environment
+        return await withTaskGroup(of: (String, [OutsideApps.FeedItem]).self) { group in
+            for local in locals {
+                guard let feed = local.feed else { continue }
+                group.addTask {
+                    let data = try? await self.read(app, OutsideApps.feedCommand(feed), environment: environment)
+                    return (local.path, data.map(OutsideApps.parseFeed) ?? [])
+                }
+            }
+            var out: [String: [OutsideApps.FeedItem]] = [:]
+            for await (path, items) in group { out[path] = items }
+            return out
+        }
+    }
+
     private func brew(_ app: AppModel, _ path: String, _ arguments: [String]) async throws -> Data {
-        let id = app.console.begin(Homebrew.command(path, arguments))
+        try await read(app, Homebrew.command(path, arguments), environment: Homebrew.processEnvironment)
+    }
+
+    /// One read-only command, logged to the console with its exit status.
+    private func read(_ app: AppModel, _ command: ShellCommand, environment: [String: String]) async throws -> Data {
+        let id = app.console.begin(command)
         do {
-            let result = try await ProcessRunner.run(URL(fileURLWithPath: path), arguments, environment: Homebrew.processEnvironment)
+            let result = try await ProcessRunner.run(URL(fileURLWithPath: command.executable), command.arguments, environment: environment)
             if !result.stderr.isEmpty { app.console.append(id, result.stderr.components(separatedBy: "\n")) }
             app.console.finish(id, status: result.status)
-            guard result.succeeded else { throw NoraError.commandFailed(result.stderr.isEmpty ? "brew exited with status \(result.status)" : result.stderr) }
+            guard result.succeeded else { throw NoraError.commandFailed(result.stderr.isEmpty ? "\(command.executable) exited with status \(result.status)" : result.stderr) }
             return Data(result.stdout.utf8)
         } catch {
             app.console.fail(id, error: error)
@@ -182,11 +246,13 @@ final class AppsModel {
     /// Runs `brew upgrade --cask` for each selected cask in turn, so Stop can wait for the one in
     /// progress, then checks with `brew outdated` which of them are still behind. That check
     /// decides the result, because the upgrade's exit status does not say which cask failed.
+    /// Selected apps from a download follow, one at a time (see `replace`).
     func upgrade(_ app: AppModel) {
         guard let path = Homebrew.executable() else { return }
         let tokens = selectedTokens
         let commands = tokens.compactMap { Homebrew.upgradeCommand(tokens: [$0], executable: path) }
-        guard !commands.isEmpty, commands.count == tokens.count else { return }
+        let others = selectedOutside
+        guard commands.count == tokens.count, !(tokens.isEmpty && others.isEmpty) else { return }
         runningUpdates = true
         stopRequested = false
         stage = .running
@@ -197,32 +263,79 @@ final class AppsModel {
                 // A failed upgrade is in the console with its status; the check below reports it.
                 try? await app.stream(command, environment: Homebrew.processEnvironment)
             }
-            var remaining: Set<String>?
-            do {
-                remaining = Set(try Homebrew.parseOutdated(try await brew(app, path, Homebrew.outdatedArguments())).map(\.token))
-            } catch {
-                remaining = nil
+            var done: [String] = []
+            var lines: [String] = []
+            var checked = true
+            if !tokens.isEmpty {
+                if let remaining = try? Set(Homebrew.parseOutdated(try await brew(app, path, Homebrew.outdatedArguments())).map(\.token)) {
+                    done = tokens.filter { !remaining.contains($0) }
+                    lines = done.map { "✓ \($0)" }
+                        + tokens.filter { remaining.contains($0) && !skipped.contains($0) }.map { "✕ " + String(localized: "\($0) is still outdated") }
+                        + skipped.filter { remaining.contains($0) }.map { "– " + String(localized: "\($0): not started, you pressed Stop") }
+                    updates.removeAll { done.contains($0.token) }
+                } else {
+                    checked = false
+                    lines = [String(localized: "Homebrew did not answer the check. See the console.")]
+                }
             }
-            if let remaining {
-                let done = tokens.filter { !remaining.contains($0) }
-                let left = tokens.filter { remaining.contains($0) && !skipped.contains($0) }
-                let notStarted = skipped.filter { remaining.contains($0) }
-                failed = !left.isEmpty || !notStarted.isEmpty
-                resultHeadline = done.isEmpty ? String(localized: "No app was updated")
-                    : !failed ? String(localized: "\(done.count) apps updated")
-                    : String(localized: "Updated: \(done.count) of \(tokens.count)")
-                resultLines = done.map { "✓ \($0)" } + left.map { "✕ " + String(localized: "\($0) is still outdated") }
-                    + notStarted.map { "– " + String(localized: "\($0): not started, you pressed Stop") }
-            } else {
-                failed = true
-                resultHeadline = String(localized: "Could not check the result")
-                resultLines = [String(localized: "Homebrew did not answer the check. See the console.")]
+            for item in others {
+                if stopRequested {
+                    lines.append("– " + String(localized: "\(item.name): not started, you pressed Stop"))
+                    continue
+                }
+                if let problem = await replace(app, item, brew: path) {
+                    lines.append("✕ \(item.name): \(problem)")
+                } else {
+                    done.append(item.path)
+                    lines.append("✓ \(item.name) \(item.latest)")
+                    outside.removeAll { $0.path == item.path }
+                }
             }
+            let total = tokens.count + others.count
+            failed = !checked || done.count < total
+            resultHeadline = !checked && done.isEmpty ? String(localized: "Could not check the result")
+                : done.isEmpty ? String(localized: "No app was updated")
+                : !failed ? String(localized: "\(done.count) apps updated")
+                : String(localized: "Updated: \(done.count) of \(total)")
+            resultLines = lines
             selectedUpdates = []
-            if let remaining { updates.removeAll { tokens.contains($0.token) && !remaining.contains($0.token) } }
             runningUpdates = false
             stage = .done
         }
+    }
+
+    /// Hands an app from a download over to Homebrew: checks that Homebrew's own list has a newer
+    /// version, moves the old copy to the Trash, runs `brew install --cask`, and puts the old copy
+    /// back if the install fails. Nil on success, otherwise what went wrong.
+    private func replace(_ app: AppModel, _ item: OutsideApps.Update, brew path: String) async -> String? {
+        guard let token = item.token, let install = Homebrew.installCommand(token: token, executable: path) else {
+            return String(localized: "Homebrew cannot install this app.")
+        }
+        if !NSRunningApplication.runningApplications(withBundleIdentifier: item.bundleID).isEmpty {
+            return String(localized: "It is running. Quit it and try again.")
+        }
+        guard let data = try? await brew(app, path, Homebrew.infoArguments(token: token)),
+              let version = try? Homebrew.parseVersion(data, token: token),
+              OutsideApps.isNewer(version, than: item.installed) else {
+            return String(localized: "Homebrew's app list has no newer version yet. Run brew update and try again.")
+        }
+        let original = URL(fileURLWithPath: item.path)
+        var trashed: NSURL?
+        do {
+            try FileManager.default.trashItem(at: original, resultingItemURL: &trashed)
+        } catch {
+            return error.localizedDescription
+        }
+        do {
+            try await app.stream(install, environment: Homebrew.processEnvironment)
+            if FileManager.default.fileExists(atPath: original.path) { return nil }
+        } catch {}
+        // brew failed: the old copy goes back if its place is still free.
+        guard let copy = trashed?.absoluteURL, !FileManager.default.fileExists(atPath: original.path),
+              (try? FileManager.default.moveItem(at: copy, to: original)) != nil else {
+            return String(localized: "Homebrew could not install it. The old version is in the Trash.")
+        }
+        return String(localized: "Homebrew could not install it. The old version is back in place.")
     }
 
     // MARK: - Uninstall
@@ -335,7 +448,7 @@ final class AppsModel {
     }
 
     func openUpdates(all: Bool) {
-        selectedUpdates = all ? Set(updates.map(\.token)) : []
+        selectedUpdates = all ? Set(updatableIDs) : []
         screen = .updates
     }
 
@@ -399,9 +512,9 @@ struct ApplicationsView: View {
 
     private var start: some View {
         ModuleStart(module: module,
-                    subtitle: "Remove an app with its helpers, caches and settings, update Homebrew apps, and find the ones you no longer open.",
-                    features: [Feature(symbol: Module.applications.symbol, text: "Uninstaller"),
-                               Feature(symbol: "arrow.triangle.2.circlepath", text: "Updates (Homebrew)"),
+                    subtitle: "Remove an app with its helpers, caches and settings, update your apps, and find the ones you no longer open.",
+                    features: [Feature(symbol: "xmark.app", text: "Uninstaller"),
+                               Feature(symbol: "arrow.triangle.2.circlepath", text: "Updates"),
                                Feature(symbol: "moon.zzz", text: "Unused apps"),
                                Feature(symbol: "chart.bar", text: "Largest apps")],
                     command: model.scanCommand,

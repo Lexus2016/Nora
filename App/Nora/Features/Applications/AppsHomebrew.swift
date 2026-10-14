@@ -57,6 +57,16 @@ enum Homebrew {
         return command(executable, ["upgrade", "--cask"] + tokens)
     }
 
+    /// `brew install --cask <token>` for an app Nora found outside Homebrew; same token rules.
+    static func installCommand(token: String, executable: String) -> ShellCommand? {
+        guard isValidToken(token) else { return nil }
+        return command(executable, ["install", "--cask", token])
+    }
+
+    /// `brew info` for one cask: the version Homebrew would install now. With auto-update off it
+    /// can be older than the public catalog the scan read.
+    static func infoArguments(token: String) -> [String] { ["info", "--cask", "--json=v2", token] }
+
     static func isValidToken(_ token: String) -> Bool {
         !token.isEmpty && !token.hasPrefix("-")
             && !token.unicodeScalars.contains { $0.value < 0x20 || $0.value == 0x7F }
@@ -100,6 +110,19 @@ enum Homebrew {
                      installed: ($0.installedVersions ?? []).joined(separator: ", "),
                      latest: $0.currentVersion ?? "?")
         }
+    }
+
+    private struct VersionRoot: Decodable {
+        let casks: [VersionCask]?
+    }
+
+    private struct VersionCask: Decodable {
+        let token: String
+        let version: String?
+    }
+
+    static func parseVersion(_ data: Data, token: String) throws -> String? {
+        try JSONDecoder().decode(VersionRoot.self, from: data).casks?.first { $0.token == token }?.version
     }
 
     static func parseInfo(_ data: Data) throws -> [String: CaskInfo] {
