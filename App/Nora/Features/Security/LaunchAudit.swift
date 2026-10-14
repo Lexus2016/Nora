@@ -113,10 +113,18 @@ enum LaunchAudit {
                           binaryExists: binaryExists, signature: signature)
     }
 
-    /// The reasons an item needs a look. Apple-signed items and anything under /System are never flagged.
+    /// Apple's script interpreters: signed by Apple, but they run whatever they are given.
+    static let interpreters: Set<String> = ["sh", "bash", "zsh", "dash", "ksh", "csh", "tcsh", "osascript",
+                                            "python3", "python", "perl", "ruby", "tclsh", "env"]
+
+    /// The reasons an item needs a look. Apple-signed programs and anything under /System are not
+    /// flagged for themselves; an Apple interpreter is still checked for what it is told to run.
     static func reasons(for item: LaunchItem) -> [LaunchReason] {
         guard let program = item.program else { return [] }
-        if item.signature == .apple || program.hasPrefix("/System/") { return [] }
+        if item.signature == .apple || program.hasPrefix("/System/") {
+            guard interpreters.contains((program as NSString).lastPathComponent) else { return [] }
+            return invocationReasons(item, paths: item.arguments.dropFirst().filter { $0.hasPrefix("/") })
+        }
 
         var reasons: [LaunchReason] = []
         if !item.binaryExists { reasons.append(.missingBinary) }
@@ -127,10 +135,17 @@ enum LaunchAudit {
         case .apple, .signed, .none: break
         }
 
-        if program.hasPrefix("/tmp/") || program.hasPrefix("/private/tmp/") { reasons.append(.inTemporaryFolder) }
-        if program.hasPrefix("/Users/Shared/") { reasons.append(.inSharedFolder) }
-        let folders = (program as NSString).deletingLastPathComponent.split(separator: "/")
-        if folders.contains(where: { $0.hasPrefix(".") }) { reasons.append(.inHiddenFolder) }
+        return reasons + invocationReasons(item, paths: [program])
+    }
+
+    /// Where the program or the script it runs lives, and what its command line does.
+    private static func invocationReasons(_ item: LaunchItem, paths: [String]) -> [LaunchReason] {
+        var reasons: [LaunchReason] = []
+        if paths.contains(where: { $0.hasPrefix("/tmp/") || $0.hasPrefix("/private/tmp/") }) { reasons.append(.inTemporaryFolder) }
+        if paths.contains(where: { $0.hasPrefix("/Users/Shared/") }) { reasons.append(.inSharedFolder) }
+        if paths.contains(where: { ($0 as NSString).deletingLastPathComponent.split(separator: "/").contains { $0.hasPrefix(".") } }) {
+            reasons.append(.inHiddenFolder)
+        }
 
         let commandLine = item.commandLine
         if commandLine.range(of: #"(curl|wget)\b[^|]*\|\s*(sudo\s+)?(/\S*/)?(ba|z|da|k)?sh\b"#,

