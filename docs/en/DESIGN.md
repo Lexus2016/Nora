@@ -234,8 +234,8 @@ Tests: parser tests on fixtures recorded from real runs (CI matrix with `brew in
 - **Module scenes** (neon, Hotline Miami): Smart Care magenta → violet; Cleanup green; Applications cyan → blue; Performance sunset; Space Map ultraviolet; Status pink → indigo; Tools and History night violet; Security crimson. Colours morph between sections. Barely visible VHS lines and a light "horizon" behind the button.
 - **Glass 3D objects**, one per module, in three states (*idle / working / done*):
   - disk: a "vessel" with layers of used space and amber dust showing what can be removed;
-  - cleanup: soap bubbles with a sparkle;
-  - applications: a tile;
+  - cleanup: a trash can;
+  - applications: four app tiles in a grid;
   - performance: a lightning bolt;
   - space map: a 3D sunburst;
   - status: a torus with a neon filament that pulses with the CPU;

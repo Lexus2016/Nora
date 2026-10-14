@@ -52,8 +52,8 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
     var symbol: String {
         switch self {
         case .smartCare: "flask"
-        case .cleanup: "bubbles.and.sparkles"
-        case .applications: "trash.square"
+        case .cleanup: "trash"
+        case .applications: "square.grid.2x2"
         case .performance: "bolt"
         case .spaceMap: "chart.pie"
         case .status: "waveform.path.ecg"
@@ -71,7 +71,7 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .smartCare: "vessel"
         case .cleanup: "clean"
-        case .applications: "uninstall"
+        case .applications: "apps"
         case .performance: "optimize"
         case .spaceMap: "analyze"
         case .status: "status"
