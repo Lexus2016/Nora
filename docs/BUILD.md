@@ -42,7 +42,7 @@ A module that is not finished is absent from the sidebar. There are no mock scre
 
 ## Releasing an update
 
-1. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `App/Config/Nora.xcconfig`.
+1. Bump `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `App/Config/Nora.xcconfig`. Turn the **Unreleased** section of `CHANGELOG.md` into the new version's section; it is also the release notes.
 2. `scripts/build-dmg.sh` → `dist/Nora-<version>.dmg`, signed, notarized and stapled. Keep the Mac unlocked: `notarytool` reads the `nora-notary` profile from the keychain only while the Mac is unlocked.
 3. Make the Sparkle feed. `dist/` must hold only the new DMG plus a copy of the published `appcast.xml` from the repo root, so earlier releases stay in the feed. Then run `build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast --download-url-prefix https://github.com/Lexus2016/Nora/releases/download/v<version>/ --link https://github.com/Lexus2016/Nora dist/`. It signs the archive with the EdDSA private key in the login keychain and updates `dist/appcast.xml`. macOS asks for keychain access first; click Allow, or the command waits forever.
 4. Tag the release commit `v<version>` and create the GitHub Release with the DMG. Check that the asset URL returns 200 before you publish the feed. Then copy `dist/appcast.xml` to the repo root and push it: Pages serves it at `https://lexus2016.github.io/Nora/appcast.xml` (the `SUFeedURL` in `Info.plist`).
