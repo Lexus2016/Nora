@@ -3,8 +3,19 @@ import MoleKit
 
 /// Watches a folder for new files. A directory event starts the check; a file is handed over once its
 /// name has no partial-download suffix and its size is unchanged across two checks.
+///
+/// A file is known by its version (file number, size, modification date), not its name: a file
+/// deleted and downloaded again under the same name, or replaced, is a new arrival and is checked
+/// again. While a check is pending the listing is compared on every poll, so a file that grows
+/// after it was handed over is handed over again once it settles.
 @MainActor
 final class DownloadsWatch {
+    struct Version: Equatable {
+        let file: UInt64
+        let size: Int64
+        let modified: Date?
+    }
+
     private struct Pending {
         var size: Int64
         var stableChecks: Int
@@ -15,7 +26,8 @@ final class DownloadsWatch {
     private let directory: URL
     private let onReady: @MainActor (URL) -> Void
     private var source: DispatchSourceFileSystemObject?
-    private var known: Set<String> = []
+    /// The version of each name last seen settled: present at the start, handed over, or a folder.
+    private var known: [String: Version] = [:]
     private var pending: [String: Pending] = [:]
     private var pollTask: Task<Void, Never>?
 
@@ -28,7 +40,7 @@ final class DownloadsWatch {
     func start() throws {
         let descriptor = open(directory.path, O_EVTONLY)
         guard descriptor >= 0 else { throw SecurityError.cannotWatch(directory.path) }
-        known = Set(listing())
+        known = Dictionary(uniqueKeysWithValues: listing().compactMap { name in version(of: name).map { (name, $0) } })
         let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: descriptor, eventMask: .write, queue: .main)
         source.setEventHandler { [weak self] in
             Task { @MainActor in self?.directoryChanged() }
@@ -47,16 +59,18 @@ final class DownloadsWatch {
     }
 
     private func directoryChanged() {
-        for name in listing() where !known.contains(name) && pending[name] == nil && !name.hasPrefix(".") {
-            let url = directory.appendingPathComponent(name)
-            if Self.isPartial(name) { continue }
-            if Self.isDirectory(url) {
-                known.insert(name)
+        let names = Set(listing())
+        // A name that is gone and comes back is a new file.
+        for name in known.keys where !names.contains(name) { known[name] = nil }
+        for name in names where pending[name] == nil && !name.hasPrefix(".") && !Self.isPartial(name) {
+            guard let current = version(of: name), known[name] != current else { continue }
+            if Self.isDirectory(directory.appendingPathComponent(name)) {
+                known[name] = current
                 continue
             }
             pending[name] = Pending(size: -1, stableChecks: 0)
         }
-        startPolling()
+        if !pending.isEmpty { startPolling() }
     }
 
     private func startPolling() {
@@ -66,6 +80,7 @@ final class DownloadsWatch {
                 try? await Task.sleep(for: .seconds(2))
                 guard let self, !Task.isCancelled else { return }
                 self.checkPending()
+                self.directoryChanged()
                 if self.pending.isEmpty {
                     self.pollTask = nil
                     return
@@ -91,7 +106,7 @@ final class DownloadsWatch {
             }
             if state.stableChecks >= 1 {
                 pending[name] = nil
-                known.insert(name)
+                known[name] = version(of: name)
                 onReady(url)
             } else {
                 pending[name] = state
@@ -101,6 +116,13 @@ final class DownloadsWatch {
 
     private func listing() -> [String] {
         (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+    }
+
+    private func version(of name: String) -> Version? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: directory.appendingPathComponent(name).path),
+              let file = attributes[.systemFileNumber] as? NSNumber else { return nil }
+        return Version(file: file.uint64Value, size: (attributes[.size] as? NSNumber)?.int64Value ?? 0,
+                       modified: attributes[.modificationDate] as? Date)
     }
 
     private static func isPartial(_ name: String) -> Bool {
@@ -126,6 +148,8 @@ final class ClamdSession {
     private let clamdscan: URL
     private let layout: ClamAVLayout
     private var process: Process?
+    /// Called when clamd exits, whether it crashed or was stopped. Set before `start()`.
+    var onExit: (@MainActor () -> Void)?
 
     init(clamd: URL, clamdscan: URL, layout: ClamAVLayout) {
         self.clamd = clamd
@@ -141,7 +165,11 @@ final class ClamdSession {
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         process.qualityOfService = .utility
-        process.terminationHandler = { ChildProcesses.unregister($0) }
+        let onExit = self.onExit
+        process.terminationHandler = { finished in
+            ChildProcesses.unregister(finished)
+            Task { @MainActor in onExit?() }
+        }
         // A socket left by an earlier clamd would look like readiness of this one.
         try? FileManager.default.removeItem(at: layout.socket)
         ChildProcesses.register(process)

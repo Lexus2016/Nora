@@ -49,6 +49,22 @@
         }
       }
     },
+    "%@ could not be checked: %@ It is checked again when it changes or when the watch restarts.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ не удалось проверить: %@ Файл проверится снова, когда изменится или когда слежение перезапустится."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ не вдалося перевірити: %@ Файл перевіриться знову, коли зміниться або коли стеження перезапуститься."
+          }
+        }
+      }
+    },
     "%@ free": {
       "localizations": {
         "ru": {
@@ -3411,6 +3427,22 @@
         }
       }
     },
+    "ClamAV kept stopping, so the Downloads watch is off. Turn it on again to retry.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV постоянно останавливался, поэтому слежение за Загрузками выключено. Включите его снова, чтобы попробовать ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV раз у раз зупинявся, тому стеження за Завантаженнями вимкнено. Увімкніть його знову, щоб спробувати ще раз."
+          }
+        }
+      }
+    },
     "ClamAV matched the signature %@.": {
       "localizations": {
         "ru": {
@@ -3471,6 +3503,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "ClamAV зупинився з помилкою або не зміг прочитати частину файлів, тож перевірка може бути неповною. Подробиці в консолі."
+          }
+        }
+      }
+    },
+    "ClamAV stopped. Nora restarted the Downloads watch.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV остановился. Nora перезапустила слежение за Загрузками."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV зупинився. Nora перезапустила стеження за Завантаженнями."
           }
         }
       }
@@ -12873,6 +12921,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "можна очистити"
+          }
+        }
+      }
+    },
+    "clamdscan could not start.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "clamdscan не удалось запустить."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "clamdscan не вдалося запустити."
+          }
+        }
+      }
+    },
+    "clamdscan stopped.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "clamdscan остановился."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "clamdscan зупинився."
           }
         }
       }

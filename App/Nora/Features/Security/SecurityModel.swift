@@ -109,6 +109,10 @@ final class SecurityModel {
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var watch: DownloadsWatch?
     @ObservationIgnored private var clamd: ClamdSession?
+    /// When clamd last stopped under a running watch, for the restart limit.
+    @ObservationIgnored private var watchRestarts: [Date] = []
+    /// Downloads whose check failed, checked again when the watch restarts.
+    @ObservationIgnored private var watchRetry: [URL] = []
     @ObservationIgnored private var watchStart: Task<Void, Never>?
     @ObservationIgnored private var watchGeneration: UUID?
     @ObservationIgnored private var scheduledRun = false
@@ -517,15 +521,20 @@ final class SecurityModel {
             return
         }
         let session = ClamdSession(clamd: clamd, clamdscan: clamdscan, layout: layout)
+        let generation = UUID()
         let watch = DownloadsWatch(directory: home.appendingPathComponent("Downloads", isDirectory: true)) { [weak self, weak app] file in
             guard let self, let app else { return }
-            self.inspectDownload(file, session: session, app)
+            self.inspectDownload(file, session: session, generation: generation, app)
+        }
+        // clamd gone while the watch is on: the switch must not keep saying it protects anything.
+        session.onExit = { [weak self, weak app] in
+            guard let self, let app, self.watchGeneration == generation, self.watchActive else { return }
+            self.watchStopped(app)
         }
         self.clamd = session
         self.watch = watch
         SecurityNotifier.requestAuthorization()
         watchStarting = true
-        let generation = UUID()
         watchGeneration = generation
         watchStart = Task {
             defer { if self.watchGeneration == generation { self.watchStarting = false } }
@@ -534,6 +543,12 @@ final class SecurityModel {
                 try Task.checkCancellation()
                 try watch.start()
                 self.watchActive = true
+                // Files a stopped clamd could not check get one more try with the new one.
+                let retry = self.watchRetry
+                self.watchRetry = []
+                for file in retry where FileManager.default.fileExists(atPath: file.path) {
+                    self.inspectDownload(file, session: session, generation: generation, app)
+                }
             } catch is CancellationError {
                 // Turned off or quitting while clamd was loading: not an error, and the setting
                 // stays as the user left it so the watch resumes at the next launch.
@@ -567,18 +582,40 @@ final class SecurityModel {
         watchActive = false
     }
 
-    private func inspectDownload(_ file: URL, session: ClamdSession, _ app: AppModel) {
+    /// clamd stopped under a running watch. It restarts up to three times in ten minutes; after
+    /// that the watch turns off and says why, instead of looking active with nothing behind it.
+    private func watchStopped(_ app: AppModel) {
+        let now = Date()
+        watchRestarts = watchRestarts.filter { now.timeIntervalSince($0) < 600 } + [now]
+        shutdown()
+        if watchRestarts.count > 3 {
+            SecuritySettings.watchEnabled = false
+            watchError = String(localized: "ClamAV kept stopping, so the Downloads watch is off. Turn it on again to retry.")
+            notice = watchError
+            return
+        }
+        setWatch(true, app)
+        watchError = String(localized: "ClamAV stopped. Nora restarted the Downloads watch.")
+    }
+
+    private func inspectDownload(_ file: URL, session: ClamdSession, generation: UUID, _ app: AppModel) {
         Task {
-            do {
-                let result = try await self.runLogged(session.scanCommand(for: file), app)
-                let output = ClamScanParser.parse(result.stdout + "\n" + result.stderr)
-                for detection in output.detections {
-                    self.watchFindings.append(Self.detectionFinding(detection))
-                    SecurityNotifier.post(title: String(localized: "Possible threat in Downloads"),
-                                          body: String(localized: "\(file.lastPathComponent): \(detection.signature). Open Nora to review."))
-                }
-            } catch {
-                self.notice = error.localizedDescription
+            let result = try? await self.runLogged(session.scanCommand(for: file), app)
+            // A result for a watch that has since stopped or restarted changes nothing.
+            guard self.watchGeneration == generation else { return }
+            let output = ClamScanParser.parse((result?.stdout ?? "") + "\n" + (result?.stderr ?? ""))
+            for detection in output.detections {
+                self.watchFindings.append(Self.detectionFinding(detection))
+                SecurityNotifier.post(title: String(localized: "Possible threat in Downloads"),
+                                      body: String(localized: "\(file.lastPathComponent): \(detection.signature). Open Nora to review."))
+            }
+            // clamdscan: 0 clean, 1 found, 2 or more an error. An error is not a clean file.
+            guard let result, result.status <= 1 else {
+                let reason = result.map { Self.lastLine($0.stderr.isEmpty ? $0.stdout : $0.stderr, fallback: String(localized: "clamdscan stopped.")) }
+                    ?? String(localized: "clamdscan could not start.")
+                self.watchError = String(localized: "\(file.lastPathComponent) could not be checked: \(reason) It is checked again when it changes or when the watch restarts.")
+                if !self.watchRetry.contains(file) { self.watchRetry.append(file) }
+                return
             }
         }
     }
