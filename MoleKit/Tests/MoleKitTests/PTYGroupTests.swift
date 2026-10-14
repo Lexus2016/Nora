@@ -55,3 +55,23 @@ struct GatedRunTests {
         }
     }
 }
+
+/// D04: a pipe child's helper that ignores SIGTERM is gone by the time a stopped run returns.
+struct PipeGroupTests {
+    @Test func stoppedRunReturnsOnlyAfterItsHelpersAreGone() async throws {
+        let pidFile = FileManager.default.temporaryDirectory.appendingPathComponent("pipe-helper-\(UUID().uuidString)").path
+        defer { try? FileManager.default.removeItem(atPath: pidFile) }
+        let script = "(trap '' TERM; sleep 60) >/dev/null 2>&1 & echo $! > '\(pidFile)'; wait"
+        let task = Task { try await ProcessRunner.run(URL(fileURLWithPath: "/bin/sh"), ["-c", script], environment: ["PATH": "/usr/bin:/bin"]) }
+        var helper: pid_t = 0
+        for _ in 0..<50 where helper == 0 {
+            try await Task.sleep(nanoseconds: 50_000_000)
+            helper = pid_t((try? String(contentsOfFile: pidFile, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "") ?? 0
+        }
+        #expect(helper > 0)
+        #expect(kill(helper, 0) == 0, "the helper runs")
+        task.cancel()
+        _ = try? await task.value
+        #expect(kill(helper, 0) != 0, "the helper is gone when the stopped run returns")
+    }
+}

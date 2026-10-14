@@ -71,6 +71,42 @@ public enum ChildProcesses {
         lock.withLock { _ = groups.remove(leader) }
     }
 
+    /// Foundation starts a pipe child as the leader of its own process group (pgid == pid, seen
+    /// on macOS 27), and `Process.terminate()` signals that group. Registering the group lets the
+    /// quit barrier wait for helpers that outlive the leader. Call right after `run()`.
+    static func adoptGroup(_ process: Process) {
+        let pid = process.processIdentifier
+        if pid > 0, getpgid(pid) == pid { registerGroup(pid) }
+    }
+
+    /// After the leader exited: a stopped run's group gets SIGTERM, then SIGKILL after `grace`,
+    /// and this returns once the group is empty, so a caller that restores state next never does
+    /// it under a helper that is still working. A finished run's group stays registered until
+    /// its last helper is gone.
+    static func settleGroup(_ pid: pid_t, stopped: Bool, grace: TimeInterval = 2) {
+        guard lock.withLock({ groups.contains(pid) }) else { return }
+        if stopped, groupAlive(pid) {
+            kill(-pid, SIGTERM)
+            let deadline = Date().addingTimeInterval(grace)
+            while Date() < deadline, groupAlive(pid) { usleep(50_000) }
+            if groupAlive(pid) {
+                kill(-pid, SIGKILL)
+                let hard = Date().addingTimeInterval(1)
+                while Date() < hard, groupAlive(pid) { usleep(20_000) }
+            }
+        }
+        guard groupAlive(pid) else { return unregisterGroup(pid) }
+        DispatchQueue.global(qos: .utility).async {
+            while groupAlive(pid) { usleep(200_000) }
+            unregisterGroup(pid)
+        }
+    }
+
+    /// SIGTERM to a registered group whose leader may already be gone.
+    static func signalGroup(_ pid: pid_t) {
+        if pid > 0, lock.withLock({ groups.contains(pid) }) { kill(-pid, SIGTERM) }
+    }
+
     /// True while any process is left in the group (ESRCH means it is empty).
     public static func groupAlive(_ leader: pid_t) -> Bool {
         kill(-leader, 0) == 0 || errno == EPERM
@@ -140,11 +176,14 @@ public enum ProcessRunner {
         let outBuffer = DataBuffer(), errBuffer = DataBuffer()
         out.fileHandleForReading.readabilityHandler = { outBuffer.append($0.availableData) }
         err.fileHandleForReading.readabilityHandler = { errBuffer.append($0.availableData) }
+        let stopped = Flag()
 
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CommandResult, Error>) in
                 process.terminationHandler = { finished in
                     ChildProcesses.unregister(finished)
+                    // Before reading to the end: a helper still holding the pipe would block it.
+                    ChildProcesses.settleGroup(finished.processIdentifier, stopped: stopped.isSet)
                     out.fileHandleForReading.readabilityHandler = nil
                     err.fileHandleForReading.readabilityHandler = nil
                     outBuffer.append(out.fileHandleForReading.readDataToEndOfFile())
@@ -165,6 +204,8 @@ public enum ProcessRunner {
                 ChildProcesses.register(process)
                 do {
                     try process.run()
+                    ChildProcesses.adoptGroup(process)
+                    if Task.isCancelled { stopped.set() }
                     ChildProcesses.stopIfUnwanted(process, cancelled: Task.isCancelled)
                 } catch {
                     ChildProcesses.unregister(process)
@@ -173,7 +214,8 @@ public enum ProcessRunner {
                 }
             }
         } onCancel: {
-            if process.isRunning { process.terminate() }
+            stopped.set()
+            if process.isRunning { process.terminate() } else { ChildProcesses.signalGroup(process.processIdentifier) }
         }
     }
 
@@ -198,8 +240,10 @@ public enum ProcessRunner {
             out.fileHandleForReading.readabilityHandler = { outSplitter.feed($0.availableData) }
             err.fileHandleForReading.readabilityHandler = { errSplitter.feed($0.availableData) }
 
+            let ended = Flag()
             process.terminationHandler = { finished in
                 ChildProcesses.unregister(finished)
+                ChildProcesses.settleGroup(finished.processIdentifier, stopped: ended.isSet)
                 out.fileHandleForReading.readabilityHandler = nil
                 err.fileHandleForReading.readabilityHandler = nil
                 outSplitter.feed(out.fileHandleForReading.readDataToEndOfFile())
@@ -213,14 +257,14 @@ public enum ProcessRunner {
                     continuation.finish()
                 }
             }
-            let ended = Flag()
             continuation.onTermination = { _ in
                 ended.set()
-                if process.isRunning { process.terminate() }
+                if process.isRunning { process.terminate() } else { ChildProcesses.signalGroup(process.processIdentifier) }
             }
             ChildProcesses.register(process)
             do {
                 try process.run()
+                ChildProcesses.adoptGroup(process)
                 // The consumer may have gone away while the child was starting.
                 ChildProcesses.stopIfUnwanted(process, cancelled: ended.isSet)
             } catch {
