@@ -16,17 +16,24 @@ final class SmartCareModel {
     /// Stop was pressed during Run: the module in progress stops, the ones after it are not started.
     var stopRequested = false
     @ObservationIgnored private var task: Task<Void, Never>?
+    /// The scans Smart Care itself started; Stop during Scan stops only these.
+    @ObservationIgnored private var startedScans: Set<Module> = []
+    /// The module whose run Smart Care started and is waiting for; Stop during Run stops only it.
+    @ObservationIgnored private var runningModule: Module?
 
     static let tiles: [Module] = [.cleanup, .performance, .projects, .installers]
 
     func scan(_ app: AppModel) {
         phase = .scanning
-        // A module that is still removing keeps its run: scanning it again would replace its task.
-        let idle = { (module: Module) in self.stage(of: module, app) != .running }
-        if idle(.cleanup) { app.cleanup.scan(app) }
-        if idle(.performance) { app.performance.scan(app) }
-        if idle(.projects) { app.projects.scan(app) }
-        if idle(.installers) { app.installers.scan(app) }
+        // A module that is running keeps its run, and one already scanning keeps its scan, which
+        // Smart Care then waits for: starting it again would leave the first scan writing over
+        // the module's state later, even under a run.
+        let idle = { (module: Module) in ![.running, .scanning].contains(self.stage(of: module, app)) }
+        startedScans = Set(Self.tiles.filter(idle))
+        if startedScans.contains(.cleanup) { app.cleanup.scan(app) }
+        if startedScans.contains(.performance) { app.performance.scan(app) }
+        if startedScans.contains(.projects) { app.projects.scan(app) }
+        if startedScans.contains(.installers) { app.installers.scan(app) }
         task = Task {
             while Self.tiles.contains(where: { stage(of: $0, app) == .scanning }) {
                 try? await Task.sleep(nanoseconds: 300_000_000)
@@ -53,6 +60,7 @@ final class SmartCareModel {
                     doneLines.append("– \(String(localized: String.LocalizationValue(module.titleText))): " + String(localized: "nothing to do"))
                     continue
                 }
+                runningModule = module
                 switch module {
                 case .cleanup: app.cleanup.clean(app)
                 case .performance: app.performance.run(app)
@@ -61,6 +69,7 @@ final class SmartCareModel {
                 default: continue
                 }
                 while stage(of: module, app) == .running { try? await Task.sleep(nanoseconds: 300_000_000) }
+                runningModule = nil
                 let failed = self.failed(module, app)
                 if failed { failedModules.append(module) }
                 doneLines.append("\(failed ? "✕" : "✓") \(String(localized: String.LocalizationValue(module.titleText))): \(headline(of: module, app))")
@@ -82,7 +91,8 @@ final class SmartCareModel {
     /// Stop during Run. The loop is not cancelled: it waits for the stopped module and reports it.
     func stopRun(_ app: AppModel) {
         stopRequested = true
-        for module in Self.tiles where stage(of: module, app) == .running {
+        // Only the step Smart Care started: a module the user runs on its own screen goes on.
+        if let module = runningModule, stage(of: module, app) == .running {
             switch module {
             case .cleanup: app.cleanup.stop()
             case .performance: app.performance.stop()
@@ -95,7 +105,16 @@ final class SmartCareModel {
 
     func stop(_ app: AppModel) {
         task?.cancel()
-        app.cleanup.stop(); app.performance.stop(); app.projects.stop(); app.installers.stop()
+        for module in startedScans where stage(of: module, app) == .scanning {
+            switch module {
+            case .cleanup: app.cleanup.stop()
+            case .performance: app.performance.stop()
+            case .projects: app.projects.stop()
+            case .installers: app.installers.stop()
+            default: break
+            }
+        }
+        startedScans = []
         phase = .start
     }
 

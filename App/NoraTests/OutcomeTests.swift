@@ -34,4 +34,18 @@ final class OutcomeTests: XCTestCase {
         XCTAssertNil(ToolsModel.failure(ToolsModel.Attempt(result: CommandResult(status: 0, stdout: "", stderr: "")), preview: true))
         XCTAssertNotNil(ToolsModel.failure(ToolsModel.Attempt(error: NoraError.moleMissing), preview: false))
     }
+
+    /// U02: Smart Care joins a scan that is already going instead of starting a second one, and
+    /// its Stop leaves that scan alone.
+    func testSmartCareJoinsARunningScanAndStopsOnlyItsOwn() async throws {
+        let app = AppModel()
+        app.performance.stage = .scanning
+        app.smartCare.scan(app)
+        try await Task.sleep(for: .milliseconds(500))
+        XCTAssertEqual(app.performance.stage, .scanning, "not restarted (a restart without Mole would have failed back to start)")
+        XCTAssertNil(app.performance.error)
+        app.smartCare.stop(app)
+        XCTAssertEqual(app.performance.stage, .scanning)
+        XCTAssertEqual(app.smartCare.phase, .start)
+    }
 }
