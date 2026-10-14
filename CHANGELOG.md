@@ -18,6 +18,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 - The Applications scan now goes online: it downloads Homebrew's public app list from formulae.brew.sh and reads the update feeds of apps installed from a download. Every request is shown in the console.
 
 ### Fixed
+- Review buttons on a glass object (Smart Care tiles and the large result cards) have a darker backing, so their text stays readable over a bright object.
 - When two sections worked at once, such as Cleanup and Applications updates, each showed the other's current item. Every section now shows only its own command's output.
 - A stopped command no longer shows as running forever in the console, and a stopped `brew install` no longer counts as a success.
 - The app now ships Sparkle's MIT license and the external licenses it includes (`ThirdPartyNotices.txt`). 1.0.0 bundled Sparkle without them.

@@ -279,6 +279,8 @@ private struct SmartTile: View {
                     Spacer()
                     if model.phase == .results {
                         Button("Review") { app.reviewFromSmartCare(module) }.buttonStyle(GlassButtonStyle()).fixedSize()
+                            // The glass object can reach under the button; its own 24% black is too thin for 4.5:1.
+                            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.black.opacity(0.5)))
                     }
                 }
             }
