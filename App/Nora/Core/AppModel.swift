@@ -15,7 +15,17 @@ final class AppModel {
     }
 
     var moleState: MoleState = .locating
-    var selection: Module = .smartCare
+    var selection: Module = .smartCare {
+        didSet { if selection != reviewOrigin { reviewOrigin = nil } }
+    }
+    /// A module opened from a Smart Care tile. Its screens lead back to Smart Care instead of
+    /// starting over, so the scan behind the tiles stays intact. Any other navigation clears it.
+    private(set) var reviewOrigin: Module?
+
+    func reviewFromSmartCare(_ module: Module) {
+        reviewOrigin = module
+        selection = module
+    }
     /// Debug launch arguments for screenshots and checks: `-NoraModule cleanup -NoraAutoScan 1`.
     let autoScan: Bool
 

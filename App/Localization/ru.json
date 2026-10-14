@@ -783,5 +783,6 @@
   "cache cleaned: %@": "очищено кэша: %@",
   "databases optimized: %@": "оптимизировано баз данных: %@",
   "partly measured": "измерено частично",
-  "settings repaired: %@": "исправлено настроек: %@"
+  "settings repaired: %@": "исправлено настроек: %@",
+  "Run does every ticked task, one after another.": "«Запустить» выполнит все отмеченные задачи по очереди."
 }

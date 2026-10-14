@@ -472,6 +472,7 @@
  "Review removal",
  "Run",
  "Run a scan to see how much",
+ "Run does every ticked task, one after another.",
  "Run the recommended maintenance, or check each task first.",
  "Running",
  "Running…",

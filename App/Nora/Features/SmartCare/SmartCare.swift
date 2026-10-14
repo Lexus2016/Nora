@@ -182,6 +182,9 @@ struct SmartCareView: View {
                 Text(model.phase == .results ? String(localized: "Tasks are ready. Here is what we found:")
                      : model.phase == .running ? String(localized: "Working on it…") : String(localized: "Scanning your Mac…"))
                     .font(.system(size: 30, weight: .semibold))
+                if model.phase == .results, !model.enabled.isEmpty {
+                    Text("Run does every ticked task, one after another.").font(.system(size: 15)).foregroundStyle(Palette.fg2)
+                }
                 if model.phase == .results {
                     SelectAllButton(ids: [Module.cleanup, .performance, .projects, .installers].filter { model.finding($0, app) != nil },
                                     selection: Bindable(model).enabled)
@@ -253,7 +256,7 @@ private struct SmartTile: View {
                     Text(finding.caption).font(.system(size: 14)).foregroundStyle(Palette.fg2)
                     Spacer()
                     if model.phase == .results {
-                        Button("Review") { app.selection = module }.buttonStyle(GlassButtonStyle()).fixedSize()
+                        Button("Review") { app.reviewFromSmartCare(module) }.buttonStyle(GlassButtonStyle()).fixedSize()
                     }
                 }
             }

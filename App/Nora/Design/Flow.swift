@@ -22,9 +22,16 @@ struct ModuleScene<Content: View>: View {
     @Environment(AppModel.self) private var app
     @State private var owner = UUID()
 
+    /// Opened from a Smart Care tile, a module's own level leads back there: "Start over" would
+    /// throw away the scan the tile shows. Inner steps keep their own Back.
+    private var topLeading: TopBarAction? {
+        guard app.reviewOrigin == module, leading?.kind != .back else { return leading }
+        return .smartCare { app.selection = .smartCare }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            TopBar(title: module.title, leading: leading)
+            TopBar(title: module.title, leading: topLeading)
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
             Color.clear.frame(height: orb == nil ? 16 : app.orb.bottomClearance)
         }

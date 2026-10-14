@@ -8691,6 +8691,22 @@
         }
       }
     },
+    "Run does every ticked task, one after another.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Запустить» выполнит все отмеченные задачи по очереди."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Запустити» виконає всі позначені задачі по черзі."
+          }
+        }
+      }
+    },
     "Run the recommended maintenance, or check each task first.": {
       "localizations": {
         "ru": {

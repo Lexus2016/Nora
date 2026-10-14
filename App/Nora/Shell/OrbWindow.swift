@@ -15,6 +15,7 @@ final class OrbController {
     @ObservationIgnored private weak var parent: NSWindow?
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
     @ObservationIgnored private var mouseMonitor: Any?
+    @ObservationIgnored private var globalMouseMonitor: Any?
 
     static let diameter: CGFloat = 104
     /// Large enough for the orb's glow (shadow radius up to 46 pt on hover) so it is never clipped.
@@ -80,6 +81,11 @@ final class OrbController {
         mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
             MainActor.assumeIsolated { self?.updateHitArea() }
             return event
+        }
+        // While another app is active its windows get the mouse moves, so the local monitor is
+        // silent and the first click on the orb would fall through. The global one sees them.
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] _ in
+            MainActor.assumeIsolated { self?.updateHitArea() }
         }
         reposition()
     }

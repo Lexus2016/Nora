@@ -783,5 +783,6 @@
   "cache cleaned: %@": "очищено кешу: %@",
   "databases optimized: %@": "оптимізовано баз даних: %@",
   "partly measured": "виміряно частково",
-  "settings repaired: %@": "виправлено налаштувань: %@"
+  "settings repaired: %@": "виправлено налаштувань: %@",
+  "Run does every ticked task, one after another.": "«Запустити» виконає всі позначені задачі по черзі."
 }

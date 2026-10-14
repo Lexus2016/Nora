@@ -249,16 +249,23 @@ struct TopBar: View {
 }
 
 struct TopBarAction {
+    enum Kind { case startOver, back }
+    let kind: Kind
     let label: LocalizedStringKey
     let symbol: String
     let action: () -> Void
 
     static func startOver(_ action: @escaping () -> Void) -> TopBarAction {
-        TopBarAction(label: "Start over", symbol: "arrow.counterclockwise", action: action)
+        TopBarAction(kind: .startOver, label: "Start over", symbol: "arrow.counterclockwise", action: action)
     }
 
     static func back(_ action: @escaping () -> Void) -> TopBarAction {
-        TopBarAction(label: "Back", symbol: "chevron.left", action: action)
+        TopBarAction(kind: .back, label: "Back", symbol: "chevron.left", action: action)
+    }
+
+    /// Back to the Smart Care tiles, keeping the module's scan as it is.
+    static func smartCare(_ action: @escaping () -> Void) -> TopBarAction {
+        TopBarAction(kind: .back, label: Module.smartCare.title, symbol: "chevron.left", action: action)
     }
 }
 
