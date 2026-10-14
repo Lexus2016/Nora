@@ -256,7 +256,7 @@ struct ProtectionView: View {
 
     private func row(_ text: String, badge: String?, remove: (() -> Void)?) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: badge == nil ? "lock.shield" : "lock").foregroundStyle(module.palette.glow)
+            Image(systemName: badge == nil ? module.symbol : "lock").foregroundStyle(module.palette.glow)
             Text(text).font(.mono).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
             Spacer()
             if let badge { Text(badge).font(.system(size: 11)).foregroundStyle(Palette.muted) }

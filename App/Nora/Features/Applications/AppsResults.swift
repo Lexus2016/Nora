@@ -46,7 +46,7 @@ struct AppsResults: View {
         CategoryCard(value: "\(model.unusedApps.count)",
                      caption: String(localized: "Unused apps"),
                      detail: String(localized: "Not opened for 90 days or more."),
-                     symbol: "clock.arrow.circlepath", tint: module.palette.glow,
+                     symbol: "moon.zzz", tint: module.palette.glow,
                      review: { model.openList(.unused) })
             .overlay(alignment: .bottomLeading) {
                 HStack(spacing: -8) {
@@ -72,7 +72,7 @@ struct AppsResults: View {
     private var installersCard: some View {
         CategoryCard(value: String(localized: "Installers"),
                      caption: String(localized: "Disk images you no longer need"),
-                     symbol: "shippingbox", tint: module.palette.glow,
+                     symbol: Module.installers.symbol, tint: module.palette.glow,
                      reviewTitle: "Open Installers",
                      review: { app.selection = .installers })
     }

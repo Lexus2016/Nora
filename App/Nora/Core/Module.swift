@@ -46,18 +46,21 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    /// The rail, menu bar and hover card icon. It draws the same thing as the module's glass
+    /// object, so the menu and the scene show one picture. Other scenes that point at a module
+    /// use this symbol too, never a look-alike.
     var symbol: String {
         switch self {
-        case .smartCare: "sparkles"
-        case .cleanup: "trash.circle"
-        case .applications: "square.grid.2x2"
+        case .smartCare: "flask"
+        case .cleanup: "sparkle"
+        case .applications: "trash.square"
         case .performance: "bolt"
         case .spaceMap: "chart.pie"
         case .status: "waveform.path.ecg"
-        case .projects: "hammer"
+        case .projects: "chevron.left.forwardslash.chevron.right"
         case .installers: "shippingbox"
-        case .protection: "lock.shield"
-        case .security: "checkmark.shield"
+        case .protection: "checkmark.shield"
+        case .security: "lock.shield"
         case .history: "clock.arrow.circlepath"
         case .tools: "wrench.and.screwdriver"
         }
@@ -77,7 +80,7 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
         case .protection: "protect"
         case .security: "security"
         case .history: "history"
-        case .tools: "settings"
+        case .tools: "tools"
         }
     }
 

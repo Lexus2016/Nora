@@ -28,6 +28,7 @@ final class ToolsModel {
     var externalBusy = false
     /// While a drive is being cleaned the picker and Preview wait, so nothing overlaps the run.
     var externalCleaning = false
+    @ObservationIgnored private var externalTask: Task<Void, Never>?
     @ObservationIgnored private var unmountObserver: NSObjectProtocol?
 
     init() {
@@ -115,16 +116,19 @@ final class ToolsModel {
         let generation = UUID()
         externalGeneration = generation
         externalCleaning = true
-        Task {
+        externalTask = Task {
             defer { externalCleaning = false }
             let result = try? await app.run(["clean", "--external", volume.path])
             // Only this run's own screen state is written; a newer preview stays as it is.
             guard externalGeneration == generation, externalVolume == volume else { return }
-            externalPreview = MoleSummary.lines(result?.stdout ?? "")
+            externalPreview = Task.isCancelled ? [String(localized: "Stopped. Files removed before the stop stay removed.")]
+                                               : MoleSummary.lines(result?.stdout ?? "")
             previewedVolume = nil
             previewedIdentity = nil
         }
     }
+
+    func stopExternal() { externalTask?.cancel() }
 
     /// The mounted drive as it is now: unmounting, remounting or swapping it gives a new value.
     static func identity(of volume: URL) -> String? {
@@ -248,6 +252,7 @@ struct ToolsView: View {
             HStack {
                 Spacer()
                 if model.externalBusy || model.externalCleaning { Spinner() }
+                if model.externalCleaning { Button("Stop") { model.stopExternal() }.buttonStyle(GlassButtonStyle()) }
                 Button("Preview") { model.previewExternal(app) }.buttonStyle(GlassButtonStyle())
                     .disabled(model.externalVolume == nil || model.externalCleaning)
                 Button("Clean") { model.cleanExternal(app) }.buttonStyle(PrimaryButtonStyle())

@@ -239,7 +239,8 @@ Tests: parser tests on fixtures recorded from real runs (CI matrix with `brew in
   - performance: a lightning bolt;
   - space map: a 3D sunburst;
   - status: a torus with a neon filament that pulses with the CPU;
-  - projects, installers, protection, history, settings: matching symbols.
+  - projects: stacked folders with `</>`; installers: a box; protection and security: shields; history: a clock with a back arrow; tools: a wrench and a screwdriver.
+  - Each object draws the same thing as the module's SF Symbol in the rail and the menu bar (`Module.symbol`), so the menu item and the scene show one picture.
 - **Assets:** the final art is generated with an image model under one style guide (frosted tinted glass, matte white inner symbols, hot-pink and cyan rim light), and the background is converted to alpha. Sources live in `Design/Glass/`.
 - **Natively** the objects animate in SwiftUI: float, pointer tilt, a glow while working and a pop on completion. The animation phase never resets on re-render. Inferno (refraction, shine) and Vortex (particles) add to this; UI chrome uses `glassEffect` on macOS 26 with a `Material` fallback.
 - **App icon:** neon squircle (magenta → violet → cyan) with the glass disk vessel; sources in `Design/AppIcon/` (`AppIcon-1024.png`, `Nora.icns`).

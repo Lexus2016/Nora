@@ -47,7 +47,7 @@ final class PerformanceModel {
     func scan(_ app: AppModel) {
         error = nil
         stage = .scanning
-        task = Task {
+        task = Task(.performance) {
             do {
                 let result = try await app.run(["optimize", "--dry-run"])
                 let parsed = OptimizeReport.parse(result.stdout)
@@ -65,7 +65,7 @@ final class PerformanceModel {
 
     func run(_ app: AppModel) {
         stage = .running
-        task = Task {
+        task = Task(.performance) {
             do {
                 let (declined, result) = try await app.drive(["optimize"], sudo: true) { session in
                     try OptimizeDriver().run(in: session)
@@ -113,11 +113,11 @@ struct PerformanceView: View {
             }
             .task { if app.autoScan { model.scan(app) } }
         case .scanning:
-            WorkingView(module: module, title: "Checking your Mac…", detail: WorkingView.currentItem(app.console.entries.last?.output ?? []), onStop: { model.stop() })
+            WorkingView(module: module, title: "Checking your Mac…", detail: WorkingView.currentItem(app.console.output(of: module)), onStop: { model.stop() })
         case .review:
             PerformanceReview(model: model)
         case .running:
-            WorkingView(module: module, title: "Refreshing…", detail: WorkingView.currentItem(app.console.entries.last?.output ?? []),
+            WorkingView(module: module, title: "Refreshing…", detail: WorkingView.currentItem(app.console.output(of: module)),
                         onStop: { model.stop() })
         case .done:
             DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
@@ -148,7 +148,7 @@ private struct PerformanceReview: View {
                         CategoryCard(value: String(localized: "\(model.pendingCount ?? 0) tasks"),
                                      caption: String(localized: "of recommended maintenance"),
                                      detail: String(localized: "Mole refreshes caches and services it found worth refreshing. Nothing personal is touched."),
-                                     symbol: "wrench.and.screwdriver", tint: module.palette.glow, large: true, glass: module.glass,
+                                     symbol: module.symbol, tint: module.palette.glow, large: true, glass: module.glass,
                                      actionTitle: "Run", review: { showAll = true }, action: { model.run(app) })
                             .frame(width: (geo.size.width - 36) / 3)
                         VStack(spacing: 18) {

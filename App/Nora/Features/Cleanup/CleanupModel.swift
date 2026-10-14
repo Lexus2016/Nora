@@ -37,7 +37,7 @@ final class CleanupModel {
         guard !app.exclusiveRunActive else { error = AppModel.busyScanMessage; return }
         error = nil
         stage = .scanning
-        task = Task {
+        task = Task(.cleanup) {
             do {
                 let output: String
                 #if DEBUG
@@ -86,7 +86,7 @@ final class CleanupModel {
         let partial = !reviewed.isEmpty
         let allPaths = Set(preview.items.map(\.path))
         stage = .running
-        task = Task {
+        task = Task(.cleanup) {
             // Only this run's overlay is ever undone here; another module's stays in place.
             defer {
                 try? app.overlay.recover(runID: runID)
@@ -122,6 +122,11 @@ final class CleanupModel {
                     text = result.stdout + "\n" + result.stderr; ok = result.succeeded
                 }
                 finish(text: text, ok: ok)
+            } catch is CancellationError {
+                failed = true
+                resultHeadline = String(localized: "Cleanup stopped")
+                resultLines = [String(localized: "What was removed before the stop stays removed. Scan again to see what is left.")]
+                stage = .done
             } catch {
                 failed = true
                 resultHeadline = Self.describe(error)

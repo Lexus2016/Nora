@@ -15,7 +15,8 @@ struct SecurityView: View {
             case .scanning:
                 WorkingView(module: module, title: "Looking for signals…", detail: model.progress, onStop: { model.stop() })
             case .running:
-                WorkingView(module: module, title: "Moving to quarantine…", detail: model.progress)
+                WorkingView(module: module, title: model.stopRequested ? "Finishing the current item…" : "Moving to quarantine…", detail: model.progress,
+                            onStop: model.stopRequested ? nil : { model.stopAfterCurrent() })
             case .review, .done:
                 if let mode = model.listMode {
                     SecurityList(model: model, mode: mode)
@@ -65,7 +66,15 @@ private struct SecurityStart: View {
                 installButton(String(localized: "Install ClamAV with Homebrew"), formula: "clamav")
             } else if !model.databaseReady {
                 Notice(text: String(localized: "ClamAV's virus database is not downloaded yet."), symbol: "arrow.down.circle")
-                Button("Update virus database") { model.updateDatabase(app) }.buttonStyle(GlassButtonStyle())
+                HStack(spacing: 10) {
+                    Button("Update virus database") { model.updateDatabase(app) }.buttonStyle(GlassButtonStyle())
+                        .disabled(model.updatingDatabase)
+                    if model.updatingDatabase {
+                        Spinner()
+                        Text("Downloading the virus database…").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+                        Button("Cancel") { model.cancelSetup() }.buttonStyle(.link)
+                    }
+                }
             }
             if model.yaraMissing {
                 Notice(text: String(localized: "yara is not installed, so Apple's XProtect rules do not run."), symbol: "exclamationmark.shield")
@@ -84,6 +93,7 @@ private struct SecurityStart: View {
                     if model.installing == formula {
                         Spinner()
                         Text(model.downloadingDatabase ? "Downloading the virus database…" : "Installing…").font(.system(size: 12)).foregroundStyle(Palette.fg2)
+                        Button("Cancel") { model.cancelSetup() }.buttonStyle(.link)
                     }
                 }
                 CommandPreview(command: "brew install \(formula)").frame(maxWidth: 420)
@@ -220,7 +230,7 @@ private struct SecurityNotes: View {
         VStack(alignment: .leading, spacing: 6) {
             if model.scope == .full && !app.hasFullDiskAccess {
                 HStack {
-                    Notice(text: String(localized: "Without Full Disk Access, macOS hides parts of your home folder from Nora."), symbol: "lock.shield")
+                    Notice(text: String(localized: "Without Full Disk Access, macOS hides parts of your home folder from Nora."), symbol: "hand.raised")
                     Button("Open settings") { Permissions.openFullDiskAccess() }.buttonStyle(.link)
                 }
             }

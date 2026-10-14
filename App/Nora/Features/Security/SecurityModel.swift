@@ -94,6 +94,10 @@ final class SecurityModel {
     private(set) var installing: String?
     /// The ClamAV install fetches the virus database in the same click.
     private(set) var downloadingDatabase = false
+    /// freshclam is running for a manual or scheduled update.
+    private(set) var updatingDatabase = false
+    /// Stop was pressed while moving to quarantine: the item in progress finishes, the rest stay.
+    private(set) var stopRequested = false
     /// Programs of the current launch items, read when the screen opens, so the scan command
     /// preview lists the same paths a Quick scan will cover.
     private(set) var previewLaunchPaths: [String] = []
@@ -323,12 +327,17 @@ final class SecurityModel {
         let selected = findings.filter { checked.contains($0.id) }
         guard !selected.isEmpty, task == nil else { return }
         stage = .running
+        stopRequested = false
         progress = String(localized: "Moving \(selected.count) items to quarantine")
         task = Task {
             defer { self.task = nil }
             var done = Set<UUID>()
             var problems: [String] = []
             for item in selected {
+                if self.stopRequested {
+                    problems.append(String(localized: "Stopped. The items that were not moved stay ticked."))
+                    break
+                }
                 do {
                     try await self.quarantine(item, app)
                     done.insert(item.id)
@@ -345,6 +354,8 @@ final class SecurityModel {
             self.stage = .review
         }
     }
+
+    func stopAfterCurrent() { stopRequested = true }
 
     private func quarantine(_ item: SecurityFinding, _ app: AppModel) async throws {
         let url = URL(fileURLWithPath: item.path)
@@ -389,10 +400,17 @@ final class SecurityModel {
     /// Runs freshclam with Nora's config. Manual and scheduled updates both call this.
     func updateDatabase(_ app: AppModel) {
         guard task == nil, let freshclam = clamav.freshclam else { return }
+        updatingDatabase = true
         task = Task {
-            defer { self.task = nil }
+            defer { self.task = nil; self.updatingDatabase = false }
             self.notice = await self.refreshDatabase(freshclam, app)
         }
+    }
+
+    /// Cancels `brew install` or a database download. Both resume cleanly on the next try.
+    func cancelSetup() {
+        guard installing != nil || updatingDatabase else { return }
+        task?.cancel()
     }
 
     /// One freshclam run. Nil when the database is current afterwards, otherwise why not.
@@ -404,12 +422,13 @@ final class SecurityModel {
         do {
             try layout.writeConfigs()
             let result = try await runLogged(ShellCommand(freshclam.path, ["--config-file", layout.freshclamConfig.path]), app)
+            if Task.isCancelled { return String(localized: "The database update was stopped.") }
             if result.succeeded { SecuritySettings.lastDatabaseUpdate = Date() }
             databaseReady = layout.hasDatabase
             return result.succeeded ? nil : Self.lastLine(result.stderr.isEmpty ? result.stdout : result.stderr,
                                                           fallback: String(localized: "The database update failed."))
         } catch {
-            return error.localizedDescription
+            return Task.isCancelled ? String(localized: "The database update was stopped.") : error.localizedDescription
         }
     }
 
@@ -431,6 +450,8 @@ final class SecurityModel {
                     self.downloadingDatabase = true
                     self.notice = await self.refreshDatabase(freshclam, app)
                 }
+            } catch is CancellationError {
+                self.notice = String(localized: "brew install \(formula) was stopped. Install again when you are ready.")
             } catch {
                 self.notice = String(localized: "brew install \(formula) did not finish. The console shows the output.")
             }

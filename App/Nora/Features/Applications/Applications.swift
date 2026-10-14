@@ -39,6 +39,9 @@ final class AppsModel {
     var scanTitle = "Looking at your apps…"
     var scanStep = ""
     var runningUpdates = false
+    /// Stop was pressed during removal or updates: the app in progress finishes, the rest wait.
+    /// Cutting `mo uninstall` or `brew upgrade` short could leave an app half removed.
+    var stopRequested = false
     var resultHeadline = ""
     var resultLines: [String] = []
     var failed = false
@@ -83,7 +86,7 @@ final class AppsModel {
         sizes = [:]
         lastUsed = [:]
         stage = .scanning
-        task = Task {
+        task = Task(.applications) {
             do {
                 let listed = try await app.run(["uninstall", "--list"])
                 guard listed.succeeded, let data = listed.stdout.data(using: .utf8) else {
@@ -176,18 +179,24 @@ final class AppsModel {
 
     // MARK: - Updates
 
-    /// Runs `brew upgrade --cask` for the selected casks, then checks with `brew outdated` which of
-    /// them are still behind. That check decides the result, because the upgrade's exit status
-    /// does not say which cask failed.
+    /// Runs `brew upgrade --cask` for each selected cask in turn, so Stop can wait for the one in
+    /// progress, then checks with `brew outdated` which of them are still behind. That check
+    /// decides the result, because the upgrade's exit status does not say which cask failed.
     func upgrade(_ app: AppModel) {
         guard let path = Homebrew.executable() else { return }
         let tokens = selectedTokens
-        guard let command = Homebrew.upgradeCommand(tokens: tokens, executable: path) else { return }
+        let commands = tokens.compactMap { Homebrew.upgradeCommand(tokens: [$0], executable: path) }
+        guard !commands.isEmpty, commands.count == tokens.count else { return }
         runningUpdates = true
+        stopRequested = false
         stage = .running
-        task = Task {
-            // A failed upgrade is in the console with its status; the check below reports it.
-            try? await app.stream(command, environment: Homebrew.processEnvironment)
+        task = Task(.applications) {
+            var skipped: [String] = []
+            for (token, command) in zip(tokens, commands) {
+                if stopRequested { skipped.append(token); continue }
+                // A failed upgrade is in the console with its status; the check below reports it.
+                try? await app.stream(command, environment: Homebrew.processEnvironment)
+            }
             var remaining: Set<String>?
             do {
                 remaining = Set(try Homebrew.parseOutdated(try await brew(app, path, Homebrew.outdatedArguments())).map(\.token))
@@ -196,12 +205,14 @@ final class AppsModel {
             }
             if let remaining {
                 let done = tokens.filter { !remaining.contains($0) }
-                let left = tokens.filter { remaining.contains($0) }
-                failed = !left.isEmpty
+                let left = tokens.filter { remaining.contains($0) && !skipped.contains($0) }
+                let notStarted = skipped.filter { remaining.contains($0) }
+                failed = !left.isEmpty || !notStarted.isEmpty
                 resultHeadline = done.isEmpty ? String(localized: "No app was updated")
-                    : left.isEmpty ? String(localized: "\(done.count) apps updated")
+                    : !failed ? String(localized: "\(done.count) apps updated")
                     : String(localized: "Updated: \(done.count) of \(tokens.count)")
                 resultLines = done.map { "✓ \($0)" } + left.map { "✕ " + String(localized: "\($0) is still outdated") }
+                    + notStarted.map { "– " + String(localized: "\($0): not started, you pressed Stop") }
             } else {
                 failed = true
                 resultHeadline = String(localized: "Could not check the result")
@@ -221,7 +232,7 @@ final class AppsModel {
         scanTitle = "Finding every file…"
         scanStep = String(localized: "Reading Mole's removal plan")
         stage = .scanning
-        task = Task {
+        task = Task(.applications) {
             for index in plans.indices {
                 // Stop means stop: back to the list, no half-made review.
                 guard !Task.isCancelled else { break }
@@ -261,10 +272,12 @@ final class AppsModel {
     func uninstall(_ app: AppModel) {
         let ready = plans.filter { $0.error == nil && !$0.entries.isEmpty }
         runningUpdates = false
+        stopRequested = false
         stage = .running
-        task = Task {
-            var removed: [String] = [], removedPaths: Set<String> = [], problems: [String] = []
+        task = Task(.applications) {
+            var removed: [String] = [], removedPaths: Set<String> = [], problems: [String] = [], skipped: [String] = []
             for plan in ready {
+                if stopRequested { skipped.append(plan.app.name); continue }
                 let args = ["uninstall", plan.app.uninstallName] + (permanent ? ["--permanent"] : [])
                 let needsAdmin = !FileManager.default.isDeletableFile(atPath: plan.app.path)
                 do {
@@ -288,12 +301,13 @@ final class AppsModel {
             }
             apps.removeAll { removedPaths.contains($0.path) }
             unusedPaths.subtract(removedPaths)
-            failed = !problems.isEmpty
-            let total = removed.count + problems.count
+            failed = !problems.isEmpty || !skipped.isEmpty
+            let total = removed.count + problems.count + skipped.count
             resultHeadline = removed.isEmpty ? String(localized: "No app was removed")
                 : failed ? String(localized: "Removed: \(removed.count) of \(total)")
                 : permanent ? String(localized: "\(removed.count) apps removed") : String(localized: "\(removed.count) apps moved to the Trash")
             resultLines = removed.map { "✓ \($0)" } + problems.map { "✕ \($0)" }
+                + skipped.map { "– " + String(localized: "\($0): not started, you pressed Stop") }
             selected = []
             plans = []
             stage = .done
@@ -326,6 +340,9 @@ final class AppsModel {
     }
 
     func stop() { task?.cancel() }
+
+    /// Stop during removal or updates: the app in progress finishes, the rest are not started.
+    func stopAfterCurrent() { stopRequested = true }
 
     /// One step back inside the review stage; from the results it returns to the start screen.
     func back() {
@@ -369,8 +386,10 @@ struct ApplicationsView: View {
             case .plans: AppsReview(model: model)
             }
         case .running:
-            WorkingView(module: module, title: model.runningUpdates ? "Updating apps…" : "Removing apps…",
-                        detail: WorkingView.currentItem(app.console.entries.last?.output ?? []))
+            WorkingView(module: module,
+                        title: model.stopRequested ? "Finishing the current app…" : model.runningUpdates ? "Updating apps…" : "Removing apps…",
+                        detail: WorkingView.currentItem(app.console.output(of: module)),
+                        onStop: model.stopRequested ? nil : { model.stopAfterCurrent() })
         case .done:
             DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) {
                 model.reset()
@@ -381,9 +400,9 @@ struct ApplicationsView: View {
     private var start: some View {
         ModuleStart(module: module,
                     subtitle: "Remove an app with its helpers, caches and settings, update Homebrew apps, and find the ones you no longer open.",
-                    features: [Feature(symbol: "trash", text: "Uninstaller"),
+                    features: [Feature(symbol: Module.applications.symbol, text: "Uninstaller"),
                                Feature(symbol: "arrow.triangle.2.circlepath", text: "Updates (Homebrew)"),
-                               Feature(symbol: "clock.arrow.circlepath", text: "Unused apps"),
+                               Feature(symbol: "moon.zzz", text: "Unused apps"),
                                Feature(symbol: "chart.bar", text: "Largest apps")],
                     command: model.scanCommand,
                     action: { model.scan(app) }) {

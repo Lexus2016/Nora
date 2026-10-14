@@ -305,6 +305,22 @@
         }
       }
     },
+    "%@: not started, you pressed Stop": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: не запущено, вы нажали «Стоп»"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: не запущено, ви натиснули «Стоп»"
+          }
+        }
+      }
+    },
     "%@: skipped until Nora has Full Disk Access.": {
       "localizations": {
         "ru": {
@@ -4175,6 +4191,22 @@
         }
       }
     },
+    "Files moved before the stop are in the Trash.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файлы, перемещённые до остановки, лежат в Корзине."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файли, переміщені до зупинки, лежать у Кошику."
+          }
+        }
+      }
+    },
     "Files of apps that are no longer installed.": {
       "localizations": {
         "ru": {
@@ -4271,6 +4303,38 @@
         }
       }
     },
+    "Finishing the current app…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершаю текущую программу…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершую поточну програму…"
+          }
+        }
+      }
+    },
+    "Finishing the current item…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершаю текущий объект…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершую поточний об’єкт…"
+          }
+        }
+      }
+    },
     "Fixes damaged preference files.": {
       "localizations": {
         "ru": {
@@ -4331,6 +4395,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Теки"
+          }
+        }
+      }
+    },
+    "Folders removed before the stop are gone. The folder being removed at that moment may be partly removed; your next build recreates it.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Папок, удалённых до остановки, уже нет. Папка, которую удаляли в тот момент, могла удалиться частично; следующая сборка создаст её заново."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тек, видалених до зупинки, уже немає. Теку, яку видаляли саме тоді, могло бути видалено частково; наступна збірка створить її знову."
           }
         }
       }
@@ -8243,6 +8323,22 @@
         }
       }
     },
+    "Removal stopped": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаление остановлено"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалення зупинено"
+          }
+        }
+      }
+    },
     "Remove": {
       "localizations": {
         "ru": {
@@ -8751,22 +8847,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Запустіть рекомендоване обслуговування або спершу перевірте кожну задачу."
-          }
-        }
-      }
-    },
-    "Running": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выполняется"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Виконується"
           }
         }
       }
@@ -9845,6 +9925,70 @@
         }
       }
     },
+    "Stopped": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остановлено"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зупинено"
+          }
+        }
+      }
+    },
+    "Stopped. Files removed before the stop stay removed.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остановлено. Файлы, удалённые до остановки, остаются удалёнными."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зупинено. Файли, видалені до зупинки, лишаються видаленими."
+          }
+        }
+      }
+    },
+    "Stopped. The items that were not moved stay ticked.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остановлено. Объекты, которые не перемещены, остаются отмеченными."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зупинено. Об’єкти, які не перемістили, лишаються позначеними."
+          }
+        }
+      }
+    },
+    "Stopping": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останавливаю"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зупиняю"
+          }
+        }
+      }
+    },
     "Stops Finder from writing .DS_Store files on network and USB drives.": {
       "localizations": {
         "ru": {
@@ -10321,6 +10465,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не вдалося оновити базу."
+          }
+        }
+      }
+    },
+    "The database update was stopped.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновление вирусной базы остановлено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлення вірусної бази зупинено."
           }
         }
       }
@@ -11463,6 +11623,22 @@
         }
       }
     },
+    "What was removed before the stop stays removed. Scan again to see what is left.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "То, что удалено до остановки, остаётся удалённым. Сканируйте снова, чтобы увидеть, что осталось."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Те, що видалено до зупинки, лишається видаленим. Скануйте знову, щоб побачити, що лишилося."
+          }
+        }
+      }
+    },
     "Without Full Disk Access, macOS hides parts of your home folder from Nora.": {
       "localizations": {
         "ru": {
@@ -11799,6 +11975,22 @@
         }
       }
     },
+    "brew install %@ was stopped. Install again when you are ready.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew install %@ остановлен. Установите снова, когда будете готовы."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brew install %@ зупинено. Встановіть знову, коли будете готові."
+          }
+        }
+      }
+    },
     "brew.sh": {
       "localizations": {
         "ru": {
@@ -12099,6 +12291,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "node_modules, target, build, dist"
+          }
+        }
+      }
+    },
+    "not started, you pressed Stop": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "не запущено, вы нажали «Стоп»"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "не запущено, ви натиснули «Стоп»"
           }
         }
       }

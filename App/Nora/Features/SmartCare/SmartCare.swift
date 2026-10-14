@@ -13,6 +13,8 @@ final class SmartCareModel {
     var doneLines: [String] = []
     /// Modules whose run failed or only partly finished; Done reports them instead of a plain success.
     var failedModules: [Module] = []
+    /// Stop was pressed during Run: the module in progress stops, the ones after it are not started.
+    var stopRequested = false
     @ObservationIgnored private var task: Task<Void, Never>?
 
     static let tiles: [Module] = [.cleanup, .performance, .projects, .installers]
@@ -39,8 +41,13 @@ final class SmartCareModel {
         phase = .running
         doneLines = []
         failedModules = []
+        stopRequested = false
         task = Task {
             for module in Self.tiles where enabled.contains(module) && stage(of: module, app) == .review {
+                if stopRequested {
+                    doneLines.append("– \(String(localized: String.LocalizationValue(module.titleText))): " + String(localized: "not started, you pressed Stop"))
+                    continue
+                }
                 switch module {
                 case .cleanup: app.cleanup.clean(app)
                 case .performance: app.performance.run(app)
@@ -54,6 +61,20 @@ final class SmartCareModel {
                 doneLines.append("\(failed ? "✕" : "✓") \(String(localized: String.LocalizationValue(module.titleText))): \(headline(of: module, app))")
             }
             phase = .done
+        }
+    }
+
+    /// Stop during Run. The loop is not cancelled: it waits for the stopped module and reports it.
+    func stopRun(_ app: AppModel) {
+        stopRequested = true
+        for module in Self.tiles where stage(of: module, app) == .running {
+            switch module {
+            case .cleanup: app.cleanup.stop()
+            case .performance: app.performance.stop()
+            case .projects: app.projects.stop()
+            case .installers: app.installers.stop()
+            default: break
+            }
         }
     }
 
@@ -146,15 +167,15 @@ struct SmartCareView: View {
         case .start:
             ModuleStart(module: module,
                         subtitle: "One scan for everything that takes space or slows your Mac. Nothing is deleted until you run it.",
-                        features: [Feature(symbol: "trash", text: "Junk: caches, logs and leftovers"),
-                                   Feature(symbol: "bolt", text: "Maintenance tasks"),
-                                   Feature(symbol: "hammer", text: "Old build folders"),
-                                   Feature(symbol: "shippingbox", text: "Installers you no longer need")],
+                        features: [Feature(symbol: Module.cleanup.symbol, text: "Junk: caches, logs and leftovers"),
+                                   Feature(symbol: Module.performance.symbol, text: "Maintenance tasks"),
+                                   Feature(symbol: Module.projects.symbol, text: "Old build folders"),
+                                   Feature(symbol: Module.installers.symbol, text: "Installers you no longer need")],
                         command: "mo clean --dry-run; mo optimize --dry-run; mo purge --dry-run; mo installer --dry-run",
                         action: { model.scan(app) }) {
                 if !app.hasFullDiskAccess {
                     HStack(spacing: 10) {
-                        Notice(text: String(localized: "Give Nora Full Disk Access so Mole can also clean the Trash and app containers."), symbol: "lock.shield")
+                        Notice(text: String(localized: "Give Nora Full Disk Access so Mole can also clean the Trash and app containers."), symbol: "hand.raised")
                         Button("Open settings") { Permissions.openFullDiskAccess() }.buttonStyle(GlassButtonStyle()).fixedSize()
                     }
                 }
@@ -174,7 +195,8 @@ struct SmartCareView: View {
         let orb: OrbAction? = switch model.phase {
         case .scanning: OrbAction(title: "Stop", busy: true, action: { model.stop(app) })
         case .results: model.enabled.isEmpty ? nil : OrbAction(title: "Run", action: { model.run(app) })
-        case .running: OrbAction(title: "Running", busy: true, action: {})
+        case .running: model.stopRequested ? OrbAction(title: "Stopping", busy: true, action: {})
+                                            : OrbAction(title: "Stop", busy: true, action: { model.stopRun(app) })
         default: nil
         }
         return ModuleScene(module: module, leading: model.phase == .results ? .startOver { model.reset(app) } : nil, orb: orb) {
@@ -245,7 +267,7 @@ private struct SmartTile: View {
             Spacer(minLength: 0)
             if working {
                 Text(stage == .running ? "Running…" : "Checking…").font(.system(size: 26, weight: .semibold))
-                Text(WorkingView.currentItem(app.console.entries.last(where: { $0.isRunning })?.output ?? []) ?? " ")
+                Text(WorkingView.currentItem(app.console.output(of: module)) ?? " ")
                     .font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(1).truncationMode(.middle)
             } else if let error = model.error(module, app) {
                 Text("Could not check").font(.system(size: 22, weight: .semibold))

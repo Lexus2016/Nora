@@ -46,9 +46,15 @@ struct SecuritySettingsSection: View {
 
             LabeledContent("ClamAV database") {
                 HStack {
-                    Text(model.databaseStatus).foregroundStyle(.secondary)
-                    Button("Update now") { model.updateDatabase(app) }
-                        .disabled(!model.clamav.isInstalled)
+                    if model.updatingDatabase {
+                        ProgressView().controlSize(.small)
+                        Text("Downloading the virus database…").foregroundStyle(.secondary)
+                        Button("Cancel") { model.cancelSetup() }
+                    } else {
+                        Text(model.databaseStatus).foregroundStyle(.secondary)
+                        Button("Update now") { model.updateDatabase(app) }
+                            .disabled(!model.clamav.isInstalled)
+                    }
                 }
             }
         }

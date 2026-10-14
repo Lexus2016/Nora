@@ -12,12 +12,12 @@ struct CleanupView: View {
             start.task { if app.autoScan { model.scan(app) } }
         case .scanning:
             WorkingView(module: module, title: "Looking for junk…",
-                        detail: WorkingView.currentItem(app.console.entries.last?.output ?? []) ?? String(localized: "Caches, logs and leftovers of removed apps"),
+                        detail: WorkingView.currentItem(app.console.output(of: module)) ?? String(localized: "Caches, logs and leftovers of removed apps"),
                         onStop: { model.stop() })
         case .review:
             if model.showList { CleanupList(model: model) } else { CleanupResults(model: model) }
         case .running:
-            WorkingView(module: module, title: "Cleaning…", detail: WorkingView.currentItem(app.console.entries.last?.output ?? []))
+            WorkingView(module: module, title: "Cleaning…", detail: WorkingView.currentItem(app.console.output(of: module)), onStop: { model.stop() })
         case .done:
             DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
         }
@@ -108,7 +108,7 @@ private struct CleanupNotes: View {
                         HStack {
                             // Mole's item label ("Trash"), translated when Nora's catalog knows it.
                             let label = note.text.components(separatedBy: " · ").first ?? note.section
-                            Notice(text: String(localized: "\(Bundle.main.localizedString(forKey: label, value: label, table: nil)): skipped until Nora has Full Disk Access."), symbol: "lock.shield")
+                            Notice(text: String(localized: "\(Bundle.main.localizedString(forKey: label, value: label, table: nil)): skipped until Nora has Full Disk Access."), symbol: "hand.raised")
                             Button("Open settings") { Permissions.openFullDiskAccess() }.buttonStyle(.link)
                         }
                     }

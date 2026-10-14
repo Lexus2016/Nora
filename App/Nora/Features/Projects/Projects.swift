@@ -29,7 +29,7 @@ final class ProjectsModel {
         guard !app.exclusiveRunActive else { error = AppModel.busyScanMessage; return }
         error = nil
         stage = .scanning
-        task = Task {
+        task = Task(.projects) {
             do {
                 let result = try await app.run(["purge", "--dry-run"])
                 let parsed = PurgePreview.parse(result.stdout, home: app.home)
@@ -67,7 +67,7 @@ final class ProjectsModel {
             return
         }
         stage = .running
-        task = Task {
+        task = Task(.projects) {
             defer {
                 try? app.overlay.recover(runID: runID)
                 app.endExclusiveRun(runID)
@@ -95,9 +95,14 @@ final class ProjectsModel {
                 resultHeadline = failed ? (freed.map { String(localized: "Partly done: \($0) freed") } ?? String(localized: "Removal did not finish"))
                                         : (freed ?? Format.bytes(selectedSize))
                 resultLines = summary
+            } catch is CancellationError {
+                failed = true
+                resultHeadline = String(localized: "Removal stopped")
+                resultLines = [String(localized: "Folders removed before the stop are gone. The folder being removed at that moment may be partly removed; your next build recreates it.")]
             } catch {
                 failed = true
                 resultHeadline = CleanupModel.describe(error)
+                resultLines = []
             }
             stage = .done
         }
@@ -117,7 +122,7 @@ struct ProjectsView: View {
         case .start:
             ModuleStart(module: module,
                         subtitle: "Build folders of your code projects take gigabytes and come back with the next build.",
-                        features: [Feature(symbol: "shippingbox", text: "node_modules, target, build, dist"),
+                        features: [Feature(symbol: "square.stack.3d.up", text: "node_modules, target, build, dist"),
                                    Feature(symbol: "chevron.left.forwardslash.chevron.right", text: ".venv, __pycache__, .gradle"),
                                    Feature(symbol: "clock", text: "Recently active projects stay untouched")],
                         command: "mo purge --dry-run",
@@ -126,11 +131,11 @@ struct ProjectsView: View {
             }
             .task { if app.autoScan { model.scan(app) } }
         case .scanning:
-            WorkingView(module: module, title: "Looking for build folders…", detail: WorkingView.currentItem(app.console.entries.last?.output ?? []), onStop: { model.stop() })
+            WorkingView(module: module, title: "Looking for build folders…", detail: WorkingView.currentItem(app.console.output(of: module)), onStop: { model.stop() })
         case .review:
             ProjectsReview(model: model)
         case .running:
-            WorkingView(module: module, title: "Removing build folders…", detail: WorkingView.currentItem(app.console.entries.last?.output ?? []))
+            WorkingView(module: module, title: "Removing build folders…", detail: WorkingView.currentItem(app.console.output(of: module)), onStop: { model.stop() })
         case .done:
             DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
         }

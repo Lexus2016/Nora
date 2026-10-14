@@ -53,9 +53,8 @@ struct AppsUpdates: View {
 
     /// The command Update will run, or a hint while nothing is selected.
     private var command: String {
-        guard let path = Homebrew.executable(),
-              let shell = Homebrew.upgradeCommand(tokens: model.selectedTokens, executable: path)
-        else { return String(localized: "Select apps to see the command.") }
-        return shell.description
+        // One command per app, run in turn, so Stop can wait for the app in progress.
+        guard let path = Homebrew.executable(), !model.selectedTokens.isEmpty else { return String(localized: "Select apps to see the command.") }
+        return model.selectedTokens.compactMap { Homebrew.upgradeCommand(tokens: [$0], executable: path)?.description }.joined(separator: "; ")
     }
 }

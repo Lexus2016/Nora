@@ -23,7 +23,7 @@ struct SettingsView: View {
             MoleSettings().tabItem { Label("Mole", systemImage: "terminal") }.tag("mole")
             Form { SecuritySettingsSection(model: app.security) }
                 .formStyle(.grouped)
-                .tabItem { Label("Security", systemImage: "checkmark.shield") }
+                .tabItem { Label("Security", systemImage: Module.security.symbol) }
                 .tag("security")
             UpdateSettings().tabItem { Label("Updates", systemImage: "arrow.triangle.2.circlepath") }.tag("updates")
         }

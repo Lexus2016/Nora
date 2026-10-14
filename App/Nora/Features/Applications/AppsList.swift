@@ -26,7 +26,7 @@ struct AppsList: View {
             }
             if model.listFilter == .unused {
                 HStack(spacing: 10) {
-                    Notice(text: String(localized: "Not opened for 90 days or more. \(model.visible.count) apps."), symbol: "clock.arrow.circlepath", color: Palette.muted)
+                    Notice(text: String(localized: "Not opened for 90 days or more. \(model.visible.count) apps."), symbol: "moon.zzz", color: Palette.muted)
                     Button("Show all apps") { model.listFilter = .all }.buttonStyle(.link)
                 }
             }

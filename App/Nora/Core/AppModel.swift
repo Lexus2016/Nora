@@ -174,21 +174,25 @@ final class AppModel {
     }
 
     /// Runs any command, streaming its output into the console. Throws `ProcessFailure` on a
-    /// non-zero exit.
+    /// non-zero exit and `CancellationError` when its task was stopped.
     func stream(_ command: ShellCommand, environment: [String: String]) async throws {
         let id = console.begin(command)
         do {
             for try await line in ProcessRunner.lines(URL(fileURLWithPath: command.executable), command.arguments, environment: environment) {
                 console.append(id, [ANSI.strip(line.text)])
             }
-            console.finish(id, status: 0)
         } catch let failure as ProcessFailure {
+            try console.checkStopped(id)
             console.finish(id, status: failure.status)
             throw failure
         } catch {
+            try console.checkStopped(id)
             console.fail(id, error: error)
             throw error
         }
+        // A cancelled stream just ends: without this a stopped command would read as a success.
+        try console.checkStopped(id)
+        console.finish(id, status: 0)
     }
 
     /// Runs a Mole command in a PTY (prompts, same-tty sudo), mirroring the screen into the console.
@@ -204,9 +208,11 @@ final class AppModel {
                 Task { @MainActor in console.mirror(id, lines) }
             }
             console.replace(id, result.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init))
+            try console.checkStopped(id)
             if case .exited(let code) = result.status { console.finish(id, status: code) } else { console.finish(id, status: -1) }
             return result
         } catch {
+            try console.checkStopped(id)
             console.fail(id, error: error)
             throw error
         }
@@ -228,9 +234,13 @@ final class AppModel {
             let outcome = try await PTYRun.drive(executable: mole.executable.path, arguments: arguments, environment: env, sudo: sudo,
                                                  onScreen: { lines in Task { @MainActor in console.mirror(id, lines) } }, driver)
             console.replace(id, outcome.result.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init))
+            try console.checkStopped(id)
             if case .exited(let code) = outcome.result.status { console.finish(id, status: code) } else { console.finish(id, status: -1) }
             return outcome
         } catch {
+            // A stop ends the session under the driver, which then throws its own error: report
+            // the stop, not that error.
+            try console.checkStopped(id)
             console.fail(id, error: error)
             throw error
         }
@@ -250,10 +260,11 @@ final class AppModel {
         } catch let failure as ProcessFailure {
             status = failure.status
         } catch {
+            try console.checkStopped(id)
             console.fail(id, error: error)
             throw error
         }
-        try Task.checkCancellation()
+        try console.checkStopped(id)
         console.finish(id, status: status)
         return CommandResult(status: status, stdout: out.joined(separator: "\n"), stderr: err.joined(separator: "\n"))
     }
@@ -271,12 +282,30 @@ enum NoraError: LocalizedError {
     }
 }
 
+/// The module whose work runs the current task's commands. Start that work with
+/// `Task(module) { … }` and its console entries carry the module, so its scene shows its own
+/// command while another module runs one at the same time.
+enum ConsoleOwner {
+    @TaskLocal static var module: Module?
+}
+
+extension Task where Success == Void, Failure == Never {
+    /// `@_implicitSelfCapture` is what the standard `Task.init` carries, so the bodies read the same.
+    @discardableResult
+    init(_ module: Module, @_implicitSelfCapture operation: sending @escaping @MainActor () async -> Void) {
+        self.init { @MainActor in
+            await ConsoleOwner.$module.withValue(module) { await operation() }
+        }
+    }
+}
+
 /// Every command Nora runs, with its exact command line and output.
 @MainActor @Observable
 final class ConsoleLog {
     struct Entry: Identifiable {
         let id = UUID()
         let command: String
+        let owner: Module?
         let startedAt = Date()
         var output: [String] = []
         var status: Int32?
@@ -288,10 +317,24 @@ final class ConsoleLog {
     private let maxLines = 4000
 
     func begin(_ command: ShellCommand, prefix: String = "") -> UUID {
-        let entry = Entry(command: prefix + command.description)
+        let entry = Entry(command: prefix + command.description, owner: ConsoleOwner.module)
         entries.append(entry)
         if entries.count > 60 { entries.removeFirst(entries.count - 60) }
         return entry.id
+    }
+
+    /// The output of the module's latest command. Never another module's: two modules may run at once.
+    func output(of module: Module) -> [String] {
+        entries.last { $0.owner == module }?.output ?? []
+    }
+
+    /// Marks the entry as stopped and throws `CancellationError` when its task was cancelled.
+    func checkStopped(_ id: UUID) throws {
+        guard Task.isCancelled else { return }
+        if let i = entries.firstIndex(where: { $0.id == id }), entries[i].isRunning {
+            entries[i].failure = String(localized: "Stopped")
+        }
+        throw CancellationError()
     }
 
     func append(_ id: UUID, _ lines: [String]) {

@@ -31,7 +31,7 @@ final class InstallersModel {
     func scan(_ app: AppModel) {
         error = nil
         stage = .scanning
-        task = Task {
+        task = Task(.installers) {
             do {
                 let (rows, _) = try await app.drive(["installer", "--dry-run"]) { session in
                     try InstallerDriver().list(in: session)
@@ -54,7 +54,7 @@ final class InstallersModel {
         // a different file behind the same cut name, never stands in.
         let targets = chosen.map { InstallerTarget(name: $0.name, sources: [$0.source], size: $0.sizeText) }
         stage = .running
-        task = Task {
+        task = Task(.installers) {
             do {
                 let (_, result) = try await app.drive(["installer"], environment: Self.trashEnvironment) { session in
                     try InstallerDriver().delete(targets, in: session)
@@ -63,6 +63,10 @@ final class InstallersModel {
                 failed = !result.succeeded
                 resultHeadline = failed ? String(localized: "Removal did not finish")
                     : String(localized: "\(Format.bytes(chosen.reduce(0) { $0 + $1.size })) moved to the Trash")
+            } catch is CancellationError {
+                failed = true
+                resultHeadline = String(localized: "Removal stopped")
+                resultLines = [String(localized: "Files moved before the stop are in the Trash.")]
             } catch let refusal as InstallerDriverError {
                 // The driver refuses before the final Enter, so nothing was touched.
                 failed = true
@@ -125,7 +129,7 @@ struct InstallersView: View {
         case .review:
             review
         case .running:
-            WorkingView(module: module, title: "Moving installers to the Trash…")
+            WorkingView(module: module, title: "Moving installers to the Trash…", onStop: { model.stop() })
         case .done:
             DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
         }
