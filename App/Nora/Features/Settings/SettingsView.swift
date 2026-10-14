@@ -178,6 +178,9 @@ private struct MoleSettings: View {
                     .font(.system(size: 12)).foregroundStyle(.secondary)
                 Text("YARA by VirusTotal (BSD-3-Clause) runs Apple's XProtect rules. Updates come through Sparkle (sparkle-project.org, MIT).")
                     .font(.system(size: 12)).foregroundStyle(.secondary)
+                if let notices = Bundle.main.url(forResource: "ThirdPartyNotices", withExtension: "txt") {
+                    Button("Third-party licenses") { NSWorkspace.shared.open(notices) }
+                }
             }
         }
         .formStyle(.grouped)

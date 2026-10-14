@@ -10581,6 +10581,22 @@
         }
       }
     },
+    "Third-party licenses": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лицензии сторонних компонентов"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ліцензії сторонніх компонентів"
+          }
+        }
+      }
+    },
     "This was only a check.": {
       "localizations": {
         "ru": {
