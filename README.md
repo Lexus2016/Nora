@@ -33,6 +33,7 @@
 - **Nothing is deleted before you review it.** Every module works the same way: Scan, Review, Done. You see each item and its size first.
 - **Checkboxes that mean something.** An unticked item is really kept: Nora protects it for that run and checks Mole's own confirmation screen against your choice before it agrees. If anything does not match, Nora cancels and nothing is removed.
 - **Nothing hidden.** The console (<kbd>⌘J</kbd>) shows every command Nora ran and Mole's full output. You can also show the exact command under each action in Settings.
+- **Antivirus built in.** ClamAV and Apple's own XProtect rules check your apps, downloads and launch items. One click installs ClamAV, and its virus database stays up to date by itself.
 - **Installs Mole for you.** No Terminal needed. Nora uses Homebrew if you have it, otherwise Mole's official installer with a pinned version and a verified checksum. No admin password.
 - **Menu bar quick menu.** Health, four stats of your choice, what loads your Mac most, space to free and quick jumps to every section (<kbd>⌥⌘N</kbd>).
 - **Native and light.** SwiftUI and AppKit, a universal app for Apple silicon and Intel. Nora runs the Mole you have and does not bundle its own engine.
@@ -54,6 +55,23 @@
 | **Protection** | What Mole must never touch: cleanup rules, maintenance tasks, project folders | `~/.config/mole/*` |
 | **Security** | Launch items and their signatures, Apple's XProtect rules and a ClamAV antivirus scan. Findings are explained and never preselected. Quarantine with one click back, optional scheduled scans | Security.framework, `yara`, ClamAV |
 | **Tools** | Touch ID for sudo, cleanup of external drives, Mole updates, shell completion | `mo touchid`, `mo clean --external`, `mo update` |
+
+## Antivirus and security
+
+The **Security** module checks your Mac in three ways and shows what it finds as signals to review. Nothing is moved until you click.
+
+| Check | What it looks at |
+|---|---|
+| **Launch items** | Every program that starts on its own: your launch agents, system agents and daemons. Nora flags a missing or unsigned program, a broken signature, a program in a temporary, shared or hidden folder, and arguments that pipe a download into a shell, decode base64 or run AppleScript |
+| **Apple XProtect rules** | The malware rules that macOS itself ships, run with `yara` over the files you scan |
+| **ClamAV** | The open-source antivirus engine and its database of known malware |
+
+- **What gets scanned.** *Quick* covers launch items, Applications, Downloads and Desktop. *Full* covers your whole home folder, except iCloud folders.
+- **Setup in one click.** ClamAV is not bundled. *Install ClamAV with Homebrew* installs it together with `yara` and downloads the virus database right away: about 57 MB for the program and 110 MB for the database. Without Homebrew, Nora links to brew.sh.
+- **Always up to date.** While Nora runs, in the window or in the menu bar, it updates the virus database once a day. Before a manual scan it updates a database older than a day. If that fails, the scan still runs and Nora shows the date of the database it used.
+- **When something is found.** Each finding says why it was flagged, and none is ticked for you. *Quarantine* moves the file into Nora's own folder, unloading a launch agent first, and *Restore* puts it back. Deleting from quarantine asks you to confirm.
+- **Optional, in Settings → Security.** A scheduled scan, daily or weekly, that notifies you when it finds something. *Watch Downloads* checks new files in Downloads as they arrive; it keeps ClamAV's database in memory (about 1 GB, up to 2.4 GB during the daily reload), so it is off by default.
+- **What Nora does not promise.** This is not real-time protection: ClamAV can watch every file access only on Linux. Nora works alongside macOS's own XProtect and Gatekeeper and does not replace them.
 
 ## Screenshots
 
@@ -123,6 +141,9 @@ Known limits, because Mole works this way: Mole removes build folders by rescann
 ## Credits and trademarks
 
 - **Mole** is created by [tw93](https://github.com/tw93) and licensed under GPL-3.0. *Mole* and the Mole logo are trademarks of the Mole project. Nora is an **independent** project. It is not affiliated with or endorsed by Mole, and it is not the official [Mole for Mac](https://mole.fit) app.
+- **ClamAV** is developed by [Cisco Talos](https://www.clamav.net) and licensed under GPL-2.0. ClamAV is a registered trademark of Cisco Systems, Inc. Nora does not bundle ClamAV: it runs the copy you install with Homebrew as a separate program. Nora is not affiliated with or endorsed by Cisco.
+- **[YARA](https://virustotal.github.io/yara/)** by VirusTotal (BSD-3-Clause) runs Apple's **XProtect** rules, which Nora reads from macOS. XProtect, Gatekeeper and macOS are trademarks of Apple Inc.
+- **[Sparkle](https://sparkle-project.org)** (MIT) delivers Nora's updates. **[Homebrew](https://brew.sh)** (BSD-2-Clause) installs Mole, ClamAV and `yara`.
 - Design and research references: [MangelSP/MoleUI](https://github.com/MangelSP/MoleUI), [Zhili1004/MoleUI](https://github.com/Zhili1004/MoleUI), [gokuscraper/mole-gui](https://github.com/gokuscraper/mole-gui), [caezium/Burrow](https://github.com/caezium/Burrow), [exelban/stats](https://github.com/exelban/stats) and others listed in the design document.
 
 ## License
