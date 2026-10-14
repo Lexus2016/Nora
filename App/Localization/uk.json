@@ -839,5 +839,11 @@
   },
   "Mole cannot keep %@ safe: its protection list does not accept that name. Nothing was removed. Tick it to remove it too, or rename it and scan again.": "Mole не може вберегти %@: її список захисту не приймає такої назви. Нічого не видалено. Позначте цей елемент, щоб видалити і його, або перейменуйте й проскануйте знову.",
   "Size unknown": "Розмір невідомий",
-  "size unknown": "розмір невідомий"
+  "size unknown": "розмір невідомий",
+  "%@: it was opened during the update, so Nora left it open and did not update it.": "%@: програму відкрили під час оновлення, тому Nora не закривала її й не оновила.",
+  "Homebrew did not install a working new version, and the old version could not go back yet. It is kept in %@; Nora puts it back the next time it starts.": "Homebrew не встановив робочу нову версію, а стару поки не вдалося повернути. Вона збережена в %@; Nora поверне її під час наступного запуску.",
+  "Homebrew did not install a working new version. The old version is back in place.": "Homebrew не встановив робочу нову версію. Стара версія знову на своєму місці.",
+  "Homebrew no longer describes this app the way the scan saw it. Scan again.": "Homebrew тепер описує цю програму інакше, ніж під час сканування. Проскануйте знову.",
+  "It changed since the scan. Scan again.": "Програма змінилася після сканування. Проскануйте знову.",
+  "Nothing was changed: %@": "Нічого не змінено: %@"
 }

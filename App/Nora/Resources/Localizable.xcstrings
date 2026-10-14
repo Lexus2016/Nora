@@ -353,6 +353,22 @@
         }
       }
     },
+    "%@: it was opened during the update, so Nora left it open and did not update it.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: программу открыли во время обновления, поэтому Nora не закрывала её и не обновила."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: програму відкрили під час оновлення, тому Nora не закривала її й не оновила."
+          }
+        }
+      }
+    },
     "%@: not started, you pressed Stop": {
       "localizations": {
         "ru": {
@@ -5041,38 +5057,6 @@
         }
       }
     },
-    "Homebrew could not install it. The old version is back in place.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Homebrew не смог её установить. Старая версия возвращена на место."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Homebrew не зміг її встановити. Стару версію повернуто на місце."
-          }
-        }
-      }
-    },
-    "Homebrew could not install it. The old version is in the Trash.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Homebrew не смог её установить. Старая версия лежит в Корзине."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Homebrew не зміг її встановити. Стара версія лежить у Кошику."
-          }
-        }
-      }
-    },
     "Homebrew did not answer the check. See the console.": {
       "localizations": {
         "ru": {
@@ -5085,6 +5069,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Homebrew не відповів на перевірку. Подробиці в консолі."
+          }
+        }
+      }
+    },
+    "Homebrew did not install a working new version, and the old version could not go back yet. It is kept in %@; Nora puts it back the next time it starts.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не установил рабочую новую версию, а старую пока не удалось вернуть. Она сохранена в %@; Nora вернёт её при следующем запуске."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не встановив робочу нову версію, а стару поки не вдалося повернути. Вона збережена в %@; Nora поверне її під час наступного запуску."
+          }
+        }
+      }
+    },
+    "Homebrew did not install a working new version. The old version is back in place.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не установил рабочую новую версию. Старая версия снова на своём месте."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не встановив робочу нову версію. Стара версія знову на своєму місці."
           }
         }
       }
@@ -5117,6 +5133,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Homebrew не встановлено. Відкрийте програму, і вона сама встановить оновлення."
+          }
+        }
+      }
+    },
+    "Homebrew no longer describes this app the way the scan saw it. Scan again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew теперь описывает эту программу иначе, чем при сканировании. Просканируйте снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew тепер описує цю програму інакше, ніж під час сканування. Проскануйте знову."
           }
         }
       }
@@ -5485,6 +5517,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Встановлюю…"
+          }
+        }
+      }
+    },
+    "It changed since the scan. Scan again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Программа изменилась после сканирования. Просканируйте снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Програма змінилася після сканування. Проскануйте знову."
           }
         }
       }
@@ -7795,6 +7843,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Немає чого переглядати."
+          }
+        }
+      }
+    },
+    "Nothing was changed: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ничего не изменено: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нічого не змінено: %@"
           }
         }
       }

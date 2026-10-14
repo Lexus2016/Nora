@@ -13,6 +13,11 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 ### Fixed
 - Cleanup and Projects could remove an item you unticked when its name was one Mole's protection list does not accept, such as a folder with `..` in its name or a name ending in a space. Nora now asks Mole, after writing the protection and before the run, whether every unticked path really is protected; if one is not, nothing runs and the result names it.
 - Cleanup hid a category when Mole could not measure its size, while its items stayed ticked and were cleaned. Every category with items now shows, with "Size unknown" where Mole gave no size. Rows Mole marks with an item count or as counted under another row are read correctly, and are no longer counted twice.
+- Handing a downloaded app over to Homebrew is now a checked transaction. The old copy is set aside in Nora's own folder (journaled and synced first), not straight in the Trash; after `brew install` Nora reads the new bundle and keeps it only if it has the same bundle ID and is not older. Otherwise whatever Homebrew left goes to the Trash and the old copy goes back. Only then does the old copy go to the Trash. A quit or crash mid-install is finished the same way on the next start, and a damaged journal stops the update instead of being ignored. The result shows the version actually installed.
+- Right before an app is handed over, Nora reads it and its Homebrew entry again: an app that updated itself since the scan, or a cask that changed, is skipped with "Scan again".
+- An app is matched to a Homebrew cask only by its exact bundle ID, not by an ID that merely starts the same way, and by the name the cask really installs: a cask that renames its app (for example `CleanMyMac_5.app` installed as `CleanMyMac.app`) no longer matches the downloaded copy.
+- Versions with letters compare only with their own kind: `2.0rc1` no longer counts as newer than `2.0`, and an app's own feed that gives only build numbers is not weighed against Homebrew's marketing version.
+- Updating apps that are open: an app that was quit before another one refused to close comes back, and an app opened during the update is left open and skipped instead of being quit without asking.
 
 ## 1.1.0 (2026-10-14)
 

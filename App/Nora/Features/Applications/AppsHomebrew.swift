@@ -115,26 +115,8 @@ enum Homebrew {
             name = try? c.decode([String].self, forKey: .name)
             autoUpdates = try? c.decode(Bool.self, forKey: .autoUpdates)
             // Lenient: a cask whose artifacts do not read still lists its update, just without apps.
-            let artifacts = (try? c.decode([Artifact].self, forKey: .artifacts)) ?? []
-            apps = artifacts.flatMap { $0.app ?? [] }.compactMap(\.name).map { ($0 as NSString).lastPathComponent }
-        }
-    }
-
-    /// One artifact; only its `app` entry matters: names as strings or `{"target": …}` objects.
-    private struct Artifact: Decodable {
-        let app: [AppEntry]?
-    }
-
-    private struct AppEntry: Decodable {
-        let name: String?
-
-        init(from decoder: Decoder) throws {
-            let c = try decoder.singleValueContainer()
-            name = (try? c.decode(String.self)) ?? (try? c.decode(Target.self))?.target
-        }
-
-        private struct Target: Decodable {
-            let target: String?
+            let artifacts = (try? c.decode([[String: OutsideApps.JSONValue]].self, forKey: .artifacts)) ?? []
+            apps = artifacts.compactMap { $0["app"] }.flatMap(OutsideApps.appNames)
         }
     }
 
@@ -145,19 +127,6 @@ enum Homebrew {
                      installed: ($0.installedVersions ?? []).joined(separator: ", "),
                      latest: $0.currentVersion ?? "?")
         }
-    }
-
-    private struct VersionRoot: Decodable {
-        let casks: [VersionCask]?
-    }
-
-    private struct VersionCask: Decodable {
-        let token: String
-        let version: String?
-    }
-
-    static func parseVersion(_ data: Data, token: String) throws -> String? {
-        try JSONDecoder().decode(VersionRoot.self, from: data).casks?.first { $0.token == token }?.version
     }
 
     static func parseInfo(_ data: Data) throws -> [String: CaskInfo] {

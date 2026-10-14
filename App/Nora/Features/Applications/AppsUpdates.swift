@@ -54,7 +54,7 @@ struct AppsUpdates: View {
             Button("Quit and update") { model.upgrade(app) }
             Button("Cancel", role: .cancel) { model.cancelQuit() }
         } message: {
-            Text("Open now: \(model.openToQuit.formatted(.list(type: .and))). Nora quits them, updates them and opens them again. Each app can ask you to save your work first.")
+            Text("Open now: \(Array(Set(model.openToQuit.map(\.name))).sorted().formatted(.list(type: .and))). Nora quits them, updates them and opens them again. Each app can ask you to save your work first.")
         }
     }
 

@@ -79,10 +79,31 @@ final class AppsBrewTests: XCTestCase {
 
     func testInfoReadsTheAppBundlesACaskInstalls() throws {
         let info = try Homebrew.parseInfo(infoJSON)
-        XCTAssertEqual(info["two-apps"]?.apps, ["Two.app", "Two Helper.app"])
+        XCTAssertEqual(info["two-apps"]?.apps, ["Two Helper.app"], "the target renames the app before it")
         XCTAssertEqual(info["example-app"]?.apps, [])
         XCTAssertEqual(info["odd-artifacts"]?.apps, [], "unreadable artifacts still list the cask")
         let merged = Homebrew.merge(outdated: [Homebrew.Outdated(token: "two-apps", installed: "1", latest: "2")], info: info)
-        XCTAssertEqual(merged.first?.apps, ["Two.app", "Two Helper.app"])
+        XCTAssertEqual(merged.first?.apps, ["Two Helper.app"])
+    }
+
+    /// Q01/Q02: an app quit before a refusal still comes back, and an app nobody agreed to quit
+    /// is never sent Quit.
+    @MainActor func testQuitBeforeUpdateKeepsWhatItClosedAndAsksForNothingNew() async {
+        var asked: [String] = []
+        let refusing = await AppsModel.quit(["/A.app", "/B.app"], approved: ["/A.app", "/B.app"], isOpen: { _ in true }) {
+            asked.append($0); return $0 == "/A.app"
+        }
+        XCTAssertEqual(refusing.quit, ["/A.app"])
+        XCTAssertEqual(refusing.block, .stayedOpen)
+
+        asked = []
+        let later = await AppsModel.quit(["/A.app", "/B.app"], approved: ["/A.app"], isOpen: { _ in true }) { asked.append($0); return true }
+        XCTAssertEqual(later.quit, ["/A.app"])
+        XCTAssertEqual(later.block, .openedLater)
+        XCTAssertEqual(asked, ["/A.app"], "B opened after the question and is left alone")
+
+        let closed = await AppsModel.quit(["/A.app"], approved: [], isOpen: { _ in false }) { _ in XCTFail("nothing is open"); return false }
+        XCTAssertEqual(closed.quit, [])
+        XCTAssertNil(closed.block)
     }
 }
