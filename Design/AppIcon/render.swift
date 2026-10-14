@@ -1,7 +1,7 @@
 // Renders the app icon from Design/Glass/vessel.png: tinted glass with a violet rim on a white tile.
 // The shipped AppIcon-1024.png:
 //   swiftc -O render.swift -o /tmp/render
-//   TINT=CDB6FF RIM_R=18 RIM_B=7 /tmp/render ../Glass/vessel.png AppIcon-1024.png white 2.6 1.5 1.0 0.86
+//   TINT=CDB6FF RIM_R=18 RIM_B=7 /tmp/render ../Glass/vessel.png AppIcon-1024.png white 2.6 1.5 1.0 0.688
 
 import AppKit
 import CoreImage
