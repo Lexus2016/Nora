@@ -15,7 +15,10 @@ final class AppsBrewTests: XCTestCase {
     private let infoJSON = Data("""
     {"casks": [
        {"token": "example-app", "name": ["Example App"], "installed": "1.0", "auto_updates": true},
-       {"token": "sample-tool", "name": [], "installed": "2.1", "auto_updates": null}
+       {"token": "sample-tool", "name": [], "installed": "2.1", "auto_updates": null},
+       {"token": "two-apps", "name": ["Two"], "auto_updates": false,
+        "artifacts": [{"uninstall": [{"quit": "com.example.two"}]}, {"app": ["Two.app", {"target": "Two Helper.app"}], "target": "/Applications/Two.app"}, {"zap": [{"trash": "~/Library/Two"}]}]},
+       {"token": "odd-artifacts", "name": ["Odd"], "artifacts": "not a list"}
      ]}
     """.utf8)
 
@@ -72,5 +75,14 @@ final class AppsBrewTests: XCTestCase {
     func testScanCommandKeepsTheReadOnlyVariables() {
         let outdated = Homebrew.command("/example/bin/brew", Homebrew.outdatedArguments())
         XCTAssertEqual(outdated.description, "HOMEBREW_NO_ANALYTICS=1 HOMEBREW_NO_AUTO_UPDATE=1 brew outdated --cask --greedy --json=v2")
+    }
+
+    func testInfoReadsTheAppBundlesACaskInstalls() throws {
+        let info = try Homebrew.parseInfo(infoJSON)
+        XCTAssertEqual(info["two-apps"]?.apps, ["Two.app", "Two Helper.app"])
+        XCTAssertEqual(info["example-app"]?.apps, [])
+        XCTAssertEqual(info["odd-artifacts"]?.apps, [], "unreadable artifacts still list the cask")
+        let merged = Homebrew.merge(outdated: [Homebrew.Outdated(token: "two-apps", installed: "1", latest: "2")], info: info)
+        XCTAssertEqual(merged.first?.apps, ["Two.app", "Two Helper.app"])
     }
 }

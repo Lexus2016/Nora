@@ -43,6 +43,8 @@ final class AppsModel {
     var scanTitle = "Looking at your apps…"
     var scanStep = ""
     var runningUpdates = false
+    /// Names of selected apps that are open: Update asks before it quits them.
+    var openToQuit: [String] = []
     /// Stop was pressed during removal or updates: the app in progress finishes, the rest wait.
     /// Cutting `mo uninstall` or `brew upgrade` short could leave an app half removed.
     var stopRequested = false
@@ -70,6 +72,11 @@ final class AppsModel {
     /// Everything Update can install: Homebrew apps, and apps from a download Homebrew can take over.
     var updatableIDs: [String] { updates.map(\.token) + outside.filter { $0.token != nil }.map(\.path) }
     var updateCount: Int { updates.count + outside.count }
+
+    /// Where each selected update's app lives, with the name the result lines use.
+    private func bundles(of update: Homebrew.Update) -> [String] {
+        update.apps.map { Homebrew.appDirectory + "/" + $0 }
+    }
 
     private func bySize(_ list: [InstalledApp]) -> [InstalledApp] {
         list.sorted { (sizes[$0.path] ?? -1) > (sizes[$1.path] ?? -1) }
@@ -243,6 +250,26 @@ final class AppsModel {
 
     // MARK: - Updates
 
+    /// Update: asks first when a selected app is open, otherwise starts right away.
+    func requestUpgrade(_ app: AppModel) {
+        let brewOpen = updates.filter { selectedTokens.contains($0.token) && bundles(of: $0).contains { OpenApps.running(at: $0) != nil } }.map(\.name)
+        let otherOpen = selectedOutside.filter { OpenApps.running(at: $0.path) != nil }.map(\.name)
+        let open = brewOpen + otherOpen
+        if open.isEmpty { upgrade(app) } else { openToQuit = open }
+    }
+
+    /// Quits the open apps among `paths` right before their update. Nil when one stayed open, so
+    /// that update is skipped; otherwise the paths it quit, to open again at the end.
+    private func quitBeforeUpdate(_ paths: [String]) async -> [String]? {
+        var quit: [String] = []
+        for path in paths {
+            guard let running = OpenApps.running(at: path) else { continue }
+            guard await OpenApps.quit(running) else { return nil }
+            quit.append(path)
+        }
+        return quit
+    }
+
     /// Runs `brew upgrade --cask` for each selected cask in turn, so Stop can wait for the one in
     /// progress, then checks with `brew outdated` which of them are still behind. That check
     /// decides the result, because the upgrade's exit status does not say which cask failed.
@@ -253,13 +280,19 @@ final class AppsModel {
         let commands = tokens.compactMap { Homebrew.upgradeCommand(tokens: [$0], executable: path) }
         let others = selectedOutside
         guard commands.count == tokens.count, !(tokens.isEmpty && others.isEmpty) else { return }
+        openToQuit = []
         runningUpdates = true
         stopRequested = false
         stage = .running
+        let brewBundles = Dictionary(uniqueKeysWithValues: updates.map { ($0.token, bundles(of: $0)) })
         task = Task(.applications) {
             var skipped: [String] = []
+            var stayedOpen: [String] = []
+            var reopen: [String] = []
             for (token, command) in zip(tokens, commands) {
                 if stopRequested { skipped.append(token); continue }
+                guard let quit = await quitBeforeUpdate(brewBundles[token] ?? []) else { stayedOpen.append(token); continue }
+                reopen += quit
                 // A failed upgrade is in the console with its status; the check below reports it.
                 try? await app.stream(command, environment: Homebrew.processEnvironment)
             }
@@ -270,7 +303,8 @@ final class AppsModel {
                 if let remaining = try? Set(Homebrew.parseOutdated(try await brew(app, path, Homebrew.outdatedArguments())).map(\.token)) {
                     done = tokens.filter { !remaining.contains($0) }
                     lines = done.map { "✓ \($0)" }
-                        + tokens.filter { remaining.contains($0) && !skipped.contains($0) }.map { "✕ " + String(localized: "\($0) is still outdated") }
+                        + stayedOpen.map { "✕ " + String(localized: "\($0): it stayed open, so it was not updated.") }
+                        + tokens.filter { remaining.contains($0) && !skipped.contains($0) && !stayedOpen.contains($0) }.map { "✕ " + String(localized: "\($0) is still outdated") }
                         + skipped.filter { remaining.contains($0) }.map { "– " + String(localized: "\($0): not started, you pressed Stop") }
                     updates.removeAll { done.contains($0.token) }
                 } else {
@@ -283,6 +317,11 @@ final class AppsModel {
                     lines.append("– " + String(localized: "\(item.name): not started, you pressed Stop"))
                     continue
                 }
+                guard let quit = await quitBeforeUpdate([item.path]) else {
+                    lines.append("✕ " + String(localized: "\(item.name): it stayed open, so it was not updated."))
+                    continue
+                }
+                reopen += quit
                 if let problem = await replace(app, item, brew: path) {
                     lines.append("✕ \(item.name): \(problem)")
                 } else {
@@ -291,6 +330,8 @@ final class AppsModel {
                     outside.removeAll { $0.path == item.path }
                 }
             }
+            // Every app Nora quit comes back, updated or not.
+            for bundle in reopen { OpenApps.reopen(bundle) }
             let total = tokens.count + others.count
             failed = !checked || done.count < total
             resultHeadline = !checked && done.isEmpty ? String(localized: "Could not check the result")
@@ -311,7 +352,8 @@ final class AppsModel {
         guard let token = item.token, let install = Homebrew.installCommand(token: token, executable: path) else {
             return String(localized: "Homebrew cannot install this app.")
         }
-        if !NSRunningApplication.runningApplications(withBundleIdentifier: item.bundleID).isEmpty {
+        // Quit just before this; an app reopened in between (by the user or a login item) stays.
+        if OpenApps.running(at: item.path) != nil {
             return String(localized: "It is running. Quit it and try again.")
         }
         guard let data = try? await brew(app, path, Homebrew.infoArguments(token: token)),
@@ -451,6 +493,8 @@ final class AppsModel {
         listFilter = filter
         screen = .list
     }
+
+    func cancelQuit() { openToQuit = [] }
 
     func openUpdates(all: Bool) {
         selectedUpdates = all ? Set(updatableIDs) : []

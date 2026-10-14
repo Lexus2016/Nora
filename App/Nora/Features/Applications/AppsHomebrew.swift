@@ -13,6 +13,8 @@ enum Homebrew {
         let installed: String
         let latest: String
         let autoUpdates: Bool
+        /// The `.app` bundles the cask installs, by file name; an open one is quit before the upgrade.
+        var apps: [String] = []
         var id: String { token }
     }
 
@@ -25,7 +27,11 @@ enum Homebrew {
     struct CaskInfo: Hashable, Sendable {
         let name: String?
         let autoUpdates: Bool
+        var apps: [String] = []
     }
+
+    /// Homebrew's app folder: where `brew` puts a cask's `.app`.
+    static let appDirectory = "/Applications"
 
     static let candidates = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
 
@@ -97,9 +103,38 @@ enum Homebrew {
         let token: String
         let name: [String]?
         let autoUpdates: Bool?
+        let apps: [String]
 
         enum CodingKeys: String, CodingKey {
-            case token, name, autoUpdates = "auto_updates"
+            case token, name, artifacts, autoUpdates = "auto_updates"
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            token = try c.decode(String.self, forKey: .token)
+            name = try? c.decode([String].self, forKey: .name)
+            autoUpdates = try? c.decode(Bool.self, forKey: .autoUpdates)
+            // Lenient: a cask whose artifacts do not read still lists its update, just without apps.
+            let artifacts = (try? c.decode([Artifact].self, forKey: .artifacts)) ?? []
+            apps = artifacts.flatMap { $0.app ?? [] }.compactMap(\.name).map { ($0 as NSString).lastPathComponent }
+        }
+    }
+
+    /// One artifact; only its `app` entry matters: names as strings or `{"target": …}` objects.
+    private struct Artifact: Decodable {
+        let app: [AppEntry]?
+    }
+
+    private struct AppEntry: Decodable {
+        let name: String?
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.singleValueContainer()
+            name = (try? c.decode(String.self)) ?? (try? c.decode(Target.self))?.target
+        }
+
+        private struct Target: Decodable {
+            let target: String?
         }
     }
 
@@ -129,7 +164,7 @@ enum Homebrew {
         let root = try JSONDecoder().decode(InfoRoot.self, from: data)
         var out: [String: CaskInfo] = [:]
         for cask in root.casks ?? [] {
-            out[cask.token] = CaskInfo(name: cask.name?.first, autoUpdates: cask.autoUpdates ?? false)
+            out[cask.token] = CaskInfo(name: cask.name?.first, autoUpdates: cask.autoUpdates ?? false, apps: cask.apps)
         }
         return out
     }
@@ -142,7 +177,8 @@ enum Homebrew {
                           name: meta?.name ?? item.token,
                           installed: item.installed,
                           latest: item.latest,
-                          autoUpdates: meta?.autoUpdates ?? false)
+                          autoUpdates: meta?.autoUpdates ?? false,
+                          apps: meta?.apps ?? [])
         }
         .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }

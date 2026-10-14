@@ -7,6 +7,9 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 ### Added
 - Settings → General → Menu bar can show the CPU temperature next to the Nora icon, with a coloured dot for how hot it runs: green below 70 °C, orange from 70 °C, red from 90 °C. Off by default; the tooltip gives the exact value.
 
+### Changed
+- Updating an app that is open no longer fails with "Quit it and try again". Update now asks first, then quits the open apps the way their own Quit command does, so each one can ask to save your work, updates them and opens them again. An app that stays open, for example because you cancelled its save dialog, is skipped and named in the result.
+
 ## 1.1.0 (2026-10-14)
 
 ### Added

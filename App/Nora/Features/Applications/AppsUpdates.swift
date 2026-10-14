@@ -11,7 +11,7 @@ struct AppsUpdates: View {
 
     var body: some View {
         ModuleScene(module: module, leading: .back { model.back() },
-                    orb: model.selectedUpdates.isEmpty ? nil : OrbAction(title: "Update", action: { model.upgrade(app) })) {
+                    orb: model.selectedUpdates.isEmpty ? nil : OrbAction(title: "Update", action: { model.requestUpgrade(app) })) {
         VStack(alignment: .leading, spacing: 14) {
             StepHeader(module: module, title: "Updates",
                        subtitle: String(localized: "\(model.updateCount) apps have a newer version")) {
@@ -49,6 +49,12 @@ struct AppsUpdates: View {
                          note: String(localized: "Only the selected apps are updated. An app from a download goes to the Trash first and comes back if Homebrew fails."))
         }
         .padding(.horizontal, 34).padding(.top, 8)
+        }
+        .alert("Quit the open apps?", isPresented: Binding(get: { !model.openToQuit.isEmpty }, set: { if !$0 { model.cancelQuit() } })) {
+            Button("Quit and update") { model.upgrade(app) }
+            Button("Cancel", role: .cancel) { model.cancelQuit() }
+        } message: {
+            Text("Open now: \(model.openToQuit.formatted(.list(type: .and))). Nora quits them, updates them and opens them again. Each app can ask you to save your work first.")
         }
     }
 

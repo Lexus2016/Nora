@@ -337,6 +337,22 @@
         }
       }
     },
+    "%@: it stayed open, so it was not updated.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: программа осталась открытой, поэтому её не обновили."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: програма лишилася відкритою, тому її не оновлено."
+          }
+        }
+      }
+    },
     "%@: not started, you pressed Stop": {
       "localizations": {
         "ru": {
@@ -7989,6 +8005,22 @@
         }
       }
     },
+    "Open now: %@. Nora quits them, updates them and opens them again. Each app can ask you to save your work first.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сейчас открыты: %@. Nora закроет их, обновит и откроет снова. Каждая программа может сначала предложить сохранить вашу работу."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зараз відкриті: %@. Nora закриє їх, оновить і відкриє знову. Кожна програма може спершу запропонувати зберегти вашу роботу."
+          }
+        }
+      }
+    },
     "Open settings": {
       "localizations": {
         "ru": {
@@ -8353,6 +8385,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вийти з Nora"
+          }
+        }
+      }
+    },
+    "Quit and update": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть и обновить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрити й оновити"
+          }
+        }
+      }
+    },
+    "Quit the open apps?": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть открытые программы?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрити відкриті програми?"
           }
         }
       }
