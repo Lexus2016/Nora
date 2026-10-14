@@ -326,12 +326,17 @@ final class AppsModel {
         } catch {
             return error.localizedDescription
         }
+        // Journaled until brew is done, so a quit or crash mid-install still gets the copy back.
+        let copy = trashed?.absoluteURL
+        let entry = copy.map { OutsideApps.Journal.Entry(original: original.path, trashed: $0.path) }
+        if let entry { app.handover.add(entry) }
+        defer { if let entry { app.handover.remove(entry) } }
         do {
             try await app.stream(install, environment: Homebrew.processEnvironment)
             if FileManager.default.fileExists(atPath: original.path) { return nil }
         } catch {}
         // brew failed: the old copy goes back if its place is still free.
-        guard let copy = trashed?.absoluteURL, !FileManager.default.fileExists(atPath: original.path),
+        guard let copy, !FileManager.default.fileExists(atPath: original.path),
               (try? FileManager.default.moveItem(at: copy, to: original)) != nil else {
             return String(localized: "Homebrew could not install it. The old version is in the Trash.")
         }

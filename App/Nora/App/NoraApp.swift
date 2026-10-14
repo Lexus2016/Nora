@@ -106,6 +106,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         app.security.shutdown()
         // Children first, and only once they are gone: Mole must not read the whitelist while
         // it is being put back. If one survives, the overlay stays until the next launch.
-        if ChildProcesses.terminateAllAndWait() { try? app.overlay.recoverIfNeeded() }
+        if ChildProcesses.terminateAllAndWait() {
+            try? app.overlay.recoverIfNeeded()
+            app.handover.recover()
+        }
     }
 }

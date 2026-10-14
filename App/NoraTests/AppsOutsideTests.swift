@@ -139,4 +139,61 @@ final class AppsOutsideTests: XCTestCase {
         XCTAssertNil(OutsideApps.update(local("B.app", "com.example.b", "5.1"), feed: buildsOnly, system: [26, 0]))
         XCTAssertNil(OutsideApps.update(local("A.app", "com.example.a", "1.0"), feed: OutsideApps.parseFeed(Data("not xml".utf8)), system: [26, 0]))
     }
+
+    // MARK: - Handover journal
+
+    private func sandbox() throws -> URL {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("handover-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir.appendingPathComponent("Applications"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: dir.appendingPathComponent("Trash"), withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        return dir
+    }
+
+    private func bundle(_ url: URL, _ version: String) throws {
+        try FileManager.default.createDirectory(at: url.appendingPathComponent("Contents"), withIntermediateDirectories: true)
+        try Data(version.utf8).write(to: url.appendingPathComponent("Contents/version"))
+    }
+
+    private func version(_ url: URL) -> String? {
+        (try? Data(contentsOf: url.appendingPathComponent("Contents/version"))).map { String(decoding: $0, as: UTF8.self) }
+    }
+
+    func testRecoverPutsTheOldCopyBackWhenTheInstallNeverFinished() throws {
+        let dir = try sandbox()
+        let original = dir.appendingPathComponent("Applications/A.app"), trashed = dir.appendingPathComponent("Trash/A.app")
+        try bundle(trashed, "1.0")
+        let journal = OutsideApps.Journal(url: dir.appendingPathComponent("journal.json"))
+        journal.add(.init(original: original.path, trashed: trashed.path))
+        XCTAssertEqual(journal.recover(), [original.path])
+        XCTAssertEqual(version(original), "1.0")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: trashed.path))
+        XCTAssertEqual(journal.entries(), [])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: journal.url.path), "an empty journal leaves no file")
+    }
+
+    func testRecoverLeavesTheNewVersionAndTheTrashAlone() throws {
+        let dir = try sandbox()
+        let original = dir.appendingPathComponent("Applications/A.app"), trashed = dir.appendingPathComponent("Trash/A.app")
+        try bundle(original, "2.0")
+        try bundle(trashed, "1.0")
+        let journal = OutsideApps.Journal(url: dir.appendingPathComponent("journal.json"))
+        journal.add(.init(original: original.path, trashed: trashed.path))
+        journal.add(.init(original: dir.appendingPathComponent("Applications/B.app").path, trashed: dir.appendingPathComponent("Trash/B.app").path))
+        XCTAssertEqual(journal.recover(), [])
+        XCTAssertEqual(version(original), "2.0")
+        XCTAssertEqual(version(trashed), "1.0")
+        XCTAssertEqual(journal.entries(), [], "taken places and emptied copies are both done")
+    }
+
+    func testAddAndRemoveKeepOneEntryPerApp() throws {
+        let dir = try sandbox()
+        let journal = OutsideApps.Journal(url: dir.appendingPathComponent("journal.json"))
+        let a = OutsideApps.Journal.Entry(original: "/Applications/A.app", trashed: "/Trash/A.app")
+        let b = OutsideApps.Journal.Entry(original: "/Applications/B.app", trashed: "/Trash/B.app")
+        journal.add(a); journal.add(a); journal.add(b)
+        XCTAssertEqual(journal.entries(), [a, b])
+        journal.remove(a)
+        XCTAssertEqual(journal.entries(), [b])
+    }
 }

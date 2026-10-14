@@ -298,3 +298,50 @@ enum OutsideApps {
         }
     }
 }
+
+extension OutsideApps {
+    /// Apps that sit in the Trash while Homebrew installs their new version. An entry is written
+    /// right after the move and cleared when brew is done. An entry left behind means Nora stopped
+    /// mid-install (quit, crash, kill); `recover` then puts the old copy back while its place is
+    /// still empty, so an app is never left in the Trash without a new version in its place.
+    struct Journal: Sendable {
+        struct Entry: Codable, Hashable, Sendable {
+            let original: String
+            let trashed: String
+        }
+
+        let url: URL
+
+        func entries() -> [Entry] {
+            (try? JSONDecoder().decode([Entry].self, from: Data(contentsOf: url))) ?? []
+        }
+
+        func add(_ entry: Entry) { write(entries().filter { $0 != entry } + [entry]) }
+        func remove(_ entry: Entry) { write(entries().filter { $0 != entry }) }
+
+        /// Moves back each copy whose place is empty. An entry whose place is taken (brew finished)
+        /// or whose copy is gone (the Trash was emptied) is dropped; one whose move fails stays for
+        /// the next try. Returns the restored paths.
+        @discardableResult
+        func recover() -> [String] {
+            let fm = FileManager.default
+            var restored: [String] = []
+            for entry in entries() {
+                if !fm.fileExists(atPath: entry.original), fm.fileExists(atPath: entry.trashed) {
+                    guard (try? fm.moveItem(atPath: entry.trashed, toPath: entry.original)) != nil else { continue }
+                    restored.append(entry.original)
+                }
+                remove(entry)
+            }
+            return restored
+        }
+
+        private func write(_ entries: [Entry]) {
+            if entries.isEmpty {
+                try? FileManager.default.removeItem(at: url)
+            } else {
+                try? JSONEncoder().encode(entries).write(to: url, options: .atomic)
+            }
+        }
+    }
+}

@@ -72,6 +72,11 @@ final class AppModel {
         WhitelistOverlay(home: home, journalURL: supportDirectory.appendingPathComponent("whitelist-journal.json"))
     }
 
+    /// Apps in the Trash while Homebrew installs their new version (see `OutsideApps.Journal`).
+    var handover: OutsideApps.Journal {
+        OutsideApps.Journal(url: supportDirectory.appendingPathComponent("app-handover.json"))
+    }
+
     /// One Cleanup or Projects run at a time, from its fresh check until the whitelist is put
     /// back: a second run would read the first one's temporary protection as the user's choice.
     @ObservationIgnored private var exclusiveRun: String?
@@ -128,7 +133,8 @@ final class AppModel {
         return env
     }
 
-    /// Prepares the askpass helper and undoes a whitelist overlay left by a crash.
+    /// Prepares the askpass helper and undoes what a crash left: a whitelist overlay, or an app
+    /// waiting in the Trash for a Homebrew install that never finished.
     func prepare() {
         try? PrivilegeBroker.writeDialogAskpass(
             to: askpassURL,
@@ -136,6 +142,7 @@ final class AppModel {
             cancel: String(localized: "Cancel"),
             ok: String(localized: "OK"))
         try? overlay.recoverIfNeeded()
+        handover.recover()
     }
 
     /// A module with a scan or a run in progress shows a ring on its rail icon.
