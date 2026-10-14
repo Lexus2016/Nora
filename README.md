@@ -45,7 +45,7 @@
 |---|---|---|
 | **Smart Care** | One scan for junk, maintenance, build folders and installers. *Run* does every ticked task in turn | `mo clean`, `mo optimize`, `mo purge`, `mo installer` (previews first) |
 | **Cleanup** | Caches, logs and leftovers by category. Untick anything to keep it. System caches are optional and ask for your password or Touch ID | `mo clean` with a temporary protection list |
-| **Applications** | Remove an app with its helpers, caches and settings (to the Trash or permanently), update Homebrew apps, find apps you no longer open and the largest ones | `mo uninstall`, `brew` |
+| **Applications** | Remove an app with its helpers, caches and settings (to the Trash or permanently), update apps installed with Homebrew or from a download, find apps you no longer open and the largest ones | `mo uninstall`, `brew`, app update feeds |
 | **Performance** | What slows your Mac right now, and 20 maintenance tasks (DNS, Spotlight, Finder caches, databases, network) | `mo optimize` |
 | **Space Map** | Folders as a bubble map and a list, large files, drill down and move anything to the Trash | `mo analyze --json` |
 | **System Status** | Health score, processor, memory, disks, network, power and temperatures, energy mode, traffic by app, listening ports, battery, Bluetooth | `mo status --watch`, system counters |
@@ -94,7 +94,7 @@ The screenshots use demo data.
 
 ## Install
 
-1. Download `Nora-1.0.0.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
+1. Download `Nora-1.1.0.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
 2. Open it and drag **Nora** to **Applications**.
 3. Start Nora. If Mole is missing, Nora installs it for you.
 
@@ -115,10 +115,10 @@ To build Nora yourself, see [docs/BUILD.md](docs/BUILD.md).
 ## Safety
 
 - Nora never deletes on its own. Removal always follows a review and your click.
-- Caches, logs and build folders are deleted permanently, as Mole does; Mole checks every path again first. Apps and installers go to the Trash. Deleting an app permanently asks once more.
+- Caches, logs and build folders are deleted permanently, as Mole does; Mole checks every path again first. Apps and installers go to the Trash. Deleting an app permanently asks once more. When Homebrew takes over an app you downloaded, the old copy goes to the Trash first and comes back if the install fails.
 - When Nora edits Mole's protection list, Mole's own default protections and safety rules stay in place.
 - Your password goes straight to `sudo` through the system dialog or Touch ID. Nora never sees or stores it.
-- No telemetry. Nora goes online only to check for updates (Nora and Mole), to install Mole, and to update the ClamAV database if you installed ClamAV.
+- No telemetry. Nora goes online only to check for updates to Nora, Mole and your apps (Homebrew's public app list and each app's own update feed), to install Mole, and to update the ClamAV database if you installed ClamAV.
 
 Known limits, because Mole works this way: Mole removes build folders by rescanning rather than from a list, so a folder created in the seconds before removal is not protected; and installers are matched by name, folder and size, as Mole's menu shows no full path.
 
