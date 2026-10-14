@@ -276,7 +276,7 @@ struct ToolsView: View {
     }
 
     private var remove: some View {
-        tool("Remove Mole", "trash", command: "mo remove") {
+        tool("Remove Mole", "xmark.app", command: "mo remove") {
             Text("What removing Mole would delete. Nora needs Mole, so the removal itself runs in Terminal.").font(.system(size: 13)).foregroundStyle(Palette.fg2)
             ForEach(Array(model.removePreview.prefix(5).enumerated()), id: \.offset) { _, line in
                 Text(line).font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(1).truncationMode(.middle)

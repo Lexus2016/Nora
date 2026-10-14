@@ -6,7 +6,9 @@ struct PTYGroupTests {
     /// A leader that exits at once can leave a helper running in its group. The group counts as
     /// alive until the helper is gone, and terminate() stops the helper too.
     @Test func terminateStopsHelpersLeftByAnExitedLeader() throws {
-        let session = try PTYSession(executable: "/bin/sh", arguments: ["-c", "(trap '' HUP; sleep 30) & exit 0"],
+        // The trap is set before the fork, so the helper starts with HUP ignored. Set inside the
+        // subshell it raced the hangup that follows the leader's exit and sometimes lost.
+        let session = try PTYSession(executable: "/bin/sh", arguments: ["-c", "trap '' HUP; sleep 30 & exit 0"],
                                      environment: ["PATH": "/bin:/usr/bin"])
         _ = try session.waitForExit(timeout: 5)
         usleep(200_000)
