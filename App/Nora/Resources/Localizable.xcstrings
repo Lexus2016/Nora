@@ -1023,6 +1023,88 @@
         }
       }
     },
+    "%lld failed": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld failed"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld failed"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld сбоя"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld сбоев"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld сбой"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld сбоя"
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld збої"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld збоїв"
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld збій"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld збою"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld files": {
       "localizations": {
         "en": {
@@ -3473,6 +3555,22 @@
         }
       }
     },
+    "Cleaning did not finish: %@ Some files may already be removed; the console shows the output.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистка не завершилась: %@ Часть файлов уже могла быть удалена; подробности в консоли."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очищення не завершилося: %@ Частину файлів уже могло бути видалено; подробиці в консолі."
+          }
+        }
+      }
+    },
     "Cleaning…": {
       "localizations": {
         "ru": {
@@ -5393,6 +5491,22 @@
         }
       }
     },
+    "Installation stopped. Nothing was installed if it stopped before the last step.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установка остановлена. Если это произошло до последнего шага, ничего не установлено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановлення зупинено. Якщо це сталося до останнього кроку, нічого не встановлено."
+          }
+        }
+      }
+    },
     "Installed": {
       "localizations": {
         "ru": {
@@ -6193,6 +6307,22 @@
         }
       }
     },
+    "Maintenance tasks failed": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неудачные задачи обслуживания"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Невдалі завдання обслуговування"
+          }
+        }
+      }
+    },
     "Manage my apps": {
       "localizations": {
         "ru": {
@@ -6547,6 +6677,22 @@
         }
       }
     },
+    "Mole could not start.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не удалось запустить."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не вдалося запустити."
+          }
+        }
+      }
+    },
     "Mole default": {
       "localizations": {
         "ru": {
@@ -6575,6 +6721,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mole не запускається"
+          }
+        }
+      }
+    },
+    "Mole exited with status %d.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole завершилась с кодом %d."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole завершилася з кодом %d."
           }
         }
       }
@@ -11225,6 +11387,22 @@
         }
       }
     },
+    "The preview failed: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предпросмотр не удался: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попередній перегляд не вдався: %@"
+          }
+        }
+      }
+    },
     "The program file is missing.": {
       "localizations": {
         "ru": {
@@ -12951,6 +13129,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "не запущено, ви натиснули «Стоп»"
+          }
+        }
+      }
+    },
+    "nothing to do": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ничего делать не нужно"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "нічого не потрібно робити"
           }
         }
       }

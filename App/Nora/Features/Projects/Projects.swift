@@ -54,7 +54,7 @@ final class ProjectsModel {
     /// tick, including folders that appeared after the review. An incomplete preview means Mole
     /// may reach folders nobody saw, so nothing runs.
     func purge(_ app: AppModel) {
-        guard preview != nil, let mole = app.mole else { return }
+        guard preview != nil, !selected.isEmpty, let mole = app.mole else { return }
         let chosen = selected
         let runID = "purge-\(UUID().uuidString)"
         // Taken before the fresh preview: under another run's overlay that preview would miss

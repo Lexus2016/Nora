@@ -82,5 +82,9 @@
   "Mole cannot keep %@ and %lld more unticked items safe: its protection list does not accept those names. Nothing was removed. Tick them to remove them too, or rename them and scan again.": {
     "one": "Mole cannot keep %@ and %lld more unticked item safe: its protection list does not accept those names. Nothing was removed. Tick them to remove them too, or rename them and scan again.",
     "other": "Mole cannot keep %@ and %lld more unticked items safe: its protection list does not accept those names. Nothing was removed. Tick them to remove them too, or rename them and scan again."
+  },
+  "%lld failed": {
+    "one": "%lld failed",
+    "other": "%lld failed"
   }
 }

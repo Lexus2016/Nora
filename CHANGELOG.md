@@ -18,12 +18,19 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 - A Full security scan no longer scans Nora's own quarantine and virus database: a quarantined file came back as a new finding, and quarantining it again split its entry so one Restore no longer put it back. A file already in quarantine can no longer be quarantined again.
 - When yara failed on one folder, the XProtect matches it had already found in other folders were dropped, and a failure that printed output still counted as a clean run. Matches are now kept as each folder finishes, and the card says when some folders could not be checked.
 - A file named `meta.json` could not be quarantined. Quarantined files are now kept in a `payload` folder of their entry; older entries are still listed and restored.
+- Smart Care no longer runs a step whose review has nothing ticked (or found nothing): it shows "nothing to do" instead of starting the command and reporting a failure. Cleanup, Projects and Installers also refuse an empty selection themselves.
+- History counts failed maintenance tasks apart from failed files, so a failed optimize no longer shows as "Failed 0"; each recent session with failures says how many.
+- Tools → External drive shows why a preview or a clean failed (the error Mole printed), instead of an empty card. A failed clean says that some files may already be removed.
+- Installing Mole from Nora gives up on a download that stalls (30 s to connect, under 1 KB/s for 10 s, 5 minutes in all), and the install can be stopped; a stopped download never reaches the installer.
 - Handing a downloaded app over to Homebrew is now a checked transaction. The old copy is set aside in Nora's own folder (journaled and synced first), not straight in the Trash; after `brew install` Nora reads the new bundle and keeps it only if it has the same bundle ID and is not older. Otherwise whatever Homebrew left goes to the Trash and the old copy goes back. Only then does the old copy go to the Trash. A quit or crash mid-install is finished the same way on the next start, and a damaged journal stops the update instead of being ignored. The result shows the version actually installed.
 - Right before an app is handed over, Nora reads it and its Homebrew entry again: an app that updated itself since the scan, or a cask that changed, is skipped with "Scan again".
 - An app is matched to a Homebrew cask only by its exact bundle ID, not by an ID that merely starts the same way, and by the name the cask really installs: a cask that renames its app (for example `CleanMyMac_5.app` installed as `CleanMyMac.app`) no longer matches the downloaded copy.
 - Versions with letters compare only with their own kind: `2.0rc1` no longer counts as newer than `2.0`, and an app's own feed that gives only build numbers is not weighed against Homebrew's marketing version.
 - The menu bar title and the quick menu show only current numbers: when Mole's status stream stops or goes quiet for 15 seconds they show dashes (and the quick menu the reason) instead of the last values.
 - Updating apps that are open: an app that was quit before another one refused to close comes back, and an app opened during the update is left open and skipped instead of being quit without asking.
+
+### Build
+- `scripts/build-dmg.sh` runs a release gate before the archive: the tree must be committed, then `scripts/l10n.py check` (new: missing translations, mismatched format specifiers, plurals without `other`, a stale catalog), the MoleKit tests and the app tests. Any failure stops the build.
 
 ## 1.1.0 (2026-10-14)
 

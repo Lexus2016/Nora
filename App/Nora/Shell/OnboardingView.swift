@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 struct OnboardingView: View {
     @Environment(AppModel.self) private var app
     @State private var working = false
+    @State private var install: Task<Void, Never>?
     @State private var error: String?
     private let palette = Module.smartCare.palette
 
@@ -72,6 +73,7 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle(glow: palette.glow))
                 .disabled(working)
+                if working { Button("Stop") { install?.cancel() }.buttonStyle(GlassButtonStyle()) }
                 Button("Choose mo…") { choose() }.buttonStyle(GlassButtonStyle()).disabled(working)
                 Button("Check again") { Task { await app.locate() } }.buttonStyle(GlassButtonStyle()).disabled(working)
             }
@@ -81,15 +83,21 @@ struct OnboardingView: View {
     private func perform(_ commands: [ShellCommand]) {
         working = true
         error = nil
-        Task {
-            defer { working = false }
+        install = Task {
+            defer { working = false; install = nil }
             do {
                 try FileManager.default.createDirectory(at: app.home.appendingPathComponent("Library/Caches/Nora"), withIntermediateDirectories: true)
                 for command in commands {
+                    // Stop between steps too: a stopped download never reaches the installer.
+                    try Task.checkCancellation()
                     try await app.stream(command, environment: Mole.environment(home: app.home))
                 }
                 await app.locate()
             } catch {
+                if error is CancellationError || Task.isCancelled {
+                    self.error = String(localized: "Installation stopped. Nothing was installed if it stopped before the last step.")
+                    return
+                }
                 self.error = String(localized: "Installation failed. The console shows the output.")
                 app.showConsole = true
             }

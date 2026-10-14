@@ -76,7 +76,7 @@ final class CleanupModel {
     }
 
     func clean(_ app: AppModel) {
-        guard let preview, let mole = app.mole else { return }
+        guard let preview, !selected.isEmpty, let mole = app.mole else { return }
         let runID = "clean-\(UUID().uuidString)"
         guard app.beginExclusiveRun(runID) else {
             return refuse(WhitelistOverlayError.pendingRecovery)

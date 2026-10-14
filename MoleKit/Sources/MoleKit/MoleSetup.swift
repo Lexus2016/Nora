@@ -31,7 +31,10 @@ public enum MoleSetup {
             let script = home.appendingPathComponent("Library/Caches/Nora/mole-install.sh").path
             return [
                 ShellCommand("/bin/mkdir", ["-p", prefix]),
-                ShellCommand("/usr/bin/curl", ["-fsSL", "-o", script, installScriptURL.absoluteString]),
+                // A server that connects and then stalls must not hold the install forever: give up
+                // after 30 s without a connection, 10 s below 1 KB/s, or 5 minutes in all.
+                ShellCommand("/usr/bin/curl", ["-fsSL", "--connect-timeout", "30", "--speed-limit", "1024", "--speed-time", "10",
+                                               "--max-time", "300", "-o", script, installScriptURL.absoluteString]),
                 ShellCommand("/bin/sh", ["-c", "echo \"\(installScriptSHA256)  $0\" | /usr/bin/shasum -a 256 -c -", script]),
                 ShellCommand("/bin/bash", [script, "--prefix", prefix, pinnedVersion]),
             ]

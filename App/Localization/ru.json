@@ -848,5 +848,18 @@
   "Nothing was changed: %@": "Ничего не изменено: %@",
   "CPU temperature unavailable right now": "Температура процессора сейчас недоступна",
   "%@ is already in quarantine.": "%@ уже в карантине.",
-  "Some folders could not be checked: %@": "Некоторые папки не удалось проверить: %@"
+  "Some folders could not be checked: %@": "Некоторые папки не удалось проверить: %@",
+  "%lld failed": {
+    "one": "%lld сбой",
+    "few": "%lld сбоя",
+    "many": "%lld сбоев",
+    "other": "%lld сбоя"
+  },
+  "Cleaning did not finish: %@ Some files may already be removed; the console shows the output.": "Очистка не завершилась: %@ Часть файлов уже могла быть удалена; подробности в консоли.",
+  "Installation stopped. Nothing was installed if it stopped before the last step.": "Установка остановлена. Если это произошло до последнего шага, ничего не установлено.",
+  "Maintenance tasks failed": "Неудачные задачи обслуживания",
+  "Mole could not start.": "Mole не удалось запустить.",
+  "Mole exited with status %d.": "Mole завершилась с кодом %d.",
+  "The preview failed: %@": "Предпросмотр не удался: %@",
+  "nothing to do": "ничего делать не нужно"
 }

@@ -17,6 +17,7 @@ final class ToolsModel {
             guard externalVolume != oldValue else { return }
             externalGeneration = UUID()
             externalPreview = []
+            externalError = nil
             previewedVolume = nil
             externalBusy = false
         }
@@ -25,6 +26,8 @@ final class ToolsModel {
     @ObservationIgnored private var previewedIdentity: String?
     @ObservationIgnored private var externalGeneration = UUID()
     var externalPreview: [String] = []
+    /// Why the last preview or clean of the drive failed, shown under its output.
+    var externalError: String?
     var externalBusy = false
     /// While a drive is being cleaned the picker and Preview wait, so nothing overlaps the run.
     var externalCleaning = false
@@ -96,10 +99,12 @@ final class ToolsModel {
         let identity = Self.identity(of: volume)
         Task {
             defer { if externalGeneration == generation { externalBusy = false } }
-            let result = try? await app.run(["clean", "--external", volume.path, "--dry-run"])
+            let outcome = await Self.attempt { try await app.run(["clean", "--external", volume.path, "--dry-run"]) }
             // A newer preview or another drive took over meanwhile: this result is stale.
             guard externalGeneration == generation, externalVolume == volume else { return }
+            let result = outcome.result
             externalPreview = Self.meaningful(result?.stdout ?? "")
+            externalError = Self.failure(outcome, preview: true)
             let valid = result?.succeeded == true && identity != nil && Self.identity(of: volume) == identity
             previewedVolume = valid ? volume : nil
             previewedIdentity = valid ? identity : nil
@@ -118,17 +123,43 @@ final class ToolsModel {
         externalCleaning = true
         externalTask = Task {
             defer { externalCleaning = false }
-            let result = try? await app.run(["clean", "--external", volume.path])
+            let outcome = await Self.attempt { try await app.run(["clean", "--external", volume.path]) }
             // Only this run's own screen state is written; a newer preview stays as it is.
             guard externalGeneration == generation, externalVolume == volume else { return }
             externalPreview = Task.isCancelled ? [String(localized: "Stopped. Files removed before the stop stay removed.")]
-                                               : MoleSummary.lines(result?.stdout ?? "")
+                                               : MoleSummary.lines(outcome.result?.stdout ?? "")
+            externalError = Task.isCancelled ? nil : Self.failure(outcome, preview: false)
             previewedVolume = nil
             previewedIdentity = nil
         }
     }
 
     func stopExternal() { externalTask?.cancel() }
+
+    /// A command's result, or the error that kept it from running.
+    struct Attempt { var result: CommandResult?; var error: Error? }
+
+    static func attempt(_ body: () async throws -> CommandResult) async -> Attempt {
+        do { return Attempt(result: try await body()) } catch { return Attempt(error: error) }
+    }
+
+    /// What went wrong, in words, or nil when the command succeeded. A failed clean may have
+    /// removed some files already, so it never says that nothing changed.
+    nonisolated static func failure(_ attempt: Attempt, preview: Bool) -> String? {
+        let detail: String
+        if let result = attempt.result {
+            guard !result.succeeded else { return nil }
+            detail = lastLine(result.stderr) ?? lastLine(result.stdout) ?? String(localized: "Mole exited with status \(result.status).")
+        } else {
+            detail = attempt.error?.localizedDescription ?? String(localized: "Mole could not start.")
+        }
+        return preview ? String(localized: "The preview failed: \(detail)")
+                       : String(localized: "Cleaning did not finish: \(detail) Some files may already be removed; the console shows the output.")
+    }
+
+    nonisolated private static func lastLine(_ text: String) -> String? {
+        ANSI.strip(text).split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.last { !$0.isEmpty }
+    }
 
     /// The mounted drive as it is now: unmounting, remounting or swapping it gives a new value.
     static func identity(of volume: URL) -> String? {
@@ -249,6 +280,7 @@ struct ToolsView: View {
             ForEach(Array(model.externalPreview.suffix(4).enumerated()), id: \.offset) { _, line in
                 Text(MoleSummaryText.localize(line)).font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(1)
             }
+            if let error = model.externalError { Notice(text: error, color: Palette.crit) }
             HStack {
                 Spacer()
                 if model.externalBusy || model.externalCleaning { Spinner() }

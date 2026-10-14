@@ -4,6 +4,9 @@
   python3 scripts/l10n.py extract   collect UI keys into App/Localization/keys.json and list
                                     keys that uk.json / ru.json do not translate yet
   python3 scripts/l10n.py build     write App/Nora/Resources/Localizable.xcstrings
+  python3 scripts/l10n.py check     exit 1 when a key lacks a uk/ru translation, a translation's
+                                    format specifiers differ from the key's, a plural misses
+                                    "other", or the committed catalog is not what build writes
 
 Keys come from the compiler's .stringsdata (build the app first) plus the keys Nora builds at
 run time: module titles and summaries, orb titles. A translation is either a string or a plural
@@ -78,9 +81,7 @@ def localization(value):
     return unit(value)
 
 
-def build():
-    keys = json.load(open(os.path.join(L10N, "keys.json"), encoding="utf-8"))
-    translations = {lang: load(lang) for lang in LANGS + ["en"]}
+def catalog_text(keys, translations):
     strings = {}
     for key in keys:
         entry = {"localizations": {}}
@@ -91,12 +92,61 @@ def build():
             entry = {}
         strings[key] = entry
     catalog = {"sourceLanguage": "en", "strings": strings, "version": "1.0"}
+    return json.dumps(catalog, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
+
+SPECIFIER = re.compile(r"%(?:\d+\$)?[-+ #0]*\d*(?:\.\d+)?(?:ll|l|h|hh|q|z|t|j)?[@dDuUxXoOfFeEgGcCsSpaA%]")
+
+
+def specifiers(text):
+    return sorted(m for m in SPECIFIER.findall(text) if m != "%%")
+
+
+def check():
+    """Read-only: nothing in the source tree changes. Exit 1 on any problem."""
+    keys = json.load(open(os.path.join(L10N, "keys.json"), encoding="utf-8"))
+    translations = {lang: load(lang) for lang in LANGS + ["en"]}
+    problems = []
+    if len(set(keys)) != len(keys):
+        problems.append("keys.json has duplicate keys")
+    for lang in LANGS + ["en"]:
+        path = os.path.join(L10N, f"{lang}.json")
+        if os.path.exists(path):
+            pairs = json.load(open(path, encoding="utf-8"), object_pairs_hook=lambda p: p)
+            names = [k for k, _ in pairs]
+            if len(set(names)) != len(names):
+                problems.append(f"{lang}.json has duplicate keys")
+    for key in keys:
+        want = specifiers(key)
+        for lang in LANGS + ["en"]:
+            value = translations[lang].get(key)
+            if value is None:
+                if lang != "en":
+                    problems.append(f"{lang}: missing {key!r}")
+                continue
+            forms = value if isinstance(value, dict) else {"": value}
+            if isinstance(value, dict) and "other" not in value:
+                problems.append(f"{lang}: plural without 'other' for {key!r}")
+            for form, text in forms.items():
+                if specifiers(text) != want:
+                    problems.append(f"{lang}{'/' + form if form else ''}: format {specifiers(text)} != {want} in {key!r}")
+    current = open(CATALOG, encoding="utf-8").read() if os.path.exists(CATALOG) else ""
+    if current != catalog_text(keys, translations):
+        problems.append(f"{os.path.relpath(CATALOG, ROOT)} is stale: run build")
+    for problem in problems:
+        print(problem)
+    print(f"{len(keys)} keys, {len(problems)} problems")
+    sys.exit(1 if problems else 0)
+
+
+def build():
+    keys = json.load(open(os.path.join(L10N, "keys.json"), encoding="utf-8"))
+    translations = {lang: load(lang) for lang in LANGS + ["en"]}
     with open(CATALOG, "w", encoding="utf-8") as f:
-        json.dump(catalog, f, ensure_ascii=False, indent=2, sort_keys=True)
-        f.write("\n")
+        f.write(catalog_text(keys, translations))
     done = {lang: sum(1 for k in keys if k in translations[lang]) for lang in LANGS}
     print(f"wrote {os.path.relpath(CATALOG, ROOT)}: {len(keys)} keys, translated {done}")
 
 
 if __name__ == "__main__":
-    {"extract": extract, "build": build}.get(sys.argv[1] if len(sys.argv) > 1 else "", lambda: sys.exit(__doc__))()
+    {"extract": extract, "build": build, "check": check}.get(sys.argv[1] if len(sys.argv) > 1 else "", lambda: sys.exit(__doc__))()

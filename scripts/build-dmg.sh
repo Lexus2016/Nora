@@ -2,6 +2,7 @@
 # Builds, signs, notarizes and staples Nora.app and Nora-<version>.dmg into dist/.
 #   scripts/build-dmg.sh              full release build
 #   NOTARIZE=0 scripts/build-dmg.sh   signed but not notarized (local testing)
+# The release gate runs first: a dirty tree, a failing test or a translation gap stops the build.
 # Needs: App/Config/Local.xcconfig (DEVELOPMENT_TEAM), a Developer ID Application certificate,
 # xcodegen, create-dmg, and the `nora-notary` notarytool keychain profile.
 set -euo pipefail
@@ -19,10 +20,19 @@ TEAM=$(sed -n 's/^DEVELOPMENT_TEAM *= *//p' "$ROOT/App/Config/Local.xcconfig" 2>
 [[ -n "$TEAM" ]] || { echo "Set DEVELOPMENT_TEAM in App/Config/Local.xcconfig" >&2; exit 1; }
 VERSION=$(sed -n 's/^MARKETING_VERSION *= *//p' "$ROOT/App/Config/Nora.xcconfig" | tr -d ' ')
 
+step "Release gate: clean tree, translations, MoleKit and app tests"
+# The DMG must come from a commit, so the tag and the tests describe exactly what ships.
+[[ -z "$(git -C "$ROOT" status --porcelain -- App MoleKit scripts)" ]] || { echo "Commit or stash the changes in App, MoleKit and scripts first." >&2; exit 1; }
+python3 "$ROOT/scripts/l10n.py" check
+(cd "$ROOT/MoleKit" && swift test --quiet)
+
 rm -rf "$BUILD" && mkdir -p "$BUILD" "$DIST"
 
 step "Generating the Xcode project"
 (cd "$ROOT/App" && xcodegen generate --spec project.yml --quiet)
+xcodebuild -project "$ROOT/App/Nora.xcodeproj" -scheme Nora -destination 'platform=macOS' \
+    -derivedDataPath "$ROOT/build/DerivedData-test" test -quiet
+echo "Gate passed for $(git -C "$ROOT" rev-parse --short HEAD)"
 
 step "Archiving Nora $VERSION"
 xcodebuild -project "$ROOT/App/Nora.xcodeproj" -scheme Nora -configuration Release \

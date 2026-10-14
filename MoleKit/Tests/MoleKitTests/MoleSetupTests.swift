@@ -28,6 +28,7 @@ struct MoleSetupTests {
         let home = URL(fileURLWithPath: "/Users/someone")
         let commands = MoleSetup.installCommands(.script, home: home)
         #expect(commands.map(\.executable) == ["/bin/mkdir", "/usr/bin/curl", "/bin/sh", "/bin/bash"])
+        #expect(commands[1].arguments.contains("--max-time") && commands[1].arguments.contains("--connect-timeout"), "a stalled download ends")
         #expect(commands[0].arguments == ["-p", "/Users/someone/.local/bin"])
         #expect(commands[1].arguments.last == "https://raw.githubusercontent.com/tw93/Mole/V1.59.1/install.sh")
         #expect(commands[2].arguments[1].contains(MoleSetup.installScriptSHA256))

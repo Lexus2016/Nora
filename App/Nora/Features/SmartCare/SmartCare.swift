@@ -48,6 +48,11 @@ final class SmartCareModel {
                     doneLines.append("– \(String(localized: String.LocalizationValue(module.titleText))): " + String(localized: "not started, you pressed Stop"))
                     continue
                 }
+                // Nothing found, or everything unticked in its review: nothing runs, nothing fails.
+                guard hasWork(module, app) else {
+                    doneLines.append("– \(String(localized: String.LocalizationValue(module.titleText))): " + String(localized: "nothing to do"))
+                    continue
+                }
                 switch module {
                 case .cleanup: app.cleanup.clean(app)
                 case .performance: app.performance.run(app)
@@ -61,6 +66,16 @@ final class SmartCareModel {
                 doneLines.append("\(failed ? "✕" : "✓") \(String(localized: String.LocalizationValue(module.titleText))): \(headline(of: module, app))")
             }
             phase = .done
+        }
+    }
+
+    /// False when a module's review has nothing ticked, so its command would have nothing to remove.
+    func hasWork(_ module: Module, _ app: AppModel) -> Bool {
+        switch module {
+        case .cleanup: !app.cleanup.selected.isEmpty
+        case .projects: !app.projects.selected.isEmpty
+        case .installers: !app.installers.selected.isEmpty
+        default: true
         }
     }
 

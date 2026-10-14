@@ -41,8 +41,10 @@ final class HistoryModel {
             .sorted { $0.1 > $1.1 }
     }
 
-    var actions: (removed: Int, trashed: Int, skipped: Int, failed: Int) {
-        sessions.reduce((0, 0, 0, 0)) { ($0.0 + $1.removed, $0.1 + $1.trashed, $0.2 + $1.skipped, $0.3 + $1.failed) }
+    /// `failed` counts files Mole could not remove; `failedTasks` counts maintenance tasks (Mole
+    /// keeps them apart), so a failed optimize shows up too.
+    var actions: (removed: Int, trashed: Int, skipped: Int, failed: Int, failedTasks: Int) {
+        sessions.reduce((0, 0, 0, 0, 0)) { ($0.0 + $1.removed, $0.1 + $1.trashed, $0.2 + $1.skipped, $0.3 + $1.failed, $0.4 + $1.failedTasks) }
     }
 
     /// Freed bytes per day for the last 30 days.
@@ -168,6 +170,7 @@ struct HistoryView: View {
             InfoRow(label: "Moved to the Trash", value: "\(a.trashed)")
             InfoRow(label: "Skipped as protected", value: "\(a.skipped)")
             InfoRow(label: "Failed", value: "\(a.failed)")
+            InfoRow(label: "Maintenance tasks failed", value: "\(a.failedTasks)")
         }
     }
 
@@ -192,6 +195,9 @@ struct HistoryView: View {
             ForEach(model.sessions.prefix(6)) { session in
                 HStack {
                     Text(Self.commandTitle(session.command)).font(.system(size: 13, weight: .medium))
+                    if session.failed + session.failedTasks > 0 {
+                        Text("\(session.failed + session.failedTasks) failed").font(.system(size: 11, weight: .medium)).foregroundStyle(Palette.crit)
+                    }
                     Spacer()
                     Text(session.started?.formatted(date: .abbreviated, time: .shortened) ?? "").font(.system(size: 11)).foregroundStyle(Palette.muted)
                     Text(Format.bytes(session.size)).font(.system(size: 12, design: .rounded)).frame(width: 70, alignment: .trailing)
