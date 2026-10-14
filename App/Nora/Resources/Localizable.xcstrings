@@ -2737,6 +2737,22 @@
         }
       }
     },
+    "CPU temperature unavailable right now": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Температура процессора сейчас недоступна"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Температура процесора зараз недоступна"
+          }
+        }
+      }
+    },
     "Cached": {
       "localizations": {
         "ru": {

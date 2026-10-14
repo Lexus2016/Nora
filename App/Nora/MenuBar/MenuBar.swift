@@ -17,6 +17,8 @@ final class MenuBarController: NSObject {
     private let temperatureSampler = TemperatureSampler()
     /// CPU average from the chip's sensors, or Mole's reading where the sensors are not readable.
     private var cpuTemperature: Double?
+    /// The chip's sensors gave no CPU temperature, so the reading comes from Mole's stream.
+    private var temperatureFromMole = false
 
     init(app: AppModel) {
         self.app = app
@@ -51,8 +53,9 @@ final class MenuBarController: NSObject {
             NSStatusBar.system.removeStatusItem(item)
             self.item = nil
         }
-        // Metrics in the bar need the live stream even when no window is open.
-        let wantsStream = show && style != .icon
+        // Metrics in the bar need the live stream even when no window is open; so does the
+        // temperature when the chip's sensors do not give it.
+        let wantsStream = show && (style != .icon || (showsTemperature && temperatureFromMole))
         if wantsStream != retainedStatus {
             retainedStatus = wantsStream
             if wantsStream { app.status.retain() } else { app.status.release() }
@@ -60,7 +63,7 @@ final class MenuBarController: NSObject {
         titleTimer?.invalidate()
         titleTimer = nil
         let wantsTemperature = show && showsTemperature
-        if !wantsTemperature { cpuTemperature = nil }
+        if !wantsTemperature { cpuTemperature = nil; temperatureFromMole = false }
         if wantsStream || wantsTemperature {
             titleTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
                 MainActor.assumeIsolated { self?.tick(temperature: wantsTemperature) }
@@ -74,14 +77,20 @@ final class MenuBarController: NSObject {
         guard temperature else { return }
         Task {
             let reading = await temperatureSampler.read()
-            cpuTemperature = reading.cpu?.average ?? app.status.snapshot?.thermal?.cpuTemp
+            cpuTemperature = reading.cpu?.average ?? app.status.liveSnapshot?.thermal?.cpuTemp
+            if (reading.cpu == nil) != temperatureFromMole {
+                temperatureFromMole = reading.cpu == nil
+                apply()
+                return
+            }
             updateTitle()
         }
     }
 
     private func updateTitle() {
         guard let button = item?.button else { return }
-        let s = app.status.snapshot
+        // Only current numbers: a dash rather than the last value of a stream that stopped.
+        let s = app.status.liveSnapshot
         let cpu = Format.percent(s?.cpu?.usage), mem = Format.percent(s?.memory?.usedPercent)
         let text: String = switch style {
         case .icon: ""
@@ -97,6 +106,8 @@ final class MenuBarController: NSObject {
                                                                         .baselineOffset: 1]))
             title.append(NSAttributedString(string: " \(Int(celsius.rounded()))°", attributes: [.font: font]))
             button.toolTip = String(localized: "Nora: system status and quick actions") + "\n" + String(localized: "CPU \(Int(celsius.rounded())) °C")
+        } else if showsTemperature {
+            button.toolTip = String(localized: "Nora: system status and quick actions") + "\n" + String(localized: "CPU temperature unavailable right now")
         } else {
             button.toolTip = String(localized: "Nora: system status and quick actions")
         }
@@ -185,12 +196,14 @@ struct QuickMenu: View {
     }
 
     var body: some View {
-        let s = app.status.snapshot
+        // Only current numbers; while the stream is down the tiles show dashes and the reason.
+        let s = app.status.liveSnapshot
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
                 HealthRing(score: s?.healthScore, size: 52)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(s?.healthScore == nil ? String(localized: "Reading your Mac…") : HistoryView.healthWord(s?.healthScore)).font(.system(size: 14, weight: .semibold)).lineLimit(1)
+                    Text(s?.healthScore == nil ? (app.status.lastError ?? String(localized: "Reading your Mac…")) : HistoryView.healthWord(s?.healthScore))
+                        .font(.system(size: 14, weight: .semibold)).lineLimit(2)
                     Text("Mole \(app.mole?.version ?? "—")").font(.system(size: 11)).foregroundStyle(Palette.muted)
                 }
                 Spacer()

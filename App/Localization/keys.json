@@ -104,6 +104,7 @@
  "CPU average",
  "CPU max",
  "CPU temperature",
+ "CPU temperature unavailable right now",
  "Cached",
  "Caches and logs are deleted permanently; apps recreate them.",
  "Caches and logs that apps create as they run. They come back as needed.",

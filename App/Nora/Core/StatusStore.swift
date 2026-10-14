@@ -18,6 +18,14 @@ final class StatusStore {
     private(set) var lastSampleAt: Date?
     private(set) var isStreaming = false
 
+    /// The snapshot while it is current: the stream runs, has no error and sent a sample in the
+    /// last 15 s. Views that show bare numbers without a stale notice (the menu bar title, the
+    /// quick menu) read this, so old values never pass for live ones.
+    var liveSnapshot: StatusSnapshot? {
+        guard isStreaming, lastError == nil, let lastSampleAt, Date().timeIntervalSince(lastSampleAt) < 15 else { return nil }
+        return snapshot
+    }
+
     static let historyLength = 120
 
     @ObservationIgnored private var mole: Mole?

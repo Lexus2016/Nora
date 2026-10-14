@@ -845,5 +845,6 @@
   "Homebrew did not install a working new version. The old version is back in place.": "Homebrew не встановив робочу нову версію. Стара версія знову на своєму місці.",
   "Homebrew no longer describes this app the way the scan saw it. Scan again.": "Homebrew тепер описує цю програму інакше, ніж під час сканування. Проскануйте знову.",
   "It changed since the scan. Scan again.": "Програма змінилася після сканування. Проскануйте знову.",
-  "Nothing was changed: %@": "Нічого не змінено: %@"
+  "Nothing was changed: %@": "Нічого не змінено: %@",
+  "CPU temperature unavailable right now": "Температура процесора зараз недоступна"
 }

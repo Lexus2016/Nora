@@ -5,7 +5,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 ## Unreleased
 
 ### Added
-- Settings → General → Menu bar can show the CPU temperature next to the Nora icon, with a coloured dot for how hot it runs: green below 70 °C, orange from 70 °C, red from 90 °C. Off by default; the tooltip gives the exact value.
+- Settings → General → Menu bar can show the CPU temperature next to the Nora icon, with a coloured dot for how hot it runs: green below 70 °C, orange from 70 °C, red from 90 °C. Off by default; the tooltip gives the value in degrees, or says when no current reading is available. When the chip's sensors give no CPU temperature, Nora reads it from Mole and keeps that stream running while the setting is on.
 
 ### Changed
 - Updating an app that is open no longer fails with "Quit it and try again". Update now asks first, then quits the open apps the way their own Quit command does, so each one can ask to save your work, updates them and opens them again. An app that stays open, for example because you cancelled its save dialog, is skipped and named in the result.
@@ -17,6 +17,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 - Right before an app is handed over, Nora reads it and its Homebrew entry again: an app that updated itself since the scan, or a cask that changed, is skipped with "Scan again".
 - An app is matched to a Homebrew cask only by its exact bundle ID, not by an ID that merely starts the same way, and by the name the cask really installs: a cask that renames its app (for example `CleanMyMac_5.app` installed as `CleanMyMac.app`) no longer matches the downloaded copy.
 - Versions with letters compare only with their own kind: `2.0rc1` no longer counts as newer than `2.0`, and an app's own feed that gives only build numbers is not weighed against Homebrew's marketing version.
+- The menu bar title and the quick menu show only current numbers: when Mole's status stream stops or goes quiet for 15 seconds they show dashes (and the quick menu the reason) instead of the last values.
 - Updating apps that are open: an app that was quit before another one refused to close comes back, and an app opened during the update is left open and skipped instead of being quit without asking.
 
 ## 1.1.0 (2026-10-14)
