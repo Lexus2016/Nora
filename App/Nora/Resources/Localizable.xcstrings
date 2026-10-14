@@ -273,34 +273,34 @@
         }
       }
     },
-    "%@ → %@ · from a download, Homebrew installs it": {
+    "%@ → %@ · Homebrew will install it": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ → %@ · из интернета, установит Homebrew"
+            "value": "%@ → %@ · установит Homebrew"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ → %@ · з інтернету, встановить Homebrew"
+            "value": "%@ → %@ · встановить Homebrew"
           }
         }
       }
     },
-    "%@ → %@ · updates itself": {
+    "%@ → %@ · open it and check for updates in its menu": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ → %@ · обновляется сама"
+            "value": "%@ → %@ · откройте её и проверьте обновления в её меню"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ → %@ · оновлюється сама"
+            "value": "%@ → %@ · відкрийте її й перевірте оновлення в її меню"
           }
         }
       }

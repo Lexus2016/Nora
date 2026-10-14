@@ -32,7 +32,7 @@ struct AppsUpdates: View {
                         ForEach(model.outside) { update in
                             if update.token != nil {
                                 CheckRow(isOn: binding(update.path), title: update.name,
-                                         detail: String(localized: "\(update.installed) → \(update.latest) · from a download, Homebrew installs it"),
+                                         detail: String(localized: "\(update.installed) → \(update.latest) · Homebrew will install it"),
                                          tint: module.palette.glow)
                             } else {
                                 openRow(update)
@@ -57,7 +57,7 @@ struct AppsUpdates: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(update.name).font(.system(size: 13)).lineLimit(1).truncationMode(.middle)
-                Text(String(localized: "\(update.installed) → \(update.latest) · updates itself"))
+                Text(String(localized: "\(update.installed) → \(update.latest) · open it and check for updates in its menu"))
                     .font(.system(size: 11)).foregroundStyle(Palette.muted).lineLimit(1).truncationMode(.middle)
             }
             Spacer(minLength: 8)

@@ -804,8 +804,8 @@
   "brew install %@ was stopped. Install again when you are ready.": "brew install %@ остановлен. Установите снова, когда будете готовы.",
   "measuring…": "измеряю…",
   "not started, you pressed Stop": "не запущено, вы нажали «Стоп»",
-  "%@ → %@ · from a download, Homebrew installs it": "%@ → %@ · из интернета, установит Homebrew",
-  "%@ → %@ · updates itself": "%@ → %@ · обновляется сама",
+  "%@ → %@ · Homebrew will install it": "%@ → %@ · установит Homebrew",
+  "%@ → %@ · open it and check for updates in its menu": "%@ → %@ · откройте её и проверьте обновления в её меню",
   "%lld apps have a newer version": {
     "one": "%lld программа имеет более новую версию",
     "few": "%lld программы имеют более новую версию",

@@ -230,6 +230,8 @@ struct CategoryCard: View {
             HStack(spacing: 10) {
                 Spacer(minLength: 0)
                 Button(reviewTitle, action: review).buttonStyle(GlassButtonStyle()).fixedSize()
+                    // Over the glass object the style's own 24% black leaves white text under 4.5:1.
+                    .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.black.opacity(glass == nil ? 0 : 0.5)))
                 if let actionTitle, let action {
                     Button(actionTitle, action: action).buttonStyle(PrimaryButtonStyle(glow: tint)).fixedSize()
                 }

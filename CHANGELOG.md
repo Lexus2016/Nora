@@ -14,6 +14,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 ### Changed
 - Menu and scene icons match: each section's icon in the sidebar and the menu bar draws the same object as its scene. New glass objects for Cleanup (a trash can instead of a star with a white ball), Applications (four app tiles instead of a tile with a trash can, so it no longer looks like Cleanup), Projects (a clean `</>`), Performance (a bolt instead of a shield), History (a clock with a back arrow) and Tools (a wrench and a screwdriver instead of a gear).
 - Homebrew updates run one app at a time, so Stop can wait for the app in progress.
+- The Applications scan now goes online: it downloads Homebrew's public app list from formulae.brew.sh and reads the update feeds of apps installed from a download. Every request is shown in the console.
 
 ### Fixed
 - When two sections worked at once, such as Cleanup and Applications updates, each showed the other's current item. Every section now shows only its own command's output.
