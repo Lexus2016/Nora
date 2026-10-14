@@ -52,7 +52,7 @@ enum Module: String, CaseIterable, Identifiable, Hashable {
     var symbol: String {
         switch self {
         case .smartCare: "flask"
-        case .cleanup: "sparkle"
+        case .cleanup: "bubbles.and.sparkles"
         case .applications: "trash.square"
         case .performance: "bolt"
         case .spaceMap: "chart.pie"

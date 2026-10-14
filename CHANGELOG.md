@@ -11,7 +11,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 - The ClamAV database update shows that it is downloading.
 
 ### Changed
-- Menu and scene icons match: each section's icon in the sidebar and the menu bar draws the same object as its scene. New glass objects for Projects (a clean `</>`), Performance (a bolt instead of a shield), History (a clock with a back arrow) and Tools (a wrench and a screwdriver instead of a gear).
+- Menu and scene icons match: each section's icon in the sidebar and the menu bar draws the same object as its scene. New glass objects for Cleanup (soap bubbles with a sparkle instead of a star with a white ball), Projects (a clean `</>`), Performance (a bolt instead of a shield), History (a clock with a back arrow) and Tools (a wrench and a screwdriver instead of a gear).
 - Homebrew updates run one app at a time, so Stop can wait for the app in progress.
 
 ### Fixed
