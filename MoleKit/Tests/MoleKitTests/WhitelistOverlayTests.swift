@@ -152,4 +152,25 @@ struct WhitelistOverlayMoleTests {
         #expect(try mole.protects(defaultProtected, home: home))
         #expect(try !mole.protects(unchecked, home: home))
     }
+
+    /// Mole's loader rejects any rule containing `..` and trims surrounding spaces, so these
+    /// literal paths stay unprotected however the overlay writes them. `unprotected` must say so.
+    @Test func reportsLiteralPathsMoleCannotProtect() throws {
+        let home = try TestSandbox.make("wl-literal")
+        defer { try? FileManager.default.removeItem(at: home) }
+        let mole = try MoleInstallation(executable: try #require(MoleE2E.executable))
+        let overlay = WhitelistOverlay(home: home, journalURL: home.appendingPathComponent("support/journal.json"))
+
+        let plain = "\(home.path)/Projects/alpha/node_modules"
+        let spaced = "\(home.path)/Projects/my app/node_modules"
+        let dots = "\(home.path)/Projects/client..archive/node_modules"
+        let trailing = "\(home.path)/Library/Caches/com.example.trailing "
+        let glob = "\(home.path)/Library/Caches/com.example.[keep]"
+        let paths = [plain, spaced, dots, trailing, glob]
+        try overlay.apply(protecting: paths, defaults: try mole.cleanWhitelistDefaults(home: home), runID: "literal")
+        defer { try? overlay.recoverIfNeeded() }
+
+        #expect(try mole.unprotected(paths, home: home) == [dots, trailing])
+        #expect(try mole.unprotected([], home: home) == [])
+    }
 }

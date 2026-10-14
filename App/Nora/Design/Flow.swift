@@ -369,6 +369,8 @@ struct CheckRow: View {
     let title: String
     var detail: String?
     var size: Int64?
+    /// Shown in place of the size when there is none, such as "size unknown".
+    var sizeNote: String?
     var tint: Color = Palette.pink
 
     var body: some View {
@@ -380,6 +382,7 @@ struct CheckRow: View {
                 }
                 Spacer(minLength: 8)
                 if let size { Text(Format.bytes(size)).font(.system(size: 12, design: .rounded)).monospacedDigit().foregroundStyle(Palette.fg2) }
+                else if let sizeNote { Text(sizeNote).font(.system(size: 12)).foregroundStyle(Palette.muted) }
             }
         }
         .toggleStyle(.checkbox)

@@ -78,7 +78,7 @@ private struct CleanupResults: View {
 
     private func card(_ section: String, large: Bool) -> some View {
         let info = CleanSection(section)
-        return CategoryCard(value: Format.bytes(model.sectionSize(section)),
+        return CategoryCard(value: model.sizeText(section),
                             caption: info.title.prefix(1).uppercased() + info.title.dropFirst(),
                             detail: large ? info.detail : nil,
                             symbol: info.symbol, tint: module.palette.glow, large: large, glass: large ? module.glass : nil,
@@ -179,7 +179,7 @@ private struct CleanupList: View {
                     Text(CleanSection(section).title).font(.system(size: 14, weight: .medium))
                     Text("\(selectedCount) of \(items.count)").font(.system(size: 11)).foregroundStyle(Palette.muted)
                     Spacer()
-                    Text(Format.bytes(model.sectionSize(section))).font(.system(size: 13, design: .rounded)).monospacedDigit()
+                    Text(model.sizeText(section)).font(.system(size: 13, design: .rounded)).monospacedDigit()
                 }
             }
             .toggleStyle(.checkbox)
@@ -191,7 +191,8 @@ private struct CleanupList: View {
                                        set: { if $0 { model.selected.insert(item.path) } else { model.selected.remove(item.path) } }),
                          title: (item.path as NSString).lastPathComponent,
                          detail: (item.path as NSString).abbreviatingWithTildeInPath,
-                         size: item.size, tint: module.palette.glow)
+                         size: item.sizeKnown ? item.size : nil,
+                         sizeNote: item.sizeKnown ? nil : String(localized: "size unknown"), tint: module.palette.glow)
                     .padding(.leading, open ? 0 : 26)
             }
         }

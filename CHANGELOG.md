@@ -10,6 +10,10 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 ### Changed
 - Updating an app that is open no longer fails with "Quit it and try again". Update now asks first, then quits the open apps the way their own Quit command does, so each one can ask to save your work, updates them and opens them again. An app that stays open, for example because you cancelled its save dialog, is skipped and named in the result.
 
+### Fixed
+- Cleanup and Projects could remove an item you unticked when its name was one Mole's protection list does not accept, such as a folder with `..` in its name or a name ending in a space. Nora now asks Mole, after writing the protection and before the run, whether every unticked path really is protected; if one is not, nothing runs and the result names it.
+- Cleanup hid a category when Mole could not measure its size, while its items stayed ticked and were cleaned. Every category with items now shows, with "Size unknown" where Mole gave no size. Rows Mole marks with an item count or as counted under another row are read correctly, and are no longer counted twice.
+
 ## 1.1.0 (2026-10-14)
 
 ### Added

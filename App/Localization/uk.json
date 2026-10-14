@@ -830,5 +830,14 @@
   "%@: it stayed open, so it was not updated.": "%@: програма лишилася відкритою, тому її не оновлено.",
   "Open now: %@. Nora quits them, updates them and opens them again. Each app can ask you to save your work first.": "Зараз відкриті: %@. Nora закриє їх, оновить і відкриє знову. Кожна програма може спершу запропонувати зберегти вашу роботу.",
   "Quit and update": "Закрити й оновити",
-  "Quit the open apps?": "Закрити відкриті програми?"
+  "Quit the open apps?": "Закрити відкриті програми?",
+  "Mole cannot keep %@ and %lld more unticked items safe: its protection list does not accept those names. Nothing was removed. Tick them to remove them too, or rename them and scan again.": {
+    "one": "Mole не може вберегти %@ і ще %lld знятий з вибору елемент: її список захисту не приймає таких назв. Нічого не видалено. Позначте їх, щоб видалити теж, або перейменуйте й проскануйте знову.",
+    "few": "Mole не може вберегти %@ і ще %lld зняті з вибору елементи: її список захисту не приймає таких назв. Нічого не видалено. Позначте їх, щоб видалити теж, або перейменуйте й проскануйте знову.",
+    "many": "Mole не може вберегти %@ і ще %lld знятих з вибору елементів: її список захисту не приймає таких назв. Нічого не видалено. Позначте їх, щоб видалити теж, або перейменуйте й проскануйте знову.",
+    "other": "Mole не може вберегти %@ і ще %lld знятого з вибору елемента: її список захисту не приймає таких назв. Нічого не видалено. Позначте їх, щоб видалити теж, або перейменуйте й проскануйте знову."
+  },
+  "Mole cannot keep %@ safe: its protection list does not accept that name. Nothing was removed. Tick it to remove it too, or rename it and scan again.": "Mole не може вберегти %@: її список захисту не приймає такої назви. Нічого не видалено. Позначте цей елемент, щоб видалити і його, або перейменуйте й проскануйте знову.",
+  "Size unknown": "Розмір невідомий",
+  "size unknown": "розмір невідомий"
 }

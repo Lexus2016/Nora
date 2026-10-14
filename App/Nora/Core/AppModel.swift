@@ -91,6 +91,24 @@ final class AppModel {
         if exclusiveRun == id { exclusiveRun = nil }
     }
 
+    /// Protects `paths` for one run through the whitelist overlay, then asks Mole whether each
+    /// one really is protected. Mole's loader drops some literal names (one with `..` in it, a
+    /// trailing space), and such a path would be removed although the user unticked it, so the
+    /// run stops here instead. The caller's `recover(runID:)` takes the overlay off again.
+    func protect(_ paths: [String], with mole: Mole, runID: String) async throws {
+        guard !paths.isEmpty else { return }
+        let installation = mole.installation
+        let home = home
+        try overlay.apply(protecting: paths, defaults: try installation.cleanWhitelistDefaults(home: home), runID: runID)
+        let open = try await Task.detached { try installation.unprotected(paths, home: home) }.value
+        if let first = open.first {
+            let path = first.replacingOccurrences(of: home.path, with: "~", options: .anchored)
+            throw NoraError.commandFailed(open.count == 1
+                ? String(localized: "Mole cannot keep \(path) safe: its protection list does not accept that name. Nothing was removed. Tick it to remove it too, or rename it and scan again.")
+                : String(localized: "Mole cannot keep \(path) and \(open.count - 1) more unticked items safe: its protection list does not accept those names. Nothing was removed. Tick them to remove them too, or rename them and scan again."))
+        }
+    }
+
     /// A preview taken now would not see what the running task protects for itself.
     var exclusiveRunActive: Bool { exclusiveRun != nil || overlay.needsRecovery }
 

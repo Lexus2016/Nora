@@ -44,6 +44,25 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(p.notes.last?.section, "Large files")
     }
 
+    /// Mole 1.59 annotates rows: unknown sizes, item counts, rows counted under an ancestor.
+    func testCleanPreviewAnnotatedRows() {
+        let list = """
+        === Developer tools ===
+        /Users/u/.npm/_cacache  # 4.0MB, 3 items
+        /Users/u/.npm/_cacache/tmp  # 1.0MB, counted under /Users/u/.npm/_cacache
+        === Logs ===
+        /Users/u/Library/Logs/Slow  # size unknown
+        /Users/u/Library/Logs/Slow/a  # size unknown, 2 items, counted under /Users/u/Library/Logs/Slow
+        /Users/u/Library/Logs/odd  # name  # 2KB
+        """
+        let items = CleanPreview.parse(cleanList: list, stdout: "").items
+        XCTAssertEqual(items.map(\.size), [4_000_000, 1_000_000, 0, 0, 2_000])
+        XCTAssertEqual(items.map(\.sizeKnown), [true, true, false, false, true])
+        XCTAssertEqual(items.map(\.countedUnder), [nil, "/Users/u/.npm/_cacache", nil, "/Users/u/Library/Logs/Slow", nil])
+        XCTAssertEqual(items.map(\.addedSize), [4_000_000, 0, 0, 0, 2_000])
+        XCTAssertEqual(items.last?.path, "/Users/u/Library/Logs/odd  # name")
+    }
+
     func testPurgePreview() {
         let out = """
         → DRY RUN MODE, No project artifacts will be removed

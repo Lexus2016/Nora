@@ -23,7 +23,7 @@ final class CleanupModel {
     var previewCommand: String { includeSystem ? "sudo -A -v && mo clean --dry-run" : "mo clean --dry-run" }
 
     var selectedSize: Int64 {
-        preview?.items.reduce(0) { selected.contains($1.path) ? $0 + $1.size : $0 } ?? 0
+        preview?.items.reduce(0) { selected.contains($1.path) ? $0 + $1.addedSize : $0 } ?? 0
     }
 
     var protectedCount: Int { (preview?.items.count ?? 0) - selected.count }
@@ -108,10 +108,7 @@ final class CleanupModel {
                     }
                     protected += fresh.filter { !chosen.contains($0) && !allPaths.contains($0) }
                 }
-                if !protected.isEmpty {
-                    let defaults = try mole.installation.cleanWhitelistDefaults(home: app.home)
-                    try app.overlay.apply(protecting: protected, defaults: defaults, runID: runID)
-                }
+                try await app.protect(protected, with: mole, runID: runID)
                 let text: String
                 let ok: Bool
                 if includeSystem {
@@ -176,17 +173,25 @@ final class CleanupModel {
         selected = []
     }
 
-    func sectionSize(_ section: String) -> Int64 { items(in: section).reduce(0) { $0 + $1.size } }
+    func sectionSize(_ section: String) -> Int64 { items(in: section).reduce(0) { $0 + $1.addedSize } }
+
+    /// The section's total, or "Size unknown" when Mole could not measure anything in it.
+    func sizeText(_ section: String) -> String {
+        let size = sectionSize(section)
+        if size == 0, items(in: section).contains(where: { !$0.sizeKnown }) { return String(localized: "Size unknown") }
+        return Format.bytes(size)
+    }
 
     /// The ticked items of one section and their size.
     func selected(in section: String) -> (paths: Set<String>, size: Int64) {
         let picked = items(in: section).filter { selected.contains($0.path) }
-        return (Set(picked.map(\.path)), picked.reduce(0) { $0 + $1.size })
+        return (Set(picked.map(\.path)), picked.reduce(0) { $0 + $1.addedSize })
     }
 
-    /// Sections, largest first, without empty ones.
+    /// Every section with an item, largest first. One Mole could not measure still shows: its
+    /// items are ticked, so hiding it would clean them unseen.
     var rankedSections: [String] {
-        (preview?.sections ?? []).filter { sectionSize($0) > 0 }.sorted { sectionSize($0) > sectionSize($1) }
+        (preview?.sections ?? []).filter { !items(in: $0).isEmpty }.sorted { sectionSize($0) > sectionSize($1) }
     }
 
     /// Cleans only what is ticked in one section; everything outside it is protected for this run.

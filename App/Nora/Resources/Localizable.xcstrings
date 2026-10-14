@@ -6321,6 +6321,104 @@
         }
       }
     },
+    "Mole cannot keep %@ and %lld more unticked items safe: its protection list does not accept those names. Nothing was removed. Tick them to remove them too, or rename them and scan again.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole cannot keep %@ and %lld more unticked item safe: its protection list does not accept those names. Nothing was removed. Tick them to remove them too, or rename them and scan again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole cannot keep %@ and %lld more unticked items safe: its protection list does not accept those names. Nothing was removed. Tick them to remove them too, or rename them and scan again."
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole не может уберечь %@ и ещё %lld снятых с выбора элемента: её список защиты не принимает такие имена. Ничего не удалено. Отметьте их, чтобы удалить тоже, или переименуйте и просканируйте снова."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole не может уберечь %@ и ещё %lld снятых с выбора элементов: её список защиты не принимает такие имена. Ничего не удалено. Отметьте их, чтобы удалить тоже, или переименуйте и просканируйте снова."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole не может уберечь %@ и ещё %lld снятый с выбора элемент: её список защиты не принимает такие имена. Ничего не удалено. Отметьте их, чтобы удалить тоже, или переименуйте и просканируйте снова."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole не может уберечь %@ и ещё %lld снятого с выбора элемента: её список защиты не принимает такие имена. Ничего не удалено. Отметьте их, чтобы удалить тоже, или переименуйте и просканируйте снова."
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole не може вберегти %@ і ще %lld зняті з вибору елементи: її список захисту не приймає таких назв. Нічого не видалено. Позначте їх, щоб видалити теж, або перейменуйте й проскануйте знову."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole не може вберегти %@ і ще %lld знятих з вибору елементів: її список захисту не приймає таких назв. Нічого не видалено. Позначте їх, щоб видалити теж, або перейменуйте й проскануйте знову."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole не може вберегти %@ і ще %lld знятий з вибору елемент: її список захисту не приймає таких назв. Нічого не видалено. Позначте їх, щоб видалити теж, або перейменуйте й проскануйте знову."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mole не може вберегти %@ і ще %lld знятого з вибору елемента: її список захисту не приймає таких назв. Нічого не видалено. Позначте їх, щоб видалити теж, або перейменуйте й проскануйте знову."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Mole cannot keep %@ safe: its protection list does not accept that name. Nothing was removed. Tick it to remove it too, or rename it and scan again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не может уберечь %@: её список защиты не принимает такое имя. Ничего не удалено. Отметьте этот элемент, чтобы удалить и его, или переименуйте и просканируйте снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не може вберегти %@: її список захисту не приймає такої назви. Нічого не видалено. Позначте цей елемент, щоб видалити і його, або перейменуйте й проскануйте знову."
+          }
+        }
+      }
+    },
     "Mole could not check the junk again before cleaning, so nothing was removed. Scan again.": {
       "localizations": {
         "ru": {
@@ -9781,6 +9879,22 @@
         }
       }
     },
+    "Size unknown": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Размер неизвестен"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Розмір невідомий"
+          }
+        }
+      }
+    },
     "Skipped": {
       "localizations": {
         "ru": {
@@ -12821,6 +12935,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "виправлено налаштувань: %@"
+          }
+        }
+      }
+    },
+    "size unknown": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "размер неизвестен"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "розмір невідомий"
           }
         }
       }

@@ -84,9 +84,7 @@ final class ProjectsModel {
                     throw NoraError.commandFailed(String(localized: "The folders you chose are already gone, so nothing was removed."))
                 }
                 let protected = fresh.items.map(\.path).filter { !chosen.contains($0) }
-                if !protected.isEmpty {
-                    try app.overlay.apply(protecting: protected, defaults: try mole.installation.cleanWhitelistDefaults(home: app.home), runID: runID)
-                }
+                try await app.protect(protected, with: mole, runID: runID)
                 let result = try await app.run(["purge", "--yes"])
                 let summary = MoleSummary.lines(result.stdout)
                 let freed = summary.first(where: { $0.contains("space freed") })?

@@ -21,8 +21,15 @@ public struct CleanPreview: Sendable {
     public struct Item: Sendable, Identifiable, Hashable {
         public let section: String
         public let path: String
+        /// The row's measured bytes; 0 when Mole could not measure it (`sizeKnown` false).
         public let size: Int64
+        public var sizeKnown = true
+        /// A listed path whose size already includes this row ("counted under …").
+        public var countedUnder: String?
         public var id: String { path }
+
+        /// What this row adds to a total: nothing when its bytes are already in another row.
+        public var addedSize: Int64 { countedUnder == nil ? size : 0 }
     }
 
     public struct Note: Sendable, Hashable {
@@ -52,11 +59,23 @@ public struct CleanPreview: Sendable {
                 section = String(line.dropFirst(4).dropLast(4))
                 continue
             }
-            guard let hash = line.range(of: "  # ", options: .backwards) else { continue }
-            let path = String(line[..<hash.lowerBound])
-            let size = MoleSize.parse(String(line[hash.upperBound...])) ?? 0
-            guard path.hasPrefix("/") else { continue }
-            items.append(Item(section: section, path: path, size: size))
+            // "<path>  # 4.0MB" or "  # size unknown", then optional ", 3 items" and
+            // ", counted under <path>". Either path may itself contain "  # ", so the separator is
+            // the first one followed by a size.
+            var search = line.startIndex..<line.endIndex
+            var found: (path: String, size: Int64?, note: String)?
+            while let hash = line.range(of: "  # ", range: search) {
+                let note = String(line[hash.upperBound...])
+                let head = note.components(separatedBy: ", ")[0]
+                if head == "size unknown" || MoleSize.parse(head) != nil {
+                    found = (String(line[..<hash.lowerBound]), MoleSize.parse(head), note)
+                    break
+                }
+                search = hash.upperBound..<line.endIndex
+            }
+            guard let found, found.path.hasPrefix("/") else { continue }
+            let under = found.note.range(of: ", counted under ").map { String(found.note[$0.upperBound...]) }
+            items.append(Item(section: section, path: found.path, size: found.size ?? 0, sizeKnown: found.size != nil, countedUnder: under))
         }
 
         var notes: [Note] = []

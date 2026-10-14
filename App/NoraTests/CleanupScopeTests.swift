@@ -28,6 +28,16 @@ final class CleanupScopeTests: XCTestCase {
         XCTAssertEqual(Set(model.protectedPaths), ["/Users/u/Library/Caches/ExampleCache", "/Users/u/Library/Logs/Example Logs"])
     }
 
+    /// D02: a section Mole could not measure is still listed, because its items are ticked.
+    func testUnmeasuredSectionStaysVisible() {
+        let model = CleanupModel()
+        model.preview = CleanPreview.parse(cleanList: list + "\n=== Logs ===\n/Users/u/Library/Logs/Slow  # size unknown\n", stdout: "")
+        model.selected = Set(model.preview?.items.map(\.path) ?? [])
+        XCTAssertEqual(model.rankedSections, ["User essentials", "Browsers", "Logs"])
+        XCTAssertEqual(model.sizeText("Logs"), String(localized: "Size unknown"))
+        XCTAssertEqual(model.selectedSize, 52_600_000 + 1_000_000 + 6_400_000)
+    }
+
     /// The re-check before a partial clean counts only when Mole finished and, if it found
     /// anything, wrote a list during this check that Nora could read.
     func testFreshCheckMustBeCompleteAndReadable() {

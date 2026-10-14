@@ -82,13 +82,31 @@ public struct MoleInstallation: Sendable {
     /// Asks the check Mole's deletion sink uses (`is_path_whitelisted`) whether `path`
     /// is protected for `home`. `is_whitelisted` in whitelist.sh only compares pattern strings.
     public func protects(_ path: String, home: URL) throws -> Bool {
+        try unprotected([path], home: home).isEmpty
+    }
+
+    /// The paths Mole would not protect for `home` under its current whitelist, asked in one
+    /// shell. Mole's loader drops or trims some literal paths (a name with `..` in it, a trailing
+    /// space), so a written rule is not proof; this is. Paths go in NUL-separated through a file,
+    /// so any byte in a name survives and a long list cannot fill a pipe.
+    public func unprotected(_ paths: [String], home: URL) throws -> [String] {
+        guard !paths.isEmpty else { return [] }
+        let list = FileManager.default.temporaryDirectory.appendingPathComponent("nora-protect-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: list) }
+        try Data(paths.map { $0 + "\0" }.joined().utf8).write(to: list)
         let script = """
         source "$1/lib/core/common.sh" >/dev/null 2>&1 || exit 3
         load_mole_whitelist >/dev/null 2>&1
-        is_path_whitelisted "$2" && echo yes || echo no
+        i=0
+        while IFS= read -r -d '' p; do
+            is_path_whitelisted "$p" || echo "$i"
+            i=$((i + 1))
+        done < "$2"
+        [ "$i" -eq "$3" ] || exit 4
         """
-        let output = try Self.run("/bin/bash", ["-c", script, "bash", root.path, path], environment: Self.probeEnvironment(home))
-        return output.trimmingCharacters(in: .whitespacesAndNewlines) == "yes"
+        let output = try Self.run("/bin/bash", ["-c", script, "bash", root.path, list.path, String(paths.count)],
+                                  environment: Self.probeEnvironment(home))
+        return output.split(separator: "\n").compactMap { Int($0) }.filter(paths.indices.contains).map { paths[$0] }
     }
 
     static func probeEnvironment(_ home: URL) -> [String: String] {
