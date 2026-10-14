@@ -3007,6 +3007,22 @@
         }
       }
     },
+    "ClamAV by Cisco Talos (clamav.net, GPL-2.0) runs as a separate program that you install with Homebrew. ClamAV is a registered trademark of Cisco Systems, Inc.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV от Cisco Talos (clamav.net, GPL-2.0) работает как отдельная программа, которую вы устанавливаете через Homebrew. ClamAV является зарегистрированным товарным знаком Cisco Systems, Inc."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV від Cisco Talos (clamav.net, GPL-2.0) працює як окрема програма, яку ви встановлюєте через Homebrew. ClamAV є зареєстрованою торговельною маркою Cisco Systems, Inc."
+          }
+        }
+      }
+    },
     "ClamAV database": {
       "localizations": {
         "ru": {
@@ -11555,6 +11571,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Працюють служби образів дисків симуляторів Xcode."
+          }
+        }
+      }
+    },
+    "YARA by VirusTotal (BSD-3-Clause) runs Apple's XProtect rules. Updates come through Sparkle (sparkle-project.org, MIT).": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YARA от VirusTotal (BSD-3-Clause) запускает правила Apple XProtect. Обновления приходят через Sparkle (sparkle-project.org, MIT)."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YARA від VirusTotal (BSD-3-Clause) запускає правила Apple XProtect. Оновлення надходять через Sparkle (sparkle-project.org, MIT)."
           }
         }
       }

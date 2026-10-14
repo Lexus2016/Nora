@@ -174,6 +174,10 @@ private struct MoleSettings: View {
             Section("Credits") {
                 Text("Nora is a window for Mole by tw93 (github.com/tw93/Mole, GPL-3.0). Nora is not affiliated with Mole.")
                     .font(.system(size: 12)).foregroundStyle(.secondary)
+                Text("ClamAV by Cisco Talos (clamav.net, GPL-2.0) runs as a separate program that you install with Homebrew. ClamAV is a registered trademark of Cisco Systems, Inc.")
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
+                Text("YARA by VirusTotal (BSD-3-Clause) runs Apple's XProtect rules. Updates come through Sparkle (sparkle-project.org, MIT).")
+                    .font(.system(size: 12)).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
