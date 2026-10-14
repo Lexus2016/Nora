@@ -83,8 +83,9 @@ final class CleanupModel {
         }
         let reviewed = protectedPaths
         let chosen = selected
-        let partial = !reviewed.isEmpty
-        let allPaths = Set(preview.items.map(\.path))
+        let previewed = Set(preview.items.map(\.path))
+        let system = includeSystem
+        let (overlay, installation, home) = (app.overlay, mole.installation, app.home)
         stage = .running
         task = Task(.cleanup) {
             // Only this run's overlay is ever undone here; another module's stays in place.
@@ -93,28 +94,29 @@ final class CleanupModel {
                 app.endExclusiveRun(runID)
             }
             do {
-                var protected = reviewed
-                if partial {
-                    // Some items stay: check again right before the run, so junk that appeared
-                    // since the review is protected too instead of riding along unseen.
-                    let started = Date()
-                    let check = try await app.run(["clean", "--dry-run"])
-                    let listURL = app.home.appendingPathComponent(".config/mole/clean-list.txt")
+                // Always check again right before the run, with the same rights as the run, so junk
+                // that appeared since the review is protected too instead of riding along unseen.
+                let started = Date()
+                let decide: @Sendable (String, Bool) throws -> Void = { output, ok in
+                    let listURL = home.appendingPathComponent(".config/mole/clean-list.txt")
                     let modified = (try? listURL.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
-                    guard check.succeeded,
-                          let fresh = Self.freshPaths(stdout: check.stdout, list: try? String(contentsOf: listURL, encoding: .utf8),
-                                                      listModified: modified, since: started) else {
+                    guard ok, let fresh = Self.freshPaths(stdout: output, list: try? String(contentsOf: listURL, encoding: .utf8),
+                                                         listModified: modified, since: started) else {
                         throw NoraError.commandFailed(String(localized: "Mole could not check the junk again before cleaning, so nothing was removed. Scan again."))
                     }
-                    protected += fresh.filter { !chosen.contains($0) && !allPaths.contains($0) }
+                    try AppModel.protect(Self.protected(reviewed: reviewed, fresh: fresh, chosen: chosen, previewed: previewed),
+                                         overlay: overlay, installation: installation, home: home, runID: runID)
                 }
-                try await app.protect(protected, with: mole, runID: runID)
                 let text: String
                 let ok: Bool
-                if includeSystem {
-                    let result = try await app.runPTY(["clean"], sudo: true)
+                if system {
+                    let result = try await app.runGated(check: ["clean", "--dry-run"], run: ["clean"]) { output, status in
+                        try decide(output, status == 0)
+                    }
                     text = result.text; ok = result.succeeded
                 } else {
+                    let check = try await app.run(["clean", "--dry-run"])
+                    try await Task.detached { try decide(check.stdout, check.succeeded) }.value
                     let result = try await app.run(["clean"])
                     text = result.stdout + "\n" + result.stderr; ok = result.succeeded
                 }
@@ -131,6 +133,12 @@ final class CleanupModel {
                 stage = .done
             }
         }
+    }
+
+    /// What the run must leave alone: every reviewed item the user unticked, plus anything the
+    /// fresh check found that the review never showed.
+    nonisolated static func protected(reviewed: [String], fresh: [String], chosen: Set<String>, previewed: Set<String>) -> [String] {
+        reviewed + fresh.filter { !chosen.contains($0) && !previewed.contains($0) }
     }
 
     private func refuse(_ error: Error) {
@@ -212,7 +220,7 @@ final class CleanupModel {
     /// The paths of a fresh `mo clean --dry-run`, or nil when it is not a complete, readable
     /// answer. Mole says "Dry run complete" only when it finished; it writes clean-list.txt and
     /// prints "Detailed file list:" only when it found something, so a list must then be fresh.
-    static func freshPaths(stdout: String, list: String?, listModified: Date?, since started: Date) -> [String]? {
+    nonisolated static func freshPaths(stdout: String, list: String?, listModified: Date?, since started: Date) -> [String]? {
         let text = ANSI.strip(stdout)
         guard text.contains("Dry run complete") else { return nil }
         guard text.contains("Detailed file list:") else { return [] }

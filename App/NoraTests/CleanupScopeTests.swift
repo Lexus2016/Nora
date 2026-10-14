@@ -38,6 +38,15 @@ final class CleanupScopeTests: XCTestCase {
         XCTAssertEqual(model.selectedSize, 52_600_000 + 1_000_000 + 6_400_000)
     }
 
+    /// D03: with everything ticked, junk that appeared after the review is still protected.
+    func testNewJunkIsProtectedEvenWhenEverythingIsTicked() {
+        let model = scanned()
+        let previewed = Set(model.preview?.items.map(\.path) ?? [])
+        let fresh = Array(previewed) + ["/Users/u/Library/Caches/New"]
+        XCTAssertEqual(CleanupModel.protected(reviewed: model.protectedPaths, fresh: fresh, chosen: model.selected, previewed: previewed),
+                       ["/Users/u/Library/Caches/New"])
+    }
+
     /// The re-check before a partial clean counts only when Mole finished and, if it found
     /// anything, wrote a list during this check that Nora could read.
     func testFreshCheckMustBeCompleteAndReadable() {

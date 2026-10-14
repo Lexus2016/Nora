@@ -59,6 +59,18 @@ extension PTYRun {
         _ drive: @escaping @Sendable (PTYSession) throws -> T
     ) async throws -> (value: T, result: Result) {
         let (exe, args) = sudo ? PrivilegeBroker.wrap(executable: executable, arguments: arguments) : (executable, arguments)
+        return try await PTYRun.drive(wrapped: exe, arguments: args, environment: environment, exitTimeout: exitTimeout, onScreen: onScreen, drive)
+    }
+
+    /// `drive` for a command line that is already complete, such as `PrivilegeBroker.gated`.
+    public static func drive<T: Sendable>(
+        wrapped exe: String,
+        arguments args: [String],
+        environment: [String: String],
+        exitTimeout: TimeInterval = 1800,
+        onScreen: (@Sendable ([String]) -> Void)? = nil,
+        _ drive: @escaping @Sendable (PTYSession) throws -> T
+    ) async throws -> (value: T, result: Result) {
         let session = try PTYSession(executable: exe, arguments: args, environment: environment)
         let mirror = DispatchSource.makeTimerSource(queue: .global())
         mirror.schedule(deadline: .now(), repeating: 0.3)

@@ -96,11 +96,16 @@ final class AppModel {
     /// trailing space), and such a path would be removed although the user unticked it, so the
     /// run stops here instead. The caller's `recover(runID:)` takes the overlay off again.
     func protect(_ paths: [String], with mole: Mole, runID: String) async throws {
+        let (overlay, installation, home) = (overlay, mole.installation, home)
+        try await Task.detached { try Self.protect(paths, overlay: overlay, installation: installation, home: home, runID: runID) }.value
+    }
+
+    /// `protect` without the main actor, for drivers that decide inside a PTY session.
+    nonisolated static func protect(_ paths: [String], overlay: WhitelistOverlay, installation: MoleInstallation,
+                                    home: URL, runID: String) throws {
         guard !paths.isEmpty else { return }
-        let installation = mole.installation
-        let home = home
         try overlay.apply(protecting: paths, defaults: try installation.cleanWhitelistDefaults(home: home), runID: runID)
-        let open = try await Task.detached { try installation.unprotected(paths, home: home) }.value
+        let open = try installation.unprotected(paths, home: home)
         if let first = open.first {
             let path = first.replacingOccurrences(of: home.path, with: "~", options: .anchored)
             throw NoraError.commandFailed(open.count == 1
@@ -265,6 +270,37 @@ final class AppModel {
         } catch {
             // A stop ends the session under the driver, which then throws its own error: report
             // the stop, not that error.
+            try console.checkStopped(id)
+            console.fail(id, error: error)
+            throw error
+        }
+    }
+
+    /// Runs `mo <check>` and then `mo <run>` with administrator rights under one authentication in
+    /// one PTY (`PrivilegeBroker.gated`). `decide` gets the check's output and exit status while
+    /// the session waits; `run` starts only if it returns without throwing.
+    func runGated(check: [String], run: [String],
+                  decide: @escaping @Sendable (_ output: String, _ status: Int32) throws -> Void) async throws -> PTYRun.Result {
+        guard let mole else { throw NoraError.moleMissing }
+        let env = PrivilegeBroker.environment(mole.environment.merging(userEnvironment) { $1 }, askpass: askpassURL)
+        let (exe, args) = PrivilegeBroker.gated(executable: mole.executable.path, check: check, run: run)
+        let id = console.begin(mole.command(run), prefix: "sudo -A -v && mo \(check.joined(separator: " ")) && ")
+        let console = self.console
+        do {
+            let outcome = try await PTYRun.drive(wrapped: exe, arguments: args, environment: env,
+                                                 onScreen: { lines in Task { @MainActor in console.mirror(id, lines) } }) { session in
+                let marker = PrivilegeBroker.gateMarker + " "
+                let screen = try session.waitUntil(timeout: 3600, "the check before the run") { $0.contains { $0.hasPrefix(marker) } }
+                let status = screen.last { $0.hasPrefix(marker) }.flatMap { Int32($0.dropFirst(marker.count)) } ?? -1
+                let output = TerminalText.render(session.transcriptBytes)
+                try decide(String(output[..<(output.range(of: PrivilegeBroker.gateMarker)?.lowerBound ?? output.endIndex)]), status)
+                session.write("go\n")
+            }
+            console.replace(id, outcome.result.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init))
+            try console.checkStopped(id)
+            if case .exited(let code) = outcome.result.status { console.finish(id, status: code) } else { console.finish(id, status: -1) }
+            return outcome.result
+        } catch {
             try console.checkStopped(id)
             console.fail(id, error: error)
             throw error

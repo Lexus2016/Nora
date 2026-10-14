@@ -11,6 +11,22 @@ public enum PrivilegeBroker {
         ("/bin/bash", ["-c", "sudo -A -v || exit 1; exec \"$0\" \"$@\"", executable] + arguments)
     }
 
+    /// The line `gated` prints between its two commands, with the first one's exit status.
+    public static let gateMarker = "__NORA_CHECKED__"
+
+    /// Two Mole commands under one authentication in one PTY: `check` runs, the gate line goes
+    /// out, then `run` starts only when the caller writes `go` and a newline. Anything else, or
+    /// the session closing, ends it before `run`. Used where a read-only check must see exactly
+    /// what the privileged run will see, because sudo's credentials do not carry to another tty.
+    /// `authenticate: false` leaves out the sudo step, for tests.
+    public static func gated(executable: String, check: [String], run: [String], authenticate: Bool = true) -> (executable: String, arguments: [String]) {
+        let quote = { (s: String) in "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+        let script = (authenticate ? "sudo -A -v || exit 1; " : "") + "\"$0\" \(check.map(quote).joined(separator: " ")); "
+            + "printf '\\n%s %d\\n' \(gateMarker) $?; IFS= read -r go; [ \"$go\" = go ] || exit 3; "
+            + "exec \"$0\" \(run.map(quote).joined(separator: " "))"
+        return ("/bin/bash", ["-c", script, executable])
+    }
+
     public static func environment(_ base: [String: String], askpass: URL) -> [String: String] {
         base.merging(["SUDO_ASKPASS": askpass.path]) { _, new in new }
     }
