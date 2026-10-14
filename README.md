@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>A native macOS app for the <a href="https://github.com/tw93/Mole">Mole</a> command-line tool.</b><br>
-  Deep clean, uninstall apps, speed up your Mac, see what fills your disk, and watch system health live. All from one neon-glass window and your menu bar.
+  Clean your Mac, remove apps with their leftovers, speed it up, see what fills your disk, watch system health live and scan for malware. All from one glass window and your menu bar.
 </p>
 
 <p align="center">
@@ -14,123 +14,113 @@
 </p>
 
 <p align="center">
-  <img alt="Status: app built, first release pending" src="https://img.shields.io/badge/status-app%20built%20·%20first%20release%20pending-ff3ea5?style=flat-square">
+  <a href="https://github.com/Lexus2016/Nora/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Lexus2016/Nora?style=flat-square&color=ff3ea5"></a>
   <img alt="Platform: macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-7b2ff7?style=flat-square&logo=apple&logoColor=white">
   <img alt="Built with SwiftUI" src="https://img.shields.io/badge/SwiftUI-native-2ee6ff?style=flat-square&logo=swift&logoColor=white">
   <img alt="License: PolyForm Noncommercial" src="https://img.shields.io/badge/license-PolyForm_Noncommercial-ffb02e?style=flat-square">
 </p>
 
 <p align="center">
-  <a href="https://lexus2016.github.io/Nora/prototype/"><b>▶ Try the interactive prototype</b></a>
+  <a href="https://github.com/Lexus2016/Nora/releases/latest"><b>⬇ Download Nora for macOS</b></a>
 </p>
 
-![Nora: Smart Care](docs/screenshots/en/01-smart-care.webp)
-
-> [!NOTE]
-> **Project status.** The native SwiftUI app is built, and `scripts/build-dmg.sh` makes a signed and notarized DMG. The first public release is not out yet. It will appear on the [Releases](https://github.com/Lexus2016/Nora/releases) page. Watch the repo to get notified.
->
-> Nora follows your Mac's language: English, Ukrainian or Russian. Any other language gets English. The browser prototype opens in English; add `?lang=uk` or `?lang=ru` to see the other two. The screenshots show the approved browser prototype in English. The app keeps its design, with an icon rail in place of the labelled sidebar.
+![Nora: Smart Care](docs/screenshots/en/02-smart-care-results.webp)
 
 ## Why Nora
 
-[Mole](https://github.com/tw93/Mole) is a free, open-source toolkit. You run it from the Terminal app, and it combines what CleanMyMac, AppCleaner, DaisyDisk and iStat Menus do. Nora gives Mole a native Mac window. It does not hide what happens underneath.
+[Mole](https://github.com/tw93/Mole) is a free, open-source toolkit that does what CleanMyMac, AppCleaner, DaisyDisk and iStat Menus do, but you run it in Terminal. Nora gives Mole a native Mac window and keeps everything it does in plain sight.
 
-- **Review before anything is deleted.** Every module follows the same steps: Scan, Review, Done. You see each path and its size before Mole touches it.
-- **Honest checkboxes.** A checkbox appears only when Nora can make Mole respect it. Unchecked cache items are protected by a temporary protected list in Mole (Mole calls it a whitelist), which Nora restores afterwards. Nora answers prompts in Mole's interactive menus only after it has checked the on-screen list against your selection. There are no cosmetic checkboxes.
-- **Nothing hidden.** Every action shows the exact `mo …` command. A built-in console shows Mole's live output.
-- **Installs and updates Mole for you.** One click, no Terminal. Nora uses Homebrew (a package manager) if you have it. Otherwise it runs Mole's official installer, with a pinned version and a verified checksum (a fingerprint that proves the file is intact). The tool goes into `~/.local/bin`, and no admin password is needed. Nora also keeps itself up to date, using Sparkle 2 and a signed update feed.
-- **Menu bar quick menu.** Live health, CPU, memory, network, disk, GPU, fan, battery, top processes and space you can free up. One click jumps to any section.
-- **Native and light.** Nora is built with SwiftUI and AppKit, Apple's tools for Mac apps. It runs the Mole you already have and does not bundle its own engine.
-- **Your language, automatically.** English, Ukrainian or Russian, picked from your macOS language. Any other system language falls back to English. There is no language switch.
+- **Nothing is deleted before you review it.** Every module works the same way: Scan, Review, Done. You see each item and its size first.
+- **Checkboxes that mean something.** An unticked item is really kept: Nora protects it for that run and checks Mole's own confirmation screen against your choice before it agrees. If anything does not match, Nora cancels and nothing is removed.
+- **Nothing hidden.** The console (<kbd>⌘J</kbd>) shows every command Nora ran and Mole's full output. You can also show the exact command under each action in Settings.
+- **Installs Mole for you.** No Terminal needed. Nora uses Homebrew if you have it, otherwise Mole's official installer with a pinned version and a verified checksum. No admin password.
+- **Menu bar quick menu.** Health, four stats of your choice, what loads your Mac most, space to free and quick jumps to every section (<kbd>⌥⌘N</kbd>).
+- **Native and light.** SwiftUI and AppKit, a universal app for Apple silicon and Intel. Nora runs the Mole you have and does not bundle its own engine.
+- **Multilingual.** Nora speaks your Mac's language when it knows it and falls back to English otherwise. More languages are on the way.
 
 ## Features
 
 | Module | What it does | Under the hood |
 |---|---|---|
-| **Smart Care** | One review-only scan across caches, project build files, installers and large files. Then one safe *Run* | `mo clean --dry-run`, `mo purge --dry-run`, `mo installer --dry-run`, `mo analyze --json` |
-| **Cleanup** | Caches, logs, leftovers of removed apps, Trash, optional system caches (Touch ID / password) | `mo clean` + whitelist overlay, `sudo -A` in the same PTY session |
-| **Applications** | Remove apps with LaunchAgents, caches and preferences. Personal data is kept by default. Move to Trash or delete permanently | `mo uninstall --list` (JSON), `mo uninstall [--permanent] "App"` |
-| **Performance** | 20 limited maintenance tasks (DNS, Spotlight, Finder caches, databases, network…), each one can be switched on or off | `mo optimize`, `~/.config/mole/whitelist_optimize` |
-| **Space Map** | Rings and treemap views, drill-down, insights (old downloads, iOS backups, Xcode/Docker data), large files, external drives | `mo analyze --json PATH` |
-| **System Status** | Health score, per-core CPU, memory pressure, disk I/O, network, battery, thermals, Bluetooth, processes, CPU alerts | `mo status --watch --interval 1s` (NDJSON) |
-| **Projects** | `node_modules`, `target`, `build`, `.venv`… grouped by project. Recently active projects stay untouched | `mo purge [--yes]` |
-| **Installers** | Forgotten DMG / PKG / ISO / XIP / ZIP files in Downloads, iCloud, Mail, Telegram, Homebrew | `mo installer` |
-| **History** | Activity dashboard: space freed, sessions, recommendations, the full operations log | `mo history --json` |
-| **Protection** | What Mole must never touch: cache rules, custom paths, maintenance exclusions, project scan roots | `~/.config/mole/*` |
-| **Tools** | Touch ID for sudo, external-drive metadata cleanup, Mole update, shell completion, Raycast / Alfred, read-only MCP for AI agents | `mo touchid`, `mo clean --external`, `mo update` |
-| **Security** *(planned)* | Malware scan on demand: login-item and LaunchAgent audit, code-signing and notarization checks, Apple's local XProtect YARA rules, the ClamAV engine (installed on request). Findings are explained and never pre-selected. Quarantine supports restore | Security.framework, `yara`, `clamd` / `freshclam` |
+| **Smart Care** | One scan for junk, maintenance, build folders and installers. *Run* does every ticked task in turn | `mo clean`, `mo optimize`, `mo purge`, `mo installer` (previews first) |
+| **Cleanup** | Caches, logs and leftovers by category. Untick anything to keep it. System caches are optional and ask for your password or Touch ID | `mo clean` with a temporary protection list |
+| **Applications** | Remove an app with its helpers, caches and settings (to the Trash or permanently), update Homebrew apps, find apps you no longer open and the largest ones | `mo uninstall`, `brew` |
+| **Performance** | What slows your Mac right now, and 20 maintenance tasks (DNS, Spotlight, Finder caches, databases, network) | `mo optimize` |
+| **Space Map** | Folders as a bubble map and a list, large files, drill down and move anything to the Trash | `mo analyze --json` |
+| **System Status** | Health score, processor, memory, disks, network, power and temperatures, energy mode, traffic by app, listening ports, battery, Bluetooth | `mo status --watch`, system counters |
+| **Projects** | `node_modules`, `target`, `build`, `.venv` and more, grouped by project. Recently active projects stay untouched | `mo purge` |
+| **Installers** | Forgotten DMG, PKG, ZIP and similar files in Downloads, iCloud, Mail and Telegram, moved to the Trash | `mo installer` |
+| **History** | Space freed, sessions and a daily chart | `mo history --json` |
+| **Protection** | What Mole must never touch: cleanup rules, maintenance tasks, project folders | `~/.config/mole/*` |
+| **Security** | Launch items and their signatures, Apple's XProtect rules and a ClamAV antivirus scan. Findings are explained and never preselected. Quarantine with one click back, optional scheduled scans | Security.framework, `yara`, ClamAV |
+| **Tools** | Touch ID for sudo, cleanup of external drives, Mole updates, shell completion | `mo touchid`, `mo clean --external`, `mo update` |
 
 ## Screenshots
 
 | | |
 |---|---|
-| ![Smart Care results](docs/screenshots/en/02-smart-care-results.webp) | ![Menu bar quick menu](docs/screenshots/en/03-menu-bar.webp) |
-| **Smart Care:** everything you can free up, at a glance | **Menu bar:** live stats and quick jumps |
-| ![Cleanup](docs/screenshots/en/04-cleanup.webp) | ![Cleanup review](docs/screenshots/en/05-cleanup-review.webp) |
-| **Cleanup:** start screen | **Review:** every path, size and protection rule |
-| ![Done](docs/screenshots/en/06-done.webp) | ![Applications](docs/screenshots/en/07-apps.webp) |
-| **Done:** what was freed, with the log one click away | **Applications:** exactly what will be removed |
-| ![Performance](docs/screenshots/en/08-performance.webp) | ![Space Map](docs/screenshots/en/09-space-map.webp) |
-| **Performance:** maintenance tasks | **Space Map:** treemap with cleanable areas highlighted |
-| ![System Status](docs/screenshots/en/10-system-status.webp) | ![History](docs/screenshots/en/11-history.webp) |
-| **System Status:** live, from the NDJSON stream | **History:** activity dashboard |
-| ![Security](docs/screenshots/en/13-security.webp) | ![Tools](docs/screenshots/en/12-tools.webp) |
-| **Security:** explained findings, nothing pre-selected | **Tools:** focused actions and settings |
+| ![Smart Care](docs/screenshots/en/01-smart-care.webp) | ![Menu bar quick menu](docs/screenshots/en/03-menu-bar.webp) |
+| **Smart Care:** one scan for everything | **Menu bar:** live stats and quick jumps |
+| ![Cleanup](docs/screenshots/en/04-cleanup.webp) | ![Applications](docs/screenshots/en/05-applications.webp) |
+| **Cleanup:** junk by category, review before cleaning | **Applications:** updates, unused and largest apps |
+| ![Performance](docs/screenshots/en/06-performance.webp) | ![Space Map](docs/screenshots/en/07-space-map.webp) |
+| **Performance:** what slows your Mac and what to run | **Space Map:** what fills your disk |
+| ![System Status](docs/screenshots/en/08-system-status.webp) | ![Projects](docs/screenshots/en/09-projects.webp) |
+| **System Status:** live, every second | **Projects:** build folders by project |
+| ![Installers](docs/screenshots/en/10-installers.webp) | ![History](docs/screenshots/en/11-history.webp) |
+| **Installers:** forgotten disk images | **History:** what Mole has done |
+| ![Security](docs/screenshots/en/12-security.webp) | ![Tools](docs/screenshots/en/13-tools.webp) |
+| **Security:** signals to review, nothing moved without your click | **Tools:** smaller Mole commands |
 
-## How to use it
-
-1. **Open Nora.** If Mole is missing, Nora offers to install it, with no Terminal and no admin password.
-2. **Pick a module** in the left rail, press <kbd>⌘1</kbd>…<kbd>⌘8</kbd>, or press <kbd>⌘K</kbd> for the command palette.
-3. **Press *Scan*.** Nothing is deleted at this step. Nora runs Mole's preview.
-4. **Review** the list. Uncheck anything you want to keep, or protect it permanently with the shield button.
-5. **Run.** Nora shows the exact command. It asks for Touch ID only when system areas are included, and then reports the result. *View log* opens the console with Mole's full output.
-
-The menu bar item (<kbd>⌥⌘N</kbd>) shows live stats. Right-click it for quick actions.
-
-## Safety
-
-- Nora never deletes on its own. Deletion always comes after a review and an explicit confirmation.
-- Caches and logs removed by `mo clean`, and project build files removed by `mo purge`, are deleted permanently. Mole checks every path again before removing it. Installers and uninstalled apps go to the Trash. Deleting an app permanently asks once more.
-- Mole's 13 default protections (Ollama models, Gradle and JetBrains caches, Playwright browsers, iCloud…) and its mandatory safety rules stay in place when Nora edits the protected list.
-- Administrator rights (your Mac password) are requested through the system dialog or Touch ID. Nora uses them only within the same session as the Mole command, and never stores them.
-- No telemetry, so no usage data is sent. The only network calls are update checks (Nora and Mole) and the Mole installer download. You can see all of them in the console.
+The screenshots use demo data.
 
 ## Install
 
-> [!IMPORTANT]
-> The first release is not published yet. When it is, download `Nora.dmg` from [Releases](https://github.com/Lexus2016/Nora/releases), open it, and drag **Nora** to **Applications**. To build it yourself, see [docs/BUILD.md](docs/BUILD.md).
+1. Download `Nora-1.0.0.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
+2. Open it and drag **Nora** to **Applications**.
+3. Start Nora. If Mole is missing, Nora installs it for you.
 
 - macOS 14 Sonoma or later, Apple silicon or Intel.
-- [Mole](https://github.com/tw93/Mole) 1.55 or later. Nora installs or updates it for you.
-- Full Disk Access (a macOS permission) is recommended, so that Mail, Safari and some caches can be scanned. Nora guides you through it.
+- The app is signed with a Developer ID and notarized by Apple, so it opens without warnings.
+- Nora keeps itself up to date with Sparkle and keeps Mole up to date from Tools.
+- Full Disk Access is recommended, so that Mail, Safari and the Trash can be scanned. Nora shows where to turn it on.
 
-## Try the prototype
+To build Nora yourself, see [docs/BUILD.md](docs/BUILD.md).
 
-The approved interactive prototype runs in any modern browser. All data in it is demo data.
+## How to use it
 
-- Online: **https://lexus2016.github.io/Nora/prototype/**
-- Locally: `cd prototype && python3 -m http.server 8000`, then open http://localhost:8000
+1. Pick a section in the left rail. **Smart Care** is the quickest start.
+2. Press **Scan**. Nothing is deleted at this step: Nora runs Mole's preview.
+3. Review the list. Untick anything you want to keep, or keep it for good in **Protection**.
+4. Press the round button to run. Nora asks for your password only when system areas are included, then shows what was done. **Show log** opens Mole's full output.
 
-Use the **Scenarios** button in the top bar to see the first-run, outdated-Mole, no-Full-Disk-Access and admin-session states.
+## Safety
+
+- Nora never deletes on its own. Removal always follows a review and your click.
+- Caches, logs and build folders are deleted permanently, as Mole does; Mole checks every path again first. Apps and installers go to the Trash. Deleting an app permanently asks once more.
+- When Nora edits Mole's protection list, Mole's own default protections and safety rules stay in place.
+- Your password goes straight to `sudo` through the system dialog or Touch ID. Nora never sees or stores it.
+- No telemetry. Nora goes online only to check for updates (Nora and Mole), to install Mole, and to update the ClamAV database if you installed ClamAV.
+
+Known limits, because Mole works this way: Mole removes build folders by rescanning rather than from a list, so a folder created in the seconds before removal is not protected; and installers are matched by name, folder and size, as Mole's menu shows no full path.
 
 ## Documentation
 
-- **Design & architecture:** [English](docs/en/DESIGN.md) · [Українська](docs/uk/DESIGN.md) · [Русский](docs/ru/DESIGN.md). Covers the full Mole feature inventory, every reference project and what we take from it, the coverage matrix and the mechanism behind each checkbox, the architecture, the design system, the roadmap and the risks.
-- **Building:** [docs/BUILD.md](docs/BUILD.md) covers requirements, tests, signing, notarization and releasing an update.
-- App icon sources: [`Design/AppIcon/`](Design/AppIcon/)
+- **Design and architecture:** [English](docs/en/DESIGN.md) · [Українська](docs/uk/DESIGN.md) · [Русский](docs/ru/DESIGN.md)
+- **Building and releasing:** [docs/BUILD.md](docs/BUILD.md)
+- **Early design concept:** the [interactive browser prototype](https://lexus2016.github.io/Nora/prototype/) that the app grew from
 
 ## Roadmap
 
-- [x] Research: Mole internals, 4 GUI wrappers, 20+ open-source references
-- [x] Approved design and interactive prototype
-- [x] **M0** Spike: PTY driver (a pseudo-terminal driver), whitelist overlay with crash recovery, `sudo -A` in PTY. Verified end to end against Mole 1.59.1 in [MoleKit](MoleKit).
-- [x] **M1** Read-only: MoleKit, System Status (NDJSON), Space Map, History, menu bar
-- [x] **M2** Cleaning: Cleanup, Applications, Projects, Installers, Performance, Protection
-- [x] **M3** Look & feel: neon design system, realistic 3D glass assets, Smart Care, onboarding, EN/UK/RU copy
-- [ ] **M4** Release: signed and notarized DMG, Sparkle updates. *The DMG builds, is notarized and stapled. The first GitHub Release and the update feed are not published yet.*
-- [ ] **M5** Security module (ClamAV + XProtect YARA + persistence audit), scheduled checks, read-only MCP. *Security and scheduled checks are in the app. The read-only MCP server is not built yet.*
+- [x] Research, design and interactive prototype
+- [x] Mole driver: pseudo-terminal sessions, protection overlay with crash recovery, `sudo` in the same session ([MoleKit](MoleKit))
+- [x] Every Mole module, Smart Care, menu bar, onboarding, multilingual interface
+- [x] Security: launch items, XProtect rules, ClamAV, quarantine, scheduled scans
+- [x] 1.0: signed and notarized DMG, Sparkle updates
+- [ ] A read-only MCP server for AI agents
+- [ ] More languages
 
-## Credits & trademarks
+## Credits and trademarks
 
 - **Mole** is created by [tw93](https://github.com/tw93) and licensed under GPL-3.0. *Mole* and the Mole logo are trademarks of the Mole project. Nora is an **independent** project. It is not affiliated with or endorsed by Mole, and it is not the official [Mole for Mac](https://mole.fit) app.
 - Design and research references: [MangelSP/MoleUI](https://github.com/MangelSP/MoleUI), [Zhili1004/MoleUI](https://github.com/Zhili1004/MoleUI), [gokuscraper/mole-gui](https://github.com/gokuscraper/mole-gui), [caezium/Burrow](https://github.com/caezium/Burrow), [exelban/stats](https://github.com/exelban/stats) and others listed in the design document.
