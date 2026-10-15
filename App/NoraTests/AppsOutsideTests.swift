@@ -245,8 +245,12 @@ final class AppsOutsideTests: XCTestCase {
 
     func testAPermissionErrorIsDescribedWithoutTheStagingFolder() {
         let denied = CocoaError(.fileWriteNoPermission, userInfo: [NSFilePathErrorKey: "/x/Handover/69C8/A.app"])
+        let plain = String(localized: "macOS did not let Nora move the old copy aside. If macOS asked about App Management, allow Nora in System Settings → Privacy & Security → App Management and try again.")
         XCTAssertFalse(OutsideApps.Handover.describeMove(denied).contains("69C8"))
-        XCTAssertTrue(OutsideApps.Handover.describeMove(denied).contains("App Management"))
+        XCTAssertEqual(OutsideApps.Handover.describeMove(denied), plain)
+        let eperm = NSError(domain: NSCocoaErrorDomain, code: CocoaError.fileWriteUnknown.rawValue,
+                            userInfo: [NSUnderlyingErrorKey: NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM))])
+        XCTAssertEqual(OutsideApps.Handover.describeMove(eperm), plain)
     }
 
     @MainActor func testHandoverChangesNothingWhenTheJournalCannotBeWritten() async throws {
