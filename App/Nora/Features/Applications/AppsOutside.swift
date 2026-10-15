@@ -264,6 +264,12 @@ enum OutsideApps {
                       action: brewFound && inAppFolder && app.movable && cask.installsOnlyApp ? .brew(cask.token) : .open)
     }
 
+    /// The app already has the update: it is now at least the version the review offered.
+    static func updatedItself(_ item: Update, now current: Local) -> Bool {
+        current.bundleID == item.bundleID && current.version != item.installed
+            && !isNewer(item.latest, than: current.version) && isNewer(current.version, than: item.installed)
+    }
+
     /// The app's own feed wins when it is ahead of the cask: Homebrew would install an older
     /// version than the one the app offers itself. A feed that has only build numbers does not
     /// compare with the cask's marketing version, so it wins too: Open is the safe choice.

@@ -116,6 +116,17 @@ final class AppsOutsideTests: XCTestCase {
         XCTAssertEqual(OutsideApps.update(docker, cask: try XCTUnwrap(OutsideApps.match(docker, in: index)), brewFound: true)?.action, .open)
     }
 
+    /// Grok Bot installed 0.71.2 itself when Nora quit it: that is the update, not a change to refuse.
+    func testAnAppThatUpdatedItselfOnQuitCountsAsUpdated() {
+        let item = OutsideApps.Update(path: "/Applications/Grok Bot.app", name: "Grok Bot", bundleID: "com.anysphere.sand",
+                                      installed: "0.70.2", latest: "0.71.2", action: .brew("grok-bot"))
+        XCTAssertTrue(OutsideApps.updatedItself(item, now: local("Grok Bot.app", "com.anysphere.sand", "0.71.2")))
+        XCTAssertTrue(OutsideApps.updatedItself(item, now: local("Grok Bot.app", "com.anysphere.sand", "0.72.0")))
+        XCTAssertFalse(OutsideApps.updatedItself(item, now: local("Grok Bot.app", "com.anysphere.sand", "0.70.2")))
+        XCTAssertFalse(OutsideApps.updatedItself(item, now: local("Grok Bot.app", "com.anysphere.sand", "0.70.9")), "newer, but not the update")
+        XCTAssertFalse(OutsideApps.updatedItself(item, now: local("Grok Bot.app", "com.other", "0.71.2")))
+    }
+
     func testTheFeedWinsWhenItIsAheadOfTheCask() {
         func update(_ latest: String, _ action: OutsideApps.Action) -> OutsideApps.Update {
             OutsideApps.Update(path: "/Applications/A.app", name: "A", bundleID: "com.example.a", installed: "1.0", latest: latest, action: action)

@@ -358,7 +358,7 @@ final class AppsModel {
             }
             // Every app Nora quit comes back, updated or not, each once.
             var seen = Set<String>()
-            for bundle in reopen where seen.insert(bundle).inserted { OpenApps.reopen(bundle) }
+            for bundle in reopen where seen.insert(bundle).inserted { await OpenApps.reopen(bundle) }
             let total = tokens.count + others.count
             failed = !checked || done.count < total
             resultHeadline = !checked && done.isEmpty ? String(localized: "Could not check the result")
@@ -383,8 +383,13 @@ final class AppsModel {
         guard let token = item.token, let install = Homebrew.installCommand(token: token, executable: path) else {
             return .failed(String(localized: "Homebrew cannot install this app."))
         }
-        guard let current = OutsideApps.local(path: item.path, name: item.name, excluding: nil),
-              current.bundleID == item.bundleID, current.version == item.installed else {
+        guard let current = OutsideApps.local(path: item.path, name: item.name, excluding: nil), current.bundleID == item.bundleID else {
+            return .failed(String(localized: "It changed since the scan. Scan again."))
+        }
+        // Many apps install a downloaded update as they quit (Sparkle, Squirrel's ShipIt): the
+        // quit before this one may already have brought the new version.
+        if OutsideApps.updatedItself(item, now: current) { return .updated(current.version) }
+        guard current.version == item.installed else {
             return .failed(String(localized: "It changed since the scan. Scan again."))
         }
         guard let data = try? await brew(app, path, Homebrew.infoArguments(token: token)),

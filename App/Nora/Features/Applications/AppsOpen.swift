@@ -28,11 +28,31 @@ enum OpenApps {
         return app.isTerminated
     }
 
-    /// Opens the app again in the background, without taking focus.
-    static func reopen(_ path: String) {
-        guard FileManager.default.fileExists(atPath: path) else { return }
+    /// Opens the app again in the background, without taking focus. An app that installed its
+    /// own update as it quit may still be swapping its bundle (Grok Bot's ShipIt did, a second
+    /// after the quit), and a launch into that dies: so wait for the bundle to stay put, launch,
+    /// and launch once more if it is not running a few seconds later.
+    static func reopen(_ path: String) async {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = false
-        NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: path), configuration: configuration)
+        for attempt in 0..<2 {
+            guard await settled(path) else { return }
+            _ = try? await NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: path), configuration: configuration)
+            try? await Task.sleep(for: .seconds(5))
+            if running(at: path) != nil || attempt == 1 { return }
+        }
+    }
+
+    /// True once the bundle exists and its Info.plist has not changed for 2 s; false after 30 s.
+    private static func settled(_ path: String) async -> Bool {
+        let plist = path + "/Contents/Info.plist"
+        var last: Date?
+        for _ in 0..<60 {
+            let modified = (try? FileManager.default.attributesOfItem(atPath: plist)[.modificationDate]) as? Date
+            if let modified, modified == last { return true }
+            last = modified
+            try? await Task.sleep(for: .seconds(modified == nil ? 0.5 : 2))
+        }
+        return false
     }
 }
