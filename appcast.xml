@@ -3,6 +3,29 @@
     <channel>
         <title>Nora</title>
         <item>
+            <title>1.2.1</title>
+            <pubDate>Thu, 15 Oct 2026 11:49:48 +0200</pubDate>
+            <link>https://github.com/Lexus2016/Nora</link>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>1.2.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[Nora now uses far less CPU when none of it is on screen. In 1.2.0 a closed or hidden window could keep it at up to a third of a CPU core in the background; the same situations now measure under 1%.
+
+### Added
+- The quick menu's Processor tile shows the CPU temperature with the same coloured dot as the menu bar (green below 70 °C, orange from 70 °C, red from 90 °C), whether or not the menu bar shows it; the tooltip gives the value in degrees. It is read every 3 seconds, only while the menu is open.
+
+### Fixed
+- After the quick menu had been opened once, Nora kept drawing it in the background on every status sample and kept Mole's status stream running, even with every window closed: about 14% of a CPU core plus 1% for the stream, all the time. The menu now exists only while it is open, and the stream stops 10 seconds after it closes. The list of apps by memory is read every 3 seconds while the menu is open, not on every redraw.
+- System Status kept Mole's status stream and its live readings (`nettop`, `lsof`, the chip's sensors) running while its window was minimised, covered or on another Space, and redrew every card on every sample: with the window on another Space that took about 13% of Nora's main thread. They now run only while the window is on screen and resume when it comes back.
+- Spinners (in cards, next to a busy module in the sidebar and on the round button) redrew the whole window at the display's refresh rate, and went on when the window was minimised or on another Space. A spinner left turning in a hidden window could keep Nora at up to 38% of a core. Spinners now turn at up to 30 frames a second and stop while their window is not on screen; the same case measures under 1%.
+- With CPU or memory figures in the menu bar, Mole's status stream runs all the time, and System Status, Space Map or History left as the last screen in the closed window redrew on every sample: 23% of a core with nothing on screen. Samples now reach a screen only while it is on screen; the menu bar title reads them directly. The same state measures 0.7%.
+- With the main window closed, the round button's mouse monitors went on waking Nora for mouse moves in every other app. They now stop when the window closes and come back when it is on screen again.
+- The quick menu showed a cache of zero as "Zero KB" (in Ukrainian "Нуль КБ"); every size of zero now reads as a number, "0 KB".
+
+]]></description>
+            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.2.1/Nora-1.2.1.dmg" length="7185505" type="application/octet-stream" sparkle:edSignature="B7jgVmy5o6H6/vSDaTUGxnI9vg8cKrB6TNZGMhkoidM6uwHO/W+sJWkA1AZGnGa6QDjmqXTIXXpfgu3A9SQ+DA=="/>
+        </item>
+        <item>
             <title>1.2.0</title>
             <pubDate>Thu, 15 Oct 2026 09:17:26 +0200</pubDate>
             <link>https://github.com/Lexus2016/Nora</link>
@@ -70,15 +93,6 @@
 - The app now ships Sparkle's MIT license and the external licenses it includes (`ThirdPartyNotices.txt`). 1.0.0 bundled Sparkle without them.
 ]]></description>
             <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.1.0/Nora-1.1.0.dmg" length="7021101" type="application/octet-stream" sparkle:edSignature="5Y4K6fknDgjFdjOJSfUvdsRJ4M1VH1KVC+YxdoYlUt3SNCu0gBRwckbOisMMJfiZtgwuNpL4nr3VoDqgOt6xBA=="/>
-        </item>
-        <item>
-            <title>1.0.0</title>
-            <pubDate>Wed, 14 Oct 2026 11:07:20 +0200</pubDate>
-            <link>https://github.com/Lexus2016/Nora</link>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.0.0/Nora-1.0.0.dmg" length="7841477" type="application/octet-stream" sparkle:edSignature="RMNwjXzpL5v8f4SHFSXAAubqgpY2QISqY7LVXG4ypQA9EdtZFgf5pRargtMPaVD771WTcWr7DE5PWXZUTe0JBQ=="/>
         </item>
     </channel>
 </rss>

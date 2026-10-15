@@ -35,7 +35,7 @@
 - **Nothing hidden.** The console (<kbd>⌘J</kbd>) shows every command Nora ran and Mole's output: the last 400 lines of each of the latest 60 commands. You can also show the exact command under each action in Settings.
 - **Antivirus built in.** ClamAV and Apple's own XProtect rules check your apps, downloads and launch items. One click installs ClamAV, and Nora updates its virus database every day while it runs.
 - **Installs Mole for you.** No Terminal needed. Nora uses Homebrew if you have it, otherwise Mole's official installer with a pinned version and a verified checksum. No admin password.
-- **Menu bar quick menu.** Health, four stats of your choice, what loads your Mac most, space to free and quick jumps to every section (<kbd>⌥⌘N</kbd>). The icon can show the CPU temperature with a coloured dot, or you can hide it from the menu bar.
+- **Menu bar quick menu.** Health, four stats of your choice, what loads your Mac most, space to free and quick jumps to every section (<kbd>⌥⌘N</kbd>). The Processor tile shows the CPU temperature with a coloured dot for how hot it runs; the icon can show it too, or you can hide the icon from the menu bar.
 - **Native and light.** SwiftUI and AppKit, a universal app for Apple silicon and Intel. Nora runs the Mole you have and does not bundle its own engine.
 - **Multilingual.** Nora speaks your Mac's language when it knows it and falls back to English otherwise. More languages are on the way.
 
@@ -94,7 +94,7 @@ The screenshots use demo data.
 
 ## Install
 
-1. Download `Nora-1.2.0.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
+1. Download `Nora-1.2.1.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
 2. Open it and drag **Nora** to **Applications**.
 3. Start Nora. If Mole is missing, Nora installs it for you.
 

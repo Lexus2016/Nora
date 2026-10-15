@@ -291,9 +291,9 @@ Every action is at most three clicks from opening Nora or the menu bar, and ever
 | **M4 Release** | Developer ID, notarization, Sparkle, EN/UK/RU localization | Signed DMG; updates work; the language follows the system |
 | **M5 Extras** | Security module, scheduler, MCP, beyond-Mole modules (by decision) | — |
 
-### 8.1. Build status (2026-10-15): current release 1.2.0
+### 8.1. Build status (2026-10-15): current release 1.2.1
 
-The native app was first released as 1.0.0 on 2026-10-14; the current release is 1.2.0, on GitHub Releases with Sparkle updates from `appcast.xml` on GitHub Pages. It is built (`App/`, SwiftUI, XcodeGen) and ships as a Developer ID signed, notarized and stapled DMG through `scripts/build-dmg.sh` (see `docs/BUILD.md`). Every module in the sidebar runs real Mole commands; none is a mock.
+The native app was first released as 1.0.0 on 2026-10-14; the current release is 1.2.1, on GitHub Releases with Sparkle updates from `appcast.xml` on GitHub Pages. It is built (`App/`, SwiftUI, XcodeGen) and ships as a Developer ID signed, notarized and stapled DMG through `scripts/build-dmg.sh` (see `docs/BUILD.md`). Every module in the sidebar runs real Mole commands; none is a mock.
 
 Changes against this design, for your veto:
 1. **Projects selection** uses the whitelist overlay plus `mo purge --yes` instead of a menu driver: `mo purge` skips whitelisted artifacts. Verified end to end on Mole 1.59.1 in a sandbox `$HOME`.
