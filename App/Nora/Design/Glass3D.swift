@@ -139,28 +139,47 @@ private struct GlassShadows: ViewModifier {
 struct VisibilityProbe: NSViewRepresentable {
     @Binding var visible: Bool
 
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        context.coordinator.attach(to: view, update: { visible = $0 })
+    func makeNSView(context: Context) -> ProbeView {
+        let view = ProbeView()
+        view.onChange = { visible = $0 }
         return view
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    func updateNSView(_ view: ProbeView, context: Context) {
+        view.onChange = { visible = $0 }
+    }
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    /// Every spinner carries a probe, so its observer must go when the spinner does.
+    static func dismantleNSView(_ view: ProbeView, coordinator: ()) {
+        view.stopObserving()
+    }
 
-    @MainActor
-    final class Coordinator {
+    /// Follows the window it is in. AppKit calls `viewDidMoveToWindow` when the view enters a
+    /// window and again (with none) when it leaves, so the observer always belongs to the current
+    /// window and is never missed the way a one-off async look at `window` can be.
+    final class ProbeView: NSView {
+        var onChange: ((Bool) -> Void)?
         private var observer: NSObjectProtocol?
 
-        func attach(to view: NSView, update: @escaping @MainActor @Sendable (Bool) -> Void) {
-            DispatchQueue.main.async { [weak self, weak view] in
-                guard let window = view?.window else { return }
-                update(window.occlusionState.contains(.visible))
-                self?.observer = NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: window, queue: .main) { [weak window] _ in
-                    MainActor.assumeIsolated { update(window?.occlusionState.contains(.visible) ?? false) }
-                }
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            stopObserving()
+            guard let window else { return report(false) }
+            report(window.occlusionState.contains(.visible))
+            observer = NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: window, queue: .main) { [weak self, weak window] _ in
+                MainActor.assumeIsolated { self?.report(window?.occlusionState.contains(.visible) ?? false) }
             }
+        }
+
+        func stopObserving() {
+            if let observer { NotificationCenter.default.removeObserver(observer) }
+            observer = nil
+        }
+
+        /// On the next turn of the run loop: AppKit can move the view during a SwiftUI update,
+        /// when state must not change.
+        private func report(_ value: Bool) {
+            DispatchQueue.main.async { [weak self] in self?.onChange?(value) }
         }
     }
 }
