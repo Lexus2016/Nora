@@ -130,8 +130,26 @@ final class DiskRateTests: XCTestCase {
     func testDiskRatesStayInMegabytesPerSecond() throws {
         let json = #"{"disk_io":{"read_rate":512.5,"write_rate":3.25}}"#
         let store = StatusStore()
+        store.retain()
         store.ingest(try StatusSnapshot.decode(Data(json.utf8)))
         XCTAssertEqual(store.diskRead.last, 512.5)
         XCTAssertEqual(store.diskWrite.last, 3.25)
+    }
+
+    /// A screen left in a closed window still observes the store, so samples reach the observed
+    /// values only while a screen is on screen; the next one gets the latest sample at once.
+    func testSamplesReachScreensOnlyWhileOneIsOnScreen() throws {
+        let store = StatusStore()
+        store.ingest(try StatusSnapshot.decode(Data(#"{"disk_io":{"read_rate":1,"write_rate":2}}"#.utf8)))
+        XCTAssertNil(store.snapshot)
+        XCTAssertEqual(store.diskRead, [])
+        store.retain()
+        XCTAssertEqual(store.diskRead, [1])
+        XCTAssertNotNil(store.snapshot)
+        store.release()
+        store.ingest(try StatusSnapshot.decode(Data(#"{"disk_io":{"read_rate":5,"write_rate":2}}"#.utf8)))
+        XCTAssertEqual(store.diskRead, [1])
+        store.retain()
+        XCTAssertEqual(store.diskRead, [1, 5])
     }
 }

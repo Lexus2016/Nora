@@ -56,7 +56,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         let wantsStream = show && (style != .icon || (showsTemperature && temperatureFromMole))
         if wantsStream != retainedStatus {
             retainedStatus = wantsStream
-            if wantsStream { app.status.retain() } else { app.status.release() }
+            if wantsStream { app.status.retainStream() } else { app.status.releaseStream() }
         }
         titleTimer?.invalidate()
         titleTimer = nil
@@ -75,7 +75,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
         guard temperature else { return }
         Task {
             let reading = await temperatureSampler.read()
-            cpuTemperature = reading.cpu?.average ?? app.status.liveSnapshot?.thermal?.cpuTemp
+            cpuTemperature = reading.cpu?.average ?? app.status.currentSnapshot?.thermal?.cpuTemp
             if (reading.cpu == nil) != temperatureFromMole {
                 temperatureFromMole = reading.cpu == nil
                 apply()
@@ -88,7 +88,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     private func updateTitle() {
         guard let button = item?.button else { return }
         // Only current numbers: a dash rather than the last value of a stream that stopped.
-        let s = app.status.liveSnapshot
+        let s = app.status.currentSnapshot
         let cpu = Format.percent(s?.cpu?.usage), mem = Format.percent(s?.memory?.usedPercent)
         let text: String = switch style {
         case .icon: ""

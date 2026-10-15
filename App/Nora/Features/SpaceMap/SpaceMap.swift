@@ -336,8 +336,7 @@ private struct SpaceLens: View {
             Color.clear.frame(width: 120)
         }
         .frame(height: 40)
-        .onAppear { app.status.retain() }
-        .onDisappear { app.status.release() }
+        .showsLiveStatus(app.status)
     }
 }
 

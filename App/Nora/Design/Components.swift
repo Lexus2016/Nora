@@ -234,4 +234,36 @@ struct Spinning: ViewModifier {
 
 extension View {
     func spinning(period: Double) -> some View { modifier(Spinning(period: period)) }
+
+    /// Keeps the status stream running and its values coming to this screen while it is shown in
+    /// a window that is on screen. `onChange` hears the same transitions, for readings of its own.
+    func showsLiveStatus(_ store: StatusStore, onChange: ((Bool) -> Void)? = nil) -> some View {
+        modifier(LiveStatusViewer(store: store, onChange: onChange))
+    }
+}
+
+/// See `showsLiveStatus`. `onAppear` alone is not enough: SwiftUI keeps a closed window's screen
+/// alive, and a covered, minimised or other-Space window never disappears at all.
+private struct LiveStatusViewer: ViewModifier {
+    let store: StatusStore
+    let onChange: ((Bool) -> Void)?
+    @State private var shown = false
+    @State private var visible = true
+    @State private var holding = false
+
+    func body(content: Content) -> some View {
+        content
+            .background(VisibilityProbe(visible: $visible))
+            .onAppear { shown = true; sync() }
+            .onDisappear { shown = false; sync() }
+            .onChange(of: visible) { sync() }
+    }
+
+    private func sync() {
+        let wanted = shown && visible
+        guard wanted != holding else { return }
+        holding = wanted
+        if wanted { store.retain() } else { store.release() }
+        onChange?(wanted)
+    }
 }

@@ -95,8 +95,7 @@ struct HistoryView: View {
         }
         // Read again every time the screen opens, so runs made meanwhile show up.
         .task { model.load(app) }
-        .onAppear { app.status.retain() }
-        .onDisappear { app.status.release() }
+        .showsLiveStatus(app.status)
     }
 
     private func panel<Content: View>(_ title: LocalizedStringKey, @ViewBuilder _ content: () -> Content) -> some View {
