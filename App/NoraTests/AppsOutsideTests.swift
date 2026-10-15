@@ -109,6 +109,9 @@ final class AppsOutsideTests: XCTestCase {
         let elsewhere = OutsideApps.Local(path: "/Users/someone/Applications/Telegram.app", name: "Telegram", bundleID: "ru.keepcoder.Telegram",
                                           version: "12.4", build: nil, feed: nil)
         XCTAssertEqual(OutsideApps.update(elsewhere, cask: cask, brewFound: true)?.action, .open)
+        var rootOwned = telegram
+        rootOwned.movable = false
+        XCTAssertEqual(OutsideApps.update(rootOwned, cask: cask, brewFound: true)?.action, .open, "Nora cannot move it aside")
         let docker = local("Docker.app", "com.docker.docker", "4.86.0")
         XCTAssertEqual(OutsideApps.update(docker, cask: try XCTUnwrap(OutsideApps.match(docker, in: index)), brewFound: true)?.action, .open)
     }

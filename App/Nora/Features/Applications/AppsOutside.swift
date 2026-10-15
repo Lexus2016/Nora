@@ -22,6 +22,10 @@ enum OutsideApps {
         let version: String
         let build: String?
         let feed: URL?
+        /// The bundle itself is writable, so Nora can move it aside. An app its own updater installed
+        /// as root (Google Chrome) is not: moving a folder to another folder needs write access to
+        /// the folder itself.
+        var movable = true
         var fileName: String { (path as NSString).lastPathComponent }
     }
 
@@ -109,7 +113,8 @@ enum OutsideApps {
               let version = info.version ?? info.build, !version.isEmpty
         else { return nil }
         let feed = info.feed.flatMap(URL.init(string:)).flatMap { ["https", "http"].contains($0.scheme?.lowercased() ?? "") ? $0 : nil }
-        return Local(path: path, name: name, bundleID: bundleID, version: version, build: info.build, feed: feed)
+        return Local(path: path, name: name, bundleID: bundleID, version: version, build: info.build, feed: feed,
+                     movable: FileManager.default.isWritableFile(atPath: path))
     }
 
     // MARK: - Versions
@@ -249,13 +254,14 @@ enum OutsideApps {
     }
 
     /// The cask's version, when it is newer. Homebrew installs it only for an app in
-    /// /Applications (Homebrew's app folder) and a cask that installs nothing else.
+    /// /Applications (Homebrew's app folder) that Nora can move aside, and a cask that installs
+    /// nothing else.
     static func update(_ app: Local, cask: Cask, brewFound: Bool) -> Update? {
         guard isNewer(cask.version, than: app.version) else { return nil }
         let inAppFolder = (app.path as NSString).deletingLastPathComponent == "/Applications"
         return Update(path: app.path, name: app.name, bundleID: app.bundleID, installed: app.version,
                       latest: String(cask.version.split(separator: ",", maxSplits: 1).first ?? ""),
-                      action: brewFound && inAppFolder && cask.installsOnlyApp ? .brew(cask.token) : .open)
+                      action: brewFound && inAppFolder && app.movable && cask.installsOnlyApp ? .brew(cask.token) : .open)
     }
 
     /// The app's own feed wins when it is ahead of the cask: Homebrew would install an older
