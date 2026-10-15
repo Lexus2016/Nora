@@ -32,10 +32,10 @@
 
 - **Nothing is deleted before you review it.** Every module works the same way: Scan, Review, Done. You see each item and its size first.
 - **Checkboxes that mean something.** An unticked item is really kept: Nora protects it for that run and checks Mole's own confirmation screen against your choice before it agrees. If anything does not match, Nora cancels and nothing is removed.
-- **Nothing hidden.** The console (<kbd>⌘J</kbd>) shows every command Nora ran and Mole's full output. You can also show the exact command under each action in Settings.
+- **Nothing hidden.** The console (<kbd>⌘J</kbd>) shows every command Nora ran and Mole's output: the last 400 lines of each of the latest 60 commands. You can also show the exact command under each action in Settings.
 - **Antivirus built in.** ClamAV and Apple's own XProtect rules check your apps, downloads and launch items. One click installs ClamAV, and Nora updates its virus database every day while it runs.
 - **Installs Mole for you.** No Terminal needed. Nora uses Homebrew if you have it, otherwise Mole's official installer with a pinned version and a verified checksum. No admin password.
-- **Menu bar quick menu.** Health, four stats of your choice, what loads your Mac most, space to free and quick jumps to every section (<kbd>⌥⌘N</kbd>).
+- **Menu bar quick menu.** Health, four stats of your choice, what loads your Mac most, space to free and quick jumps to every section (<kbd>⌥⌘N</kbd>). The icon can show the CPU temperature with a coloured dot, or you can hide it from the menu bar.
 - **Native and light.** SwiftUI and AppKit, a universal app for Apple silicon and Intel. Nora runs the Mole you have and does not bundle its own engine.
 - **Multilingual.** Nora speaks your Mac's language when it knows it and falls back to English otherwise. More languages are on the way.
 
@@ -45,7 +45,7 @@
 |---|---|---|
 | **Smart Care** | One scan for junk, maintenance, build folders and installers. *Run* does every ticked task in turn | `mo clean`, `mo optimize`, `mo purge`, `mo installer` (previews first) |
 | **Cleanup** | Caches, logs and leftovers by category. Untick anything to keep it. System caches are optional and ask for your password or Touch ID | `mo clean` with a temporary protection list |
-| **Applications** | Remove an app with its helpers, caches and settings (to the Trash or permanently), update apps installed with Homebrew or from a download, find apps you no longer open and the largest ones | `mo uninstall`, `brew`, app update feeds |
+| **Applications** | Remove an app with its helpers, caches and settings (to the Trash or permanently), update apps installed with Homebrew or from a download (open apps are quit first and opened again), find apps you no longer open and the largest ones | `mo uninstall`, `brew`, app update feeds |
 | **Performance** | What slows your Mac right now, and 20 maintenance tasks (DNS, Spotlight, Finder caches, databases, network) | `mo optimize` |
 | **Space Map** | Folders as a bubble map and a list, large files, drill down and move anything to the Trash | `mo analyze --json` |
 | **System Status** | Health score, processor, memory, disks, network, power and temperatures, energy mode, traffic by app, listening ports, battery, Bluetooth | `mo status --watch`, system counters |
@@ -94,7 +94,7 @@ The screenshots use demo data.
 
 ## Install
 
-1. Download `Nora-1.1.0.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
+1. Download `Nora-1.2.0.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
 2. Open it and drag **Nora** to **Applications**.
 3. Start Nora. If Mole is missing, Nora installs it for you.
 
@@ -110,15 +110,15 @@ To build Nora yourself, see [docs/BUILD.md](docs/BUILD.md).
 1. Pick a section in the left rail. **Smart Care** is the quickest start.
 2. Press **Scan**. Nothing is deleted at this step: Nora runs Mole's preview.
 3. Review the list. Untick anything you want to keep, or keep it for good in **Protection**.
-4. Press the round button to run. Nora asks for your password only when system areas are included, then shows what was done. **Show log** opens Mole's full output.
+4. Press the round button to run. Nora asks for your password only when system areas are included, then shows what was done. **Show log** opens Mole's output in the console.
 
 ## Safety
 
 - Nora never deletes on its own. Removal always follows a review and your click.
-- Caches, logs and build folders are deleted permanently, as Mole does; Mole checks every path again first. Apps and installers go to the Trash. Deleting an app permanently asks once more. When Homebrew takes over an app you downloaded, the old copy goes to the Trash first and comes back if the install fails.
+- Caches, logs and build folders are deleted permanently, as Mole does; Mole checks every path again first. Apps and installers go to the Trash. Deleting an app permanently asks once more. When Homebrew takes over an app you downloaded, the old copy is set aside first and goes to the Trash only after Nora has checked the new version; if the install fails, it goes back.
 - When Nora edits Mole's protection list, Mole's own default protections and safety rules stay in place.
 - Your password goes straight to `sudo` through the system dialog or Touch ID. Nora never sees or stores it.
-- No telemetry. Nora goes online only to check for updates to Nora, Mole and your apps (Homebrew's public app list and each app's own update feed), to install Mole, and to update the ClamAV database if you installed ClamAV.
+- No telemetry. Nora goes online only to check for updates to Nora, Mole and your apps (Homebrew's public app list and each app's own update feed), to update the ClamAV database if you installed ClamAV, and to download what you ask it to install: Mole, ClamAV and yara, and app updates through Homebrew.
 
 Known limits, because Mole works this way: Mole removes build folders by rescanning rather than from a list, so a folder created in the seconds before removal is not protected; and installers are matched by name, folder and size, as Mole's menu shows no full path.
 
