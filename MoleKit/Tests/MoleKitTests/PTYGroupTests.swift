@@ -75,3 +75,52 @@ struct PipeGroupTests {
         #expect(kill(helper, 0) != 0, "the helper is gone when the stopped run returns")
     }
 }
+
+/// The gated sudo session against the real `mo`, read-only: `mo clean --dry-run` both as the
+/// check and as the "run". Asks for the Mac password once, so it runs only with
+/// `NORA_MOLE_SUDO=1`; never under `NORA_MOLE_E2E` (which promises no sudo) or the release gate.
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["NORA_MOLE_SUDO"] == "1" && MoleE2E.executable != nil))
+struct GatedSudoLiveTests {
+    @Test func dryRunCheckThenDryRunUnderOneAuthentication() async throws {
+        let mo = try #require(MoleE2E.executable)
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let askpass = FileManager.default.temporaryDirectory.appendingPathComponent("nora-askpass-\(UUID().uuidString)")
+        let prompts = askpass.path + ".count"
+        defer { try? FileManager.default.removeItem(at: askpass); try? FileManager.default.removeItem(atPath: prompts) }
+        try PrivilegeBroker.writeDialogAskpass(to: askpass, message: "Nora test: one password for a read-only dry run.")
+        // Count how often sudo asks: a second prompt would mean the ticket did not carry over.
+        let script = try String(contentsOf: askpass, encoding: .utf8)
+            .replacingOccurrences(of: "exec /usr/bin/osascript", with: "echo x >> '\(prompts)'; exec /usr/bin/osascript")
+        try Data(script.utf8).write(to: askpass)
+
+        let list = home.appendingPathComponent(".config/mole/clean-list.txt")
+        let started = Date()
+        let (bash, args) = PrivilegeBroker.gated(executable: mo.path, check: ["clean", "--dry-run"], run: ["clean", "--dry-run"])
+        var env = ProcessInfo.processInfo.environment
+        env["SUDO_ASKPASS"] = askpass.path
+        // What Nora reads at the gate: the check's output and the list as it is at that moment.
+        let outcome = try await PTYRun.drive(wrapped: bash, arguments: args, environment: env, exitTimeout: 1800) { session in
+            let marker = PrivilegeBroker.gateMarker + " "
+            let screen = try session.waitUntil(timeout: 1800, "the check") { $0.contains { $0.hasPrefix(marker) } }
+            let output = TerminalText.render(session.transcriptBytes)
+            let check = String(output[..<(output.range(of: PrivilegeBroker.gateMarker)?.lowerBound ?? output.endIndex)])
+            let modified = (try? FileManager.default.attributesOfItem(atPath: list.path)[.modificationDate]) as? Date
+            let text = try? String(contentsOf: list, encoding: .utf8)
+            session.write("go\n")
+            return (screen.last { $0.hasPrefix(marker) } ?? "", check, modified, text)
+        }
+        let (gate, check, modified, text) = outcome.value
+        #expect(gate == PrivilegeBroker.gateMarker + " 0", "\(gate)")
+        #expect(check.contains("Dry run complete"), "\(check.suffix(2000))")
+        if check.contains("Detailed file list:") {
+            #expect((modified ?? .distantPast) >= started.addingTimeInterval(-2), "clean-list.txt was fresh at the gate: \(String(describing: modified))")
+            #expect(!CleanPreview.parse(cleanList: text ?? "", stdout: check).items.isEmpty)
+        }
+        #expect(!check.localizedCaseInsensitiveContains("need sudo"), "the check ran with administrator rights")
+        let run = String(outcome.result.text[(outcome.result.text.range(of: PrivilegeBroker.gateMarker)?.upperBound ?? outcome.result.text.startIndex)...])
+        #expect(!run.localizedCaseInsensitiveContains("need sudo"), "the second command kept them")
+        #expect(outcome.result.status == .exited(0))
+        let asked = (try? String(contentsOfFile: prompts, encoding: .utf8))?.split(separator: "\n").count ?? 0
+        #expect(asked == 1, "one password prompt, not \(asked)")
+    }
+}

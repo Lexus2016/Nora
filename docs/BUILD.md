@@ -39,6 +39,7 @@ A module that is not finished is absent from the sidebar. There are no mock scre
 
 - App: `cd App && xcodegen generate && xcodebuild -project Nora.xcodeproj -scheme Nora -destination 'platform=macOS' test`.
 - MoleKit: `cd MoleKit && swift test`. With `NORA_MOLE_E2E=1` the end-to-end suites run the real `mo` against a sandbox `$HOME` (installer, uninstall, purge, whitelist overlay). They never use sudo.
+- Live sudo check (read-only, asks for the Mac password once): `cd MoleKit && NORA_MOLE_SUDO=1 swift test --filter GatedSudoLiveTests`. It runs `mo clean --dry-run` twice through `PrivilegeBroker.gated`, the session Cleanup uses with system caches, and checks one password prompt, admin rights in both commands and a fresh `clean-list.txt` at the gate. Nothing else turns it on.
 - Translations: `python3 scripts/l10n.py check` exits 1 when a key lacks a Ukrainian or Russian translation, a translation's format specifiers differ from the key's, a plural has no `other` form, or the committed catalog is stale. It changes nothing.
 
 ## Releasing an update
