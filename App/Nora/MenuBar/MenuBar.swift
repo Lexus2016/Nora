@@ -7,7 +7,7 @@ import SwiftUI
 /// The menu bar item: `NSStatusItem` + `NSPopover` (not MenuBarExtra: it has no right-click and
 /// no programmatic open). Left click opens the quick menu, right click a short menu, ⌥⌘N toggles.
 @MainActor
-final class MenuBarController: NSObject {
+final class MenuBarController: NSObject, NSPopoverDelegate {
     private let app: AppModel
     private var item: NSStatusItem?
     private let popover = NSPopover()
@@ -25,9 +25,7 @@ final class MenuBarController: NSObject {
         super.init()
         popover.behavior = .transient
         popover.animates = true
-        popover.contentSize = NSSize(width: 380, height: 560)
-        popover.contentViewController = NSHostingController(rootView: QuickMenu(close: { [weak self] in self?.popover.performClose(nil) })
-            .environment(app).preferredColorScheme(.dark))
+        popover.delegate = self
         NotificationCenter.default.addObserver(self, selector: #selector(defaultsChanged), name: UserDefaults.didChangeNotification, object: nil)
         apply()
         registerHotKey()
@@ -131,9 +129,21 @@ final class MenuBarController: NSObject {
         if popover.isShown {
             popover.performClose(nil)
         } else {
+            // The menu exists only while it is shown. A closed popover keeps its view in a hidden
+            // window, and that view went on redrawing every status sample (about 14% CPU) with the
+            // stream held open, because SwiftUI never calls onDisappear for it.
+            popover.contentSize = NSSize(width: 380, height: 560)
+            popover.contentViewController = NSHostingController(rootView: QuickMenu(close: { [weak self] in self?.popover.performClose(nil) })
+                .environment(app).preferredColorScheme(.dark))
+            app.status.retain()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        app.status.release()
+        popover.contentViewController = nil
     }
 
     private func showMenu() {
@@ -184,6 +194,9 @@ struct QuickMenu: View {
     let close: () -> Void
     @Environment(AppModel.self) private var app
     @State private var tab = Self.initialTab
+    /// Read every few seconds while the menu is open, never in `body`: walking the process table
+    /// on every status sample was most of the menu's own cost.
+    @State private var memoryTop: [AppMemory] = []
 
     /// Memory first. Screenshots open the CPU tab (`-NoraPopoverTab 1`): it lists the processes
     /// Mole reports, while the memory list comes from this Mac's own process table.
@@ -234,8 +247,12 @@ struct QuickMenu: View {
         .padding(16)
         .frame(width: 380)
         .background(SceneBackground(palette: Module.smartCare.palette).opacity(0.9))
-        .onAppear { app.status.retain() }
-        .onDisappear { app.status.release() }
+        .task {
+            while !Task.isCancelled {
+                memoryTop = await Task.detached(priority: .utility) { AppMemory.top(3) }.value
+                try? await Task.sleep(for: .seconds(3))
+            }
+        }
     }
 
     private func open(_ module: Module?) {
@@ -296,9 +313,9 @@ struct QuickMenu: View {
                             .help(Text("Swap fills when memory was short earlier. It empties as the apps holding it quit, or after a restart."))
                     }
                 }
-                ForEach(AppMemory.top(3)) { usage in
+                ForEach(memoryTop) { usage in
                     HStack(spacing: 8) {
-                        Image(nsImage: usage.icon).resizable().frame(width: 18, height: 18)
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: usage.owner)).resizable().frame(width: 18, height: 18)
                         Text(usage.name).font(.system(size: 12)).lineLimit(1)
                         Spacer()
                         Text(Format.memory(usage.bytes)).font(.system(size: 12, design: .rounded)).monospacedDigit()
@@ -341,10 +358,11 @@ struct QuickMenu: View {
 }
 
 /// Memory per app: helper processes count toward the outermost `.app` they run from.
-struct AppMemory: Identifiable {
+struct AppMemory: Identifiable, Sendable {
     let name: String
     let bytes: Int64
-    let icon: NSImage
+    /// The `.app` (or executable) the memory is counted toward; its icon is looked up when shown.
+    let owner: String
     var id: String { name }
 
     static func top(_ count: Int) -> [AppMemory] {
@@ -364,7 +382,7 @@ struct AppMemory: Identifiable {
         }
         return byOwner.sorted { $0.value > $1.value }.prefix(count).map { owner, bytes in
             let name = owner.hasSuffix(".app") ? ((owner as NSString).lastPathComponent as NSString).deletingPathExtension : (owner as NSString).lastPathComponent
-            return AppMemory(name: name, bytes: bytes, icon: NSWorkspace.shared.icon(forFile: owner))
+            return AppMemory(name: name, bytes: bytes, owner: owner)
         }
     }
 }
