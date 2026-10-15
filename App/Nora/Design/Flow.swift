@@ -56,7 +56,6 @@ struct BottomOrb: View {
     let action: OrbAction
     let palette: ScenePalette
     @State private var hovering = false
-    @State private var spin = false
 
     var body: some View {
         Button(action: action.action) {
@@ -81,9 +80,7 @@ struct BottomOrb: View {
                     Circle().trim(from: 0, to: 0.22)
                         .stroke(.white.opacity(0.95), style: StrokeStyle(lineWidth: 5, lineCap: .round))
                         .padding(-9)
-                        .rotationEffect(.degrees(spin ? 360 : 0))
-                        .animation(.linear(duration: 1.4).repeatForever(autoreverses: false), value: spin)
-                        .onAppear { spin = true }
+                        .spinning(period: 1.4)
                     Circle().stroke(.white.opacity(0.18), lineWidth: 5).padding(-9)
                 }
             }

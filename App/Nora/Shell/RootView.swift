@@ -197,8 +197,6 @@ struct RailTooltip: View {
 
 /// Small spinning progress ring for a module at work.
 struct BusyRing: View {
-    @State private var spin = false
-
     var body: some View {
         // A spinner, not a status dot: a white arc running over a faint track on a dark chip.
         ZStack {
@@ -206,11 +204,9 @@ struct BusyRing: View {
             Circle().stroke(.white.opacity(0.22), lineWidth: 2).padding(3.5)
             Circle().trim(from: 0, to: 0.28).stroke(.white, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .padding(3.5)
-                .rotationEffect(.degrees(spin ? 360 : 0))
-                .animation(.linear(duration: 0.9).repeatForever(autoreverses: false), value: spin)
+                .spinning(period: 0.9)
         }
         .overlay(Circle().strokeBorder(.white.opacity(0.3), lineWidth: 0.5))
-        .onAppear { spin = true }
     }
 }
 

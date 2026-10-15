@@ -205,15 +205,33 @@ struct HealthRing: View {
 /// (System Status ↔ Smart Care on macOS 26); this has no AppKit view to re-measure.
 struct Spinner: View {
     var size: CGFloat = 14
-    @State private var spin = false
 
     var body: some View {
         Circle().trim(from: 0, to: 0.72)
             .stroke(.white, style: StrokeStyle(lineWidth: 2, lineCap: .round))
             .frame(width: size, height: size)
-            .rotationEffect(.degrees(spin ? 360 : 0))
-            .animation(.linear(duration: 0.8).repeatForever(autoreverses: false), value: spin)
-            .onAppear { spin = true }
+            .spinning(period: 0.8)
             .accessibilityLabel(Text("Loading"))
     }
+}
+
+/// Turns its content continuously at up to 30 frames a second, and stops while the window is not
+/// on screen. A `repeatForever` animation redraws the whole window at the display's refresh rate
+/// and goes on in a minimised or other-Space window: a Status card's spinner kept Nora at 38% of
+/// a core with nothing on screen.
+struct Spinning: ViewModifier {
+    let period: Double
+    @State private var visible = true
+
+    func body(content: Content) -> some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !visible)) { context in
+            let turns = context.date.timeIntervalSinceReferenceDate / period
+            content.rotationEffect(.degrees((turns - turns.rounded(.down)) * 360))
+        }
+        .background(VisibilityProbe(visible: $visible))
+    }
+}
+
+extension View {
+    func spinning(period: Double) -> some View { modifier(Spinning(period: period)) }
 }
