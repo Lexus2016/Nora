@@ -5267,6 +5267,22 @@
         }
       }
     },
+    "Homebrew did not install a working new version. The old version is back in place, and Homebrew no longer lists the app.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не установил рабочую новую версию. Старая версия снова на своём месте, а Homebrew больше не считает программу своей."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew не встановив робочу нову версію. Стара версія знову на своєму місці, а Homebrew більше не вважає програму своєю."
+          }
+        }
+      }
+    },
     "Homebrew did not install a working new version. The old version is back in place.": {
       "localizations": {
         "ru": {

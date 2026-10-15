@@ -866,5 +866,6 @@
   "ClamAV kept stopping, so the Downloads watch is off. Turn it on again to retry.": "ClamAV постоянно останавливался, поэтому слежение за Загрузками выключено. Включите его снова, чтобы попробовать ещё раз.",
   "ClamAV stopped. Nora restarted the Downloads watch.": "ClamAV остановился. Nora перезапустила слежение за Загрузками.",
   "clamdscan could not start.": "clamdscan не удалось запустить.",
-  "clamdscan stopped.": "clamdscan остановился."
+  "clamdscan stopped.": "clamdscan остановился.",
+  "Homebrew did not install a working new version. The old version is back in place, and Homebrew no longer lists the app.": "Homebrew не установил рабочую новую версию. Старая версия снова на своём месте, а Homebrew больше не считает программу своей."
 }

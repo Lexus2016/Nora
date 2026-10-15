@@ -106,4 +106,26 @@ final class AppsBrewTests: XCTestCase {
         XCTAssertEqual(closed.quit, [])
         XCTAssertNil(closed.block)
     }
+
+    /// A record brew wrote during a failed handover goes; one that was there before stays.
+    func testForgetRemovesOnlyARecordTheHandoverCreated() throws {
+        let prefix = FileManager.default.temporaryDirectory.appendingPathComponent("brew-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: prefix) }
+        let brew = prefix.appendingPathComponent("bin/brew").path
+        XCTAssertNil(Homebrew.caskRecord(token: "example", executable: brew), "no Caskroom, nothing to forget")
+        let record = prefix.appendingPathComponent("Caskroom/example")
+        try FileManager.default.createDirectory(at: record.appendingPathComponent(".metadata"), withIntermediateDirectories: true)
+        XCTAssertEqual(Homebrew.caskRecord(token: "example", executable: brew)?.path, record.path)
+        XCTAssertNil(Homebrew.caskRecord(token: "../etc", executable: brew))
+        let bin = prefix.appendingPathComponent("Trash")
+        let trash = { (url: URL) throws in
+            try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+            try FileManager.default.moveItem(at: url, to: bin.appendingPathComponent(UUID().uuidString))
+        }
+        XCTAssertFalse(Homebrew.forget(record, recordedBefore: true, trash: trash))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: record.path))
+        XCTAssertTrue(Homebrew.forget(record, recordedBefore: false, trash: trash))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: record.path))
+        XCTAssertFalse(Homebrew.forget(record, recordedBefore: false, trash: trash), "already gone")
+    }
 }

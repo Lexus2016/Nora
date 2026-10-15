@@ -73,6 +73,27 @@ enum Homebrew {
     /// can be older than the public catalog the scan read.
     static func infoArguments(token: String) -> [String] { ["info", "--cask", "--json=v2", token] }
 
+    /// Where brew keeps its record of an installed cask: `<prefix>/Caskroom/<token>`, the prefix
+    /// taken from the brew path as given (on Intel `/usr/local/bin/brew` resolves into
+    /// `/usr/local/Homebrew`, but the Caskroom is `/usr/local/Caskroom`). Nil without a Caskroom.
+    static func caskRecord(token: String, executable: String) -> URL? {
+        guard isValidToken(token), !token.contains("/") else { return nil }
+        let caskroom = URL(fileURLWithPath: executable).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Caskroom", isDirectory: true)
+        guard FileManager.default.fileExists(atPath: caskroom.path) else { return nil }
+        return caskroom.appendingPathComponent(token, isDirectory: true)
+    }
+
+    /// Makes brew forget a cask it recorded during a failed handover, without `brew uninstall`:
+    /// that would run the cask's uninstall steps (quit, launchctl, delete) against the old copy
+    /// Nora just put back. Only a record that did not exist before goes, to the Trash. True when
+    /// it went.
+    static func forget(_ record: URL, recordedBefore: Bool,
+                       trash: (URL) throws -> Void = { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) }) -> Bool {
+        guard !recordedBefore, FileManager.default.fileExists(atPath: record.path) else { return false }
+        return (try? trash(record)) != nil
+    }
+
     static func isValidToken(_ token: String) -> Bool {
         !token.isEmpty && !token.hasPrefix("-")
             && !token.unicodeScalars.contains { $0.value < 0x20 || $0.value == 0x7F }

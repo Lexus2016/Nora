@@ -399,6 +399,8 @@ final class AppsModel {
         if OpenApps.running(at: item.path) != nil {
             return .failed(String(localized: "It is running. Quit it and try again."))
         }
+        let record = Homebrew.caskRecord(token: token, executable: path)
+        let recorded = record.map { FileManager.default.fileExists(atPath: $0.path) } ?? true
         switch await OutsideApps.Handover(journal: app.handover).run(current, install: {
             try? await app.stream(install, environment: Homebrew.processEnvironment)
         }) {
@@ -407,6 +409,11 @@ final class AppsModel {
         case .untouched(let reason):
             return .failed(String(localized: "Nothing was changed: \(reason)"))
         case .restored:
+            // brew may have recorded the cask although Nora put the old copy back; a later
+            // `brew upgrade` would then replace it. Its record goes, unless it was there before.
+            if let record, Homebrew.forget(record, recordedBefore: recorded) {
+                return .failed(String(localized: "Homebrew did not install a working new version. The old version is back in place, and Homebrew no longer lists the app."))
+            }
             return .failed(String(localized: "Homebrew did not install a working new version. The old version is back in place."))
         case .setAside(let staged):
             return .failed(String(localized: "Homebrew did not install a working new version, and the old version could not go back yet. It is kept in \((staged as NSString).abbreviatingWithTildeInPath); Nora puts it back the next time it starts."))

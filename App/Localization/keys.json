@@ -258,6 +258,7 @@
  "Homebrew check failed. See the console.",
  "Homebrew did not answer the check. See the console.",
  "Homebrew did not install a working new version, and the old version could not go back yet. It is kept in %@; Nora puts it back the next time it starts.",
+ "Homebrew did not install a working new version. The old version is back in place, and Homebrew no longer lists the app.",
  "Homebrew did not install a working new version. The old version is back in place.",
  "Homebrew is not installed. Only Homebrew apps can be updated here.",
  "Homebrew is not installed. Open an app to let it install its update.",
