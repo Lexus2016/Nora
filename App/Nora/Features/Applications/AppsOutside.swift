@@ -480,6 +480,18 @@ extension OutsideApps {
     struct Handover {
         let journal: Journal
 
+        /// Why the old copy could not be set aside, in words: Foundation's text names the
+        /// staging folder, which means nothing to the user.
+        static func describeMove(_ error: Error) -> String {
+            let code = (error as NSError).code
+            let posix = ((error as NSError).userInfo[NSUnderlyingErrorKey] as? NSError)?.code
+            if code == CocoaError.fileWriteNoPermission.rawValue || code == CocoaError.fileReadNoPermission.rawValue
+                || posix == Int(EPERM) || posix == Int(EACCES) {
+                return String(localized: "macOS did not let Nora move the old copy aside. If macOS asked about App Management, allow Nora in System Settings → Privacy & Security → App Management and try again.")
+            }
+            return error.localizedDescription
+        }
+
         enum Outcome: Equatable {
             /// The new version is in place, with this version string.
             case updated(String)
@@ -511,7 +523,7 @@ extension OutsideApps {
             } catch {
                 try? journal.remove(entry)
                 try? fm.removeItem(at: staged.deletingLastPathComponent())
-                return .untouched(error.localizedDescription)
+                return .untouched(Self.describeMove(error))
             }
             await install()
             if let new = journal.verified(entry), !OutsideApps.isNewer(expected.version, than: new.version) {

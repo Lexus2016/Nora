@@ -243,6 +243,12 @@ final class AppsOutsideTests: XCTestCase {
         }
     }
 
+    func testAPermissionErrorIsDescribedWithoutTheStagingFolder() {
+        let denied = CocoaError(.fileWriteNoPermission, userInfo: [NSFilePathErrorKey: "/x/Handover/69C8/A.app"])
+        XCTAssertFalse(OutsideApps.Handover.describeMove(denied).contains("69C8"))
+        XCTAssertTrue(OutsideApps.Handover.describeMove(denied).contains("App Management"))
+    }
+
     @MainActor func testHandoverChangesNothingWhenTheJournalCannotBeWritten() async throws {
         let (dir, journal) = try sandbox()
         let (original, app) = try installed(dir)

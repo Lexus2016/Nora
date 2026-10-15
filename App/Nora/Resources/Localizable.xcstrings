@@ -8473,6 +8473,22 @@
         }
       }
     },
+    "Opening the apps again…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Снова открываю программы…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Знову відкриваю програми…"
+          }
+        }
+      }
+    },
     "Optimize": {
       "localizations": {
         "ru": {
@@ -13161,6 +13177,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "lsof не повернув даних."
+          }
+        }
+      }
+    },
+    "macOS did not let Nora move the old copy aside. If macOS asked about App Management, allow Nora in System Settings → Privacy & Security → App Management and try again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS не разрешила Nora отложить старую копию. Если macOS спрашивала об управлении приложениями, разрешите Nora в Системных настройках → Конфиденциальность и безопасность → Управление приложениями и попробуйте ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS не дозволила Nora відкласти стару копію. Якщо macOS питала про керування програмами, дозвольте Nora в Системних параметрах → Приватність і безпека → Керування програмами й спробуйте ще раз."
           }
         }
       }

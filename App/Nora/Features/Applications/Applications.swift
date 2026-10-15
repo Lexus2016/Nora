@@ -43,6 +43,8 @@ final class AppsModel {
     var scanTitle = "Looking at your apps…"
     var scanStep = ""
     var runningUpdates = false
+    /// The updates are done and the apps Nora quit are opening again (a few seconds each).
+    var reopening = false
     /// Selected apps that were open when Update was pressed. The question names them, and only
     /// these paths may be quit; an app opened later is skipped, not closed.
     var openToQuit: [(name: String, path: String)] = []
@@ -358,7 +360,9 @@ final class AppsModel {
             }
             // Every app Nora quit comes back, updated or not, each once.
             var seen = Set<String>()
+            reopening = !reopen.isEmpty
             for bundle in reopen where seen.insert(bundle).inserted { await OpenApps.reopen(bundle) }
+            reopening = false
             let total = tokens.count + others.count
             failed = !checked || done.count < total
             resultHeadline = !checked && done.isEmpty ? String(localized: "Could not check the result")
@@ -589,9 +593,10 @@ struct ApplicationsView: View {
             }
         case .running:
             WorkingView(module: module,
-                        title: model.stopRequested ? "Finishing the current app…" : model.runningUpdates ? "Updating apps…" : "Removing apps…",
-                        detail: WorkingView.currentItem(app.console.output(of: module)),
-                        onStop: model.stopRequested ? nil : { model.stopAfterCurrent() })
+                        title: model.reopening ? "Opening the apps again…" : model.stopRequested ? "Finishing the current app…"
+                            : model.runningUpdates ? "Updating apps…" : "Removing apps…",
+                        detail: model.reopening ? nil : WorkingView.currentItem(app.console.output(of: module)),
+                        onStop: model.stopRequested || model.reopening ? nil : { model.stopAfterCurrent() })
         case .done:
             DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) {
                 model.reset()

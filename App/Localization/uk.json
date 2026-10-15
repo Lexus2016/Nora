@@ -867,5 +867,7 @@
   "ClamAV stopped. Nora restarted the Downloads watch.": "ClamAV зупинився. Nora перезапустила стеження за Завантаженнями.",
   "clamdscan could not start.": "clamdscan не вдалося запустити.",
   "clamdscan stopped.": "clamdscan зупинився.",
-  "Homebrew did not install a working new version. The old version is back in place, and Homebrew no longer lists the app.": "Homebrew не встановив робочу нову версію. Стара версія знову на своєму місці, а Homebrew більше не вважає програму своєю."
+  "Homebrew did not install a working new version. The old version is back in place, and Homebrew no longer lists the app.": "Homebrew не встановив робочу нову версію. Стара версія знову на своєму місці, а Homebrew більше не вважає програму своєю.",
+  "Opening the apps again…": "Знову відкриваю програми…",
+  "macOS did not let Nora move the old copy aside. If macOS asked about App Management, allow Nora in System Settings → Privacy & Security → App Management and try again.": "macOS не дозволила Nora відкласти стару копію. Якщо macOS питала про керування програмами, дозвольте Nora в Системних параметрах → Приватність і безпека → Керування програмами й спробуйте ще раз."
 }
