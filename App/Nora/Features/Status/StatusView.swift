@@ -7,6 +7,12 @@ struct StatusView: View {
     private let module = Module.status
     @State private var live = LiveStatus()
     @State private var portsExpanded = false
+    /// The stream and the live readings run only while this screen is shown in a window that is
+    /// on screen. A covered, minimised or other-Space window otherwise redrew every card on every
+    /// sample, and cost more than a visible one: 18% of a core against 4% (1.2.0).
+    @State private var shown = false
+    @State private var windowVisible = true
+    @State private var holding = false
 
     var body: some View {
         let store = app.status
@@ -47,12 +53,21 @@ struct StatusView: View {
         }
         .scrollContentBackground(.hidden)
         }
-        .onAppear {
-            store.retain()
+        .background(VisibilityProbe(visible: $windowVisible))
+        .onAppear { shown = true; syncLive() }
+        .onDisappear { shown = false; syncLive() }
+        .onChange(of: windowVisible) { syncLive() }
+    }
+
+    private func syncLive() {
+        let wanted = shown && windowVisible
+        guard wanted != holding else { return }
+        holding = wanted
+        if wanted {
+            app.status.retain()
             live.start(home: app.home, askpass: app.askpassURL)
-        }
-        .onDisappear {
-            store.release()
+        } else {
+            app.status.release()
             live.stop()
         }
     }

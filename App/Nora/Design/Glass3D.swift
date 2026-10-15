@@ -134,9 +134,9 @@ private struct GlassShadows: ViewModifier {
     }
 }
 
-/// Reports whether the hosting window is on screen (not minimised, not fully covered), so
-/// animations stop when nobody can see them.
-private struct VisibilityProbe: NSViewRepresentable {
+/// Reports whether the hosting window is on screen (not minimised, not fully covered, not on
+/// another Space), so animations and live readings stop when nobody can see them.
+struct VisibilityProbe: NSViewRepresentable {
     @Binding var visible: Bool
 
     func makeNSView(context: Context) -> NSView {

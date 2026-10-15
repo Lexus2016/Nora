@@ -9,6 +9,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 
 ### Fixed
 - After the quick menu had been opened once, Nora kept drawing it in the background on every status sample and kept Mole's status stream running, even with every window closed: about 14% of a CPU core plus 1% for the stream, all the time. The menu now exists only while it is open, and the stream stops 10 seconds after it closes. The list of apps by memory is read every 3 seconds while the menu is open, not on every redraw.
+- System Status kept Mole's status stream and its live readings (`nettop`, `lsof`, the chip's sensors) running while its window was minimised, covered or on another Space, and redrew every card on every sample: 18% of a core against 4% with the window in view. They now run only while the window is on screen and resume when it comes back.
 
 ## 1.2.0 (2026-10-15)
 
