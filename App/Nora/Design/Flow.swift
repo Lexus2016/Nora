@@ -427,29 +427,7 @@ struct ReviewFooter: View {
     }
 }
 
-/// Gentle left-right rocking around the vertical axis with perspective, so a glass object shows
-/// its depth while its module works.
-struct Rocking: ViewModifier {
-    var amplitude: Double = 24
-    var period: Double = 2.6
-    @State private var phase = false
-
-    func body(content: Content) -> some View {
-        content
-            .rotation3DEffect(.degrees(phase ? amplitude : -amplitude), axis: (x: 0.12, y: 1, z: 0.04), anchor: .center, perspective: 0.55)
-            .rotation3DEffect(.degrees(phase ? -4 : 4), axis: (x: 1, y: 0, z: 0), perspective: 0.55)
-            .offset(y: phase ? -5 : 5)
-            .brightness(phase ? 0.05 : -0.03)
-            .animation(.easeInOut(duration: period / 2).repeatForever(autoreverses: true), value: phase)
-            .onAppear { phase = true }
-    }
-}
-
 extension View {
-    func rocking(amplitude: Double = 24, period: Double = 2.6) -> some View {
-        modifier(Rocking(amplitude: amplitude, period: period))
-    }
-
     /// A card with depth: lit top edge, soft inner shade at the bottom, deep drop shadow.
     func volumeCard(radius: CGFloat, tint: Color) -> some View {
         modifier(VolumeCard(radius: radius, tint: tint))

@@ -169,18 +169,23 @@ enum Format {
         return ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
     }
 
-    private static let zero: String = {
+    private static let zero = zeroText(.file)
+    private static let zeroMemory = zeroText(.memory)
+
+    private static func zeroText(_ style: ByteCountFormatter.CountStyle) -> String {
         let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
+        formatter.countStyle = style
         formatter.allowsNonnumericFormatting = false
         return formatter.string(fromByteCount: 0)
-    }()
+    }
 
     static func bytes(_ value: Int?) -> String { bytes(value.map(Int64.init)) }
 
     /// RAM and swap in binary units, so 32 GiB reads "32 GB" as macOS shows it.
     static func memory(_ value: Int64?) -> String {
         guard let value else { return "—" }
+        // "0 KB", not "Zero KB" (the quick menu's cache line read "кеш Нуль КБ").
+        guard value != 0 else { return zeroMemory }
         return ByteCountFormatter.string(fromByteCount: value, countStyle: .memory)
     }
 

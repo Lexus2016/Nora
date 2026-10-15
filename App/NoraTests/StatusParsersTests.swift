@@ -136,6 +136,13 @@ final class DiskRateTests: XCTestCase {
         XCTAssertEqual(store.diskWrite.last, 3.25)
     }
 
+    /// ByteCountFormatter spells zero out ("Zero KB", "Нуль КБ"); every size reads as a number.
+    func testZeroSizesAreNumbers() {
+        for text in [Format.bytes(Int64(0)), Format.memory(0)] {
+            XCTAssertTrue(text.hasPrefix("0"), text)
+        }
+    }
+
     /// A screen left in a closed window still observes the store, so samples reach the observed
     /// values only while a screen is on screen; the next one gets the latest sample at once.
     func testSamplesReachScreensOnlyWhileOneIsOnScreen() throws {
