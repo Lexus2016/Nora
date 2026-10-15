@@ -132,17 +132,34 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             // The menu exists only while it is shown. A closed popover keeps its view in a hidden
             // window, and that view went on redrawing every status sample (about 14% CPU) with the
             // stream held open, because SwiftUI never calls onDisappear for it.
-            popover.contentSize = NSSize(width: 380, height: 560)
-            popover.contentViewController = NSHostingController(rootView: QuickMenu(temperature: temperatureSampler, close: { [weak self] in self?.popover.performClose(nil) })
-                .environment(app).preferredColorScheme(.dark))
-            app.status.retain()
+            // Opened again while the last close is still animating: that menu is still there.
+            if popover.contentViewController == nil {
+                popover.contentSize = NSSize(width: 380, height: 560)
+                popover.contentViewController = NSHostingController(rootView: QuickMenu(temperature: temperatureSampler, close: { [weak self] in self?.popover.performClose(nil) })
+                    .environment(app).preferredColorScheme(.dark))
+            }
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
     }
 
+    /// One hold on the stream per open menu, whatever order AppKit reports a quick close and
+    /// reopen in.
+    private var menuHoldsStatus = false
+
+    func popoverWillShow(_ notification: Notification) {
+        guard !menuHoldsStatus else { return }
+        menuHoldsStatus = true
+        app.status.retain()
+    }
+
     func popoverDidClose(_ notification: Notification) {
-        app.status.release()
+        // A close that finishes after the menu was opened again leaves that menu alone.
+        guard !popover.isShown else { return }
+        if menuHoldsStatus {
+            menuHoldsStatus = false
+            app.status.release()
+        }
         popover.contentViewController = nil
     }
 
