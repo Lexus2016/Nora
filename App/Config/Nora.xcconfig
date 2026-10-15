@@ -1,6 +1,6 @@
 // Shared build settings. Machine-specific values (team) live in the gitignored Local.xcconfig.
-MARKETING_VERSION = 1.2.0
-CURRENT_PROJECT_VERSION = 4
+MARKETING_VERSION = 1.2.1
+CURRENT_PROJECT_VERSION = 5
 SPARKLE_PUBLIC_KEY = nCQQfIRlOIaEBPmuJvUk8sffI8/OdJP3eYJxLrZYuIA=
 
 #include? "Local.xcconfig"

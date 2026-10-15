@@ -2,7 +2,9 @@
 
 Changes to the Nora app, newest first. Work that is merged but not released yet goes under **Unreleased**; at release time it becomes the next version's section and its release notes.
 
-## Unreleased
+## 1.2.1 (2026-10-15)
+
+Nora now uses far less CPU when none of it is on screen. In 1.2.0 a closed or hidden window could keep it at up to a third of a CPU core in the background; the same situations now measure under 1%.
 
 ### Added
 - The quick menu's Processor tile shows the CPU temperature with the same coloured dot as the menu bar (green below 70 °C, orange from 70 °C, red from 90 °C), whether or not the menu bar shows it; the tooltip gives the value in degrees. It is read every 3 seconds, only while the menu is open.
@@ -13,6 +15,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 - Spinners (in cards, next to a busy module in the sidebar and on the round button) redrew the whole window at the display's refresh rate, and went on when the window was minimised or on another Space. A spinner left turning in a hidden window could keep Nora at up to 38% of a core. Spinners now turn at up to 30 frames a second and stop while their window is not on screen; the same case measures under 1%.
 - With CPU or memory figures in the menu bar, Mole's status stream runs all the time, and System Status, Space Map or History left as the last screen in the closed window redrew on every sample: 23% of a core with nothing on screen. Samples now reach a screen only while it is on screen; the menu bar title reads them directly. The same state measures 0.7%.
 - With the main window closed, the round button's mouse monitors went on waking Nora for mouse moves in every other app. They now stop when the window closes and come back when it is on screen again.
+- The quick menu showed a cache of zero as "Zero KB" (in Ukrainian "Нуль КБ"); every size of zero now reads as a number, "0 KB".
 
 ## 1.2.0 (2026-10-15)
 
