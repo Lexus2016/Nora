@@ -4,6 +4,9 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 
 ## Unreleased
 
+### Added
+- The quick menu's Processor tile shows the CPU temperature with the same coloured dot as the menu bar (green below 70 °C, orange from 70 °C, red from 90 °C), whether or not the menu bar shows it; the tooltip gives the value in degrees. It is read every 3 seconds, only while the menu is open.
+
 ### Fixed
 - After the quick menu had been opened once, Nora kept drawing it in the background on every status sample and kept Mole's status stream running, even with every window closed: about 14% of a CPU core plus 1% for the stream, all the time. The menu now exists only while it is open, and the stream stops 10 seconds after it closes. The list of apps by memory is read every 3 seconds while the menu is open, not on every redraw.
 

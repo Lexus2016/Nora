@@ -133,7 +133,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             // window, and that view went on redrawing every status sample (about 14% CPU) with the
             // stream held open, because SwiftUI never calls onDisappear for it.
             popover.contentSize = NSSize(width: 380, height: 560)
-            popover.contentViewController = NSHostingController(rootView: QuickMenu(close: { [weak self] in self?.popover.performClose(nil) })
+            popover.contentViewController = NSHostingController(rootView: QuickMenu(temperature: temperatureSampler, close: { [weak self] in self?.popover.performClose(nil) })
                 .environment(app).preferredColorScheme(.dark))
             app.status.retain()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
@@ -191,12 +191,14 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
 
 /// The popover: health, four tiles, what loads the Mac, reclaimable space, jumps.
 struct QuickMenu: View {
+    let temperature: TemperatureSampler
     let close: () -> Void
     @Environment(AppModel.self) private var app
     @State private var tab = Self.initialTab
     /// Read every few seconds while the menu is open, never in `body`: walking the process table
     /// on every status sample was most of the menu's own cost.
     @State private var memoryTop: [AppMemory] = []
+    @State private var cpuTemperature: Double?
 
     /// Memory first. Screenshots open the CPU tab (`-NoraPopoverTab 1`): it lists the processes
     /// Mole reports, while the memory list comes from this Mac's own process table.
@@ -250,6 +252,7 @@ struct QuickMenu: View {
         .task {
             while !Task.isCancelled {
                 memoryTop = await Task.detached(priority: .utility) { AppMemory.top(3) }.value
+                cpuTemperature = await temperature.read().cpu?.average
                 try? await Task.sleep(for: .seconds(3))
             }
         }
@@ -272,8 +275,19 @@ struct QuickMenu: View {
         case .gpu: (Format.percent(s?.gpu.first?.usage), [], Palette.good, 100)
         case .fan: (s?.thermal?.fanSpeed.map { $0 > 0 ? "\($0) rpm" : "—" } ?? "—", [], Palette.warn, nil)
         }
+        // The chip's sensors first, Mole's reading where they give none.
+        let celsius = tile == .cpu ? cpuTemperature ?? s?.thermal?.cpuTemp : nil
         return VStack(alignment: .leading, spacing: 4) {
-            Text(tile.title).font(.system(size: 11, weight: .semibold)).foregroundStyle(Palette.muted)
+            HStack(spacing: 4) {
+                Text(tile.title).font(.system(size: 11, weight: .semibold)).foregroundStyle(Palette.muted)
+                Spacer(minLength: 4)
+                if let celsius {
+                    Circle().fill(Color(nsColor: MenuBarController.color(HeatLevel(celsius: celsius)))).frame(width: 6, height: 6)
+                    Text(verbatim: "\(Int(celsius.rounded()))°").font(.system(size: 11, weight: .semibold, design: .rounded)).monospacedDigit()
+                        .foregroundStyle(Palette.fg2)
+                }
+            }
+            .help(celsius.map { Text("CPU \(Int($0.rounded())) °C") } ?? Text(verbatim: ""))
             Text(value).font(.system(size: 18, weight: .semibold, design: .rounded)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
             Sparkline(values: series, color: color, maxValue: maxValue).frame(height: 22)
         }
