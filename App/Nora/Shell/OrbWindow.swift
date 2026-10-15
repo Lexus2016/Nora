@@ -78,6 +78,23 @@ final class OrbController {
                 MainActor.assumeIsolated { self?.reposition() }
             })
         }
+        // With the window closed Nora lives in the menu bar, and the monitors would go on waking it
+        // for mouse moves in every other app. SwiftUI reuses the window on the next open without
+        // attaching again, so they come back when the window is on screen.
+        observers.append(center.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.removeMouseMonitors() }
+        })
+        observers.append(center.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: window, queue: .main) { [weak self, weak window] _ in
+            MainActor.assumeIsolated {
+                if window?.occlusionState.contains(.visible) == true { self?.installMouseMonitors() }
+            }
+        })
+        installMouseMonitors()
+        reposition()
+    }
+
+    private func installMouseMonitors() {
+        guard mouseMonitor == nil else { return }
         mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
             MainActor.assumeIsolated { self?.updateHitArea() }
             return event
@@ -87,7 +104,12 @@ final class OrbController {
         globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] _ in
             MainActor.assumeIsolated { self?.updateHitArea() }
         }
-        reposition()
+    }
+
+    private func removeMouseMonitors() {
+        [mouseMonitor, globalMouseMonitor].compactMap { $0 }.forEach(NSEvent.removeMonitor)
+        mouseMonitor = nil
+        globalMouseMonitor = nil
     }
 
     func reposition() {
