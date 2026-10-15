@@ -50,7 +50,7 @@ struct AppsUpdates: View {
         }
         .padding(.horizontal, 34).padding(.top, 8)
         }
-        .alert("Quit the open apps?", isPresented: Binding(get: { !model.openToQuit.isEmpty }, set: { if !$0 { model.cancelQuit() } })) {
+        .alert("Quit the open apps?", isPresented: Binding(get: { model.askingToQuit }, set: { model.askingToQuit = $0 })) {
             Button("Quit and update") { model.upgrade(app) }
             Button("Cancel", role: .cancel) { model.cancelQuit() }
         } message: {

@@ -46,6 +46,9 @@ final class AppsModel {
     /// Selected apps that were open when Update was pressed. The question names them, and only
     /// these paths may be quit; an app opened later is skipped, not closed.
     var openToQuit: [(name: String, path: String)] = []
+    /// The question is on screen. Kept apart from `openToQuit`, so dismissing the alert never
+    /// empties the list before "Quit and update" has read it.
+    var askingToQuit = false
     /// Stop was pressed during removal or updates: the app in progress finishes, the rest wait.
     /// Cutting `mo uninstall` or `brew upgrade` short could leave an app half removed.
     var stopRequested = false
@@ -257,7 +260,7 @@ final class AppsModel {
             .flatMap { update in bundles(of: update).map { (name: update.name, path: $0) } }
         let otherOpen = selectedOutside.map { (name: $0.name, path: $0.path) }
         let open = (brewOpen + otherOpen).filter { OpenApps.running(at: $0.path) != nil }
-        if open.isEmpty { upgrade(app) } else { openToQuit = open }
+        if open.isEmpty { upgrade(app) } else { openToQuit = open; askingToQuit = true }
     }
 
     /// Why an update was skipped before it started.
@@ -303,6 +306,7 @@ final class AppsModel {
         guard commands.count == tokens.count, !(tokens.isEmpty && others.isEmpty) else { return }
         let approved = Set(openToQuit.map(\.path))
         openToQuit = []
+        askingToQuit = false
         runningUpdates = true
         stopRequested = false
         stage = .running
@@ -518,7 +522,7 @@ final class AppsModel {
         screen = .list
     }
 
-    func cancelQuit() { openToQuit = [] }
+    func cancelQuit() { openToQuit = []; askingToQuit = false }
 
     func openUpdates(all: Bool) {
         selectedUpdates = all ? Set(updatableIDs) : []

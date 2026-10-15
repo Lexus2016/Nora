@@ -85,28 +85,66 @@ public struct MoleInstallation: Sendable {
         try unprotected([path], home: home).isEmpty
     }
 
-    /// The paths Mole would not protect for `home` under its current whitelist, asked in one
-    /// shell. Mole's loader drops or trims some literal paths (a name with `..` in it, a trailing
-    /// space), so a written rule is not proof; this is. Paths go in NUL-separated through a file,
-    /// so any byte in a name survives and a long list cannot fill a pipe.
+    /// The paths Mole would not protect for `home` under its current whitelist. Mole's loader drops
+    /// or trims some literal paths (a name with `..` in it, a trailing space), so a written rule is
+    /// not proof; this is.
+    ///
+    /// Mole's loader is quadratic in the number of rules (1,500 take about 24 s) and so is a loop
+    /// over `is_path_whitelisted`, so one shell loads the whitelist once and prints the loaded
+    /// patterns. A path equal to one of them, normalized as Mole does, is protected by
+    /// `is_path_whitelisted`'s exact-match branch; only the rest are sent back to the same shell
+    /// for the full check. Everything travels NUL-separated, so any byte in a name survives.
     public func unprotected(_ paths: [String], home: URL) throws -> [String] {
         guard !paths.isEmpty else { return [] }
-        let list = FileManager.default.temporaryDirectory.appendingPathComponent("nora-protect-\(UUID().uuidString)")
-        defer { try? FileManager.default.removeItem(at: list) }
-        try Data(paths.map { $0 + "\0" }.joined().utf8).write(to: list)
         let script = """
         source "$1/lib/core/common.sh" >/dev/null 2>&1 || exit 3
         load_mole_whitelist >/dev/null 2>&1
-        i=0
+        [ ${#WHITELIST_PATTERNS[@]} -eq 0 ] || printf '%s\\0' "${WHITELIST_PATTERNS[@]}"
+        printf '\\0'
         while IFS= read -r -d '' p; do
-            is_path_whitelisted "$p" || echo "$i"
-            i=$((i + 1))
-        done < "$2"
-        [ "$i" -eq "$3" ] || exit 4
+            is_path_whitelisted "$p" || printf '%s\\0' "$p"
+        done
         """
-        let output = try Self.run("/bin/bash", ["-c", script, "bash", root.path, list.path, String(paths.count)],
-                                  environment: Self.probeEnvironment(home))
-        return output.split(separator: "\n").compactMap { Int($0) }.filter(paths.indices.contains).map { paths[$0] }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = ["-c", script, "bash", root.path]
+        process.environment = Self.probeEnvironment(home)
+        let input = Pipe(), output = Pipe()
+        process.standardInput = input
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        defer { if process.isRunning { process.terminate() } }
+
+        // The pattern list ends with an empty record: a lone NUL, or two in a row.
+        var data = Data()
+        while !(data == Data([0]) || data.suffix(2) == Data([0, 0])) {
+            let chunk = output.fileHandleForReading.availableData
+            guard !chunk.isEmpty else { throw PTYError(description: "Mole's whitelist could not be read") }
+            data.append(chunk)
+        }
+        let exact = Set(String(decoding: data, as: UTF8.self).split(separator: "\0").map { Self.normalized(String($0)) })
+        let rest = paths.filter { !exact.contains(Self.normalized($0)) }
+        // Written from another thread, so a long answer cannot block the shell while we write.
+        let writer = input.fileHandleForWriting
+        DispatchQueue.global(qos: .userInitiated).async {
+            try? writer.write(contentsOf: Data(rest.map { $0 + "\0" }.joined().utf8))
+            try? writer.close()
+        }
+        let answer = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else {
+            throw PTYError(description: "the protection check exited \(process.terminationStatus)")
+        }
+        let open = Set(String(decoding: answer, as: UTF8.self).split(separator: "\0").map(String.init))
+        return rest.filter(open.contains)
+    }
+
+    /// As `is_path_whitelisted` compares: one trailing slash dropped, runs of slashes collapsed.
+    static func normalized(_ path: String) -> String {
+        var out = path.hasSuffix("/") ? String(path.dropLast()) : path
+        while out.contains("//") { out = out.replacingOccurrences(of: "//", with: "/") }
+        return out
     }
 
     static func probeEnvironment(_ home: URL) -> [String: String] {

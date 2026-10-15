@@ -173,4 +173,25 @@ struct WhitelistOverlayMoleTests {
         #expect(try mole.unprotected(paths, home: home) == [dots, trailing])
         #expect(try mole.unprotected([], home: home) == [])
     }
+
+    /// A category's Clean protects every item of the other categories, so a long list is normal.
+    /// 1,500 rules took over two minutes through `is_path_whitelisted` alone. Mole's own loader
+    /// is quadratic too, and `mo clean` pays it as well; the check must cost about one load.
+    @Test func checksALongProtectedListQuickly() throws {
+        let home = try TestSandbox.make("wl-long")
+        defer { try? FileManager.default.removeItem(at: home) }
+        let mole = try MoleInstallation(executable: try #require(MoleE2E.executable))
+        let overlay = WhitelistOverlay(home: home, journalURL: home.appendingPathComponent("support/journal.json"))
+        let dots = "\(home.path)/Projects/client..archive/node_modules"
+        let paths = (0..<1500).map { "\(home.path)/Library/Caches/com.example.app\($0)/data" } + [dots, "\(home.path)/Library/Caches/slash/"]
+        try overlay.apply(protecting: paths, defaults: try mole.cleanWhitelistDefaults(home: home), runID: "long")
+        defer { try? overlay.recoverIfNeeded() }
+        var started = Date()
+        _ = try mole.unprotected([paths[0]], home: home)
+        let oneLoad = Date().timeIntervalSince(started)
+        started = Date()
+        #expect(try mole.unprotected(paths, home: home) == [dots])
+        let check = Date().timeIntervalSince(started)
+        #expect(check < oneLoad * 1.5 + 2, "check \(check) s, one load \(oneLoad) s")
+    }
 }

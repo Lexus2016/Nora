@@ -23,6 +23,8 @@ public enum PrivilegeBroker {
         let quote = { (s: String) in "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
         let script = (authenticate ? "sudo -A -v || exit 1; " : "") + "\"$0\" \(check.map(quote).joined(separator: " ")); "
             + "printf '\\n%s %d\\n' \(gateMarker) $?; IFS= read -r go; [ \"$go\" = go ] || exit 3; "
+            // The check may outlast sudo's ticket; renewing it here is silent while it is valid.
+            + (authenticate ? "sudo -A -v || exit 1; " : "")
             + "exec \"$0\" \(run.map(quote).joined(separator: " "))"
         return ("/bin/bash", ["-c", script, executable])
     }
