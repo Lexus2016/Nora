@@ -16,6 +16,7 @@ final class SmartCareModel {
     /// Stop was pressed during Run: the module in progress stops, the ones after it are not started.
     var stopRequested = false
     @ObservationIgnored private var task: Task<Void, Never>?
+    private var scanGeneration = UUID()
     /// The scans Smart Care itself started; Stop during Scan stops only these.
     @ObservationIgnored private var startedScans: Set<Module> = []
     /// The module whose run Smart Care started and is waiting for; Stop during Run stops only it.
@@ -24,6 +25,10 @@ final class SmartCareModel {
     static let tiles: [Module] = [.cleanup, .performance, .projects, .installers]
 
     func scan(_ app: AppModel) {
+        guard phase != .scanning, phase != .running else { return }
+        task?.cancel()
+        let generation = UUID()
+        scanGeneration = generation
         phase = .scanning
         // A module that is running keeps its run, and one already scanning keeps its scan, which
         // Smart Care then waits for: starting it again would leave the first scan writing over
@@ -35,28 +40,32 @@ final class SmartCareModel {
         if startedScans.contains(.projects) { app.projects.scan(app) }
         if startedScans.contains(.installers) { app.installers.scan(app) }
         task = Task {
+            guard !Task.isCancelled, generation == scanGeneration else { return }
             while Self.tiles.contains(where: { stage(of: $0, app) == .scanning }) {
                 try? await Task.sleep(nanoseconds: 300_000_000)
                 if Task.isCancelled { return }
             }
+            guard !Task.isCancelled, generation == scanGeneration else { return }
             for module in Self.tiles where stage(of: module, app) != .review { enabled.remove(module) }
             phase = .results
         }
     }
 
     func run(_ app: AppModel) {
+        let runnable = runnableModules(app)
+        guard phase == .results, !runnable.isEmpty else { return }
         phase = .running
         doneLines = []
         failedModules = []
         stopRequested = false
         task = Task {
-            for module in Self.tiles where enabled.contains(module) && stage(of: module, app) == .review {
+            for module in runnable {
                 if stopRequested {
                     doneLines.append("– \(String(localized: String.LocalizationValue(module.titleText))): " + String(localized: "not started, you pressed Stop"))
                     continue
                 }
                 // Nothing found, or everything unticked in its review: nothing runs, nothing fails.
-                guard hasWork(module, app) else {
+                guard stage(of: module, app) == .review, canRun(module, app) else {
                     doneLines.append("– \(String(localized: String.LocalizationValue(module.titleText))): " + String(localized: "nothing to do"))
                     continue
                 }
@@ -68,6 +77,12 @@ final class SmartCareModel {
                 case .installers: app.installers.remove(app)
                 default: continue
                 }
+                guard stage(of: module, app) == .running || stage(of: module, app) == .done else {
+                    runningModule = nil
+                    failedModules.append(module)
+                    doneLines.append("✕ \(String(localized: String.LocalizationValue(module.titleText))): " + String(localized: "The task could not start"))
+                    continue
+                }
                 while stage(of: module, app) == .running { try? await Task.sleep(nanoseconds: 300_000_000) }
                 runningModule = nil
                 let failed = self.failed(module, app)
@@ -75,6 +90,33 @@ final class SmartCareModel {
                 doneLines.append("\(failed ? "✕" : "✓") \(String(localized: String.LocalizationValue(module.titleText))): \(headline(of: module, app))")
             }
             phase = .done
+        }
+    }
+
+    /// One eligibility rule shared by Run, its command preview and enabled state.
+    func runnableModules(_ app: AppModel) -> [Module] {
+        Self.tiles.filter { enabled.contains($0) && stage(of: $0, app) == .review && canRun($0, app) }
+    }
+
+    func canRun(_ module: Module, _ app: AppModel) -> Bool {
+        guard hasWork(module, app) else { return false }
+        switch module {
+        case .cleanup: return app.cleanup.canClean
+        case .projects: return app.projects.preview?.isComplete == true
+        case .performance: return app.performance.canRun
+        default: return true
+        }
+    }
+
+    func retry(_ module: Module, _ app: AppModel) {
+        guard phase == .results, !app.isBusy(module) else { return }
+        enabled.insert(module)
+        switch module {
+        case .cleanup: app.cleanup.scan(app)
+        case .performance: app.performance.scan(app)
+        case .projects: app.projects.scan(app)
+        case .installers: app.installers.scan(app)
+        default: break
         }
     }
 
@@ -104,6 +146,7 @@ final class SmartCareModel {
     }
 
     func stop(_ app: AppModel) {
+        scanGeneration = UUID()
         task?.cancel()
         for module in startedScans where stage(of: module, app) == .scanning {
             switch module {
@@ -121,6 +164,9 @@ final class SmartCareModel {
     /// Start over never resets a module whose command is still running: its state and overlay
     /// belong to that run until it ends.
     func reset(_ app: AppModel) {
+        guard phase != .running, !Self.tiles.contains(where: { app.isBusy($0) }) else { return }
+        scanGeneration = UUID()
+        task?.cancel()
         if app.cleanup.stage != .running { app.cleanup.reset() }
         if app.performance.stage != .running { app.performance.reset() }
         if app.projects.stage != .running { app.projects.reset() }
@@ -149,7 +195,7 @@ final class SmartCareModel {
         }
     }
 
-    private func headline(of module: Module, _ app: AppModel) -> String {
+    func headline(of module: Module, _ app: AppModel) -> String {
         switch module {
         case .cleanup: app.cleanup.resultHeadline
         case .performance: app.performance.resultHeadline
@@ -161,6 +207,7 @@ final class SmartCareModel {
 
     /// What the tile shows after the scan: the number and the line under it.
     func finding(_ module: Module, _ app: AppModel) -> (value: String, caption: String)? {
+        guard stage(of: module, app) == .review else { return nil }
         switch module {
         case .cleanup:
             guard app.cleanup.preview != nil else { return nil }
@@ -219,7 +266,7 @@ struct SmartCareView: View {
             tiles
         case .done:
             DoneView(module: module,
-                     headline: model.failedModules.isEmpty ? String(localized: "Smart Care is done")
+                     headline: model.stopRequested ? String(localized: "Smart Care stopped") : model.failedModules.isEmpty ? String(localized: "Smart Care is done")
                                                            : String(localized: "Smart Care finished with problems"),
                      lines: model.doneLines, failed: !model.failedModules.isEmpty) { model.reset(app) }
         }
@@ -228,12 +275,12 @@ struct SmartCareView: View {
     private var tiles: some View {
         let orb: OrbAction? = switch model.phase {
         case .scanning: OrbAction(title: "Stop", busy: true, action: { model.stop(app) })
-        case .results: model.enabled.isEmpty ? nil : OrbAction(title: "Run", action: { model.run(app) })
+        case .results: OrbAction(title: "Run", enabled: !model.runnableModules(app).isEmpty, disabledReason: String(localized: "Select a ready task, or review and rescan a module"), action: { model.run(app) })
         case .running: model.stopRequested ? OrbAction(title: "Stopping", busy: true, action: {})
                                             : OrbAction(title: "Stop", busy: true, action: { model.stopRun(app) })
         default: nil
         }
-        return ModuleScene(module: module, leading: model.phase == .results ? .startOver { model.reset(app) } : nil, orb: orb) {
+        return ModuleScene(module: module, leading: model.phase == .results && !SmartCareModel.tiles.contains(where: { app.isBusy($0) }) ? .startOver { model.reset(app) } : nil, orb: orb) {
             VStack(spacing: 22) {
                 Text(model.phase == .results ? String(localized: "Tasks are ready. Here is what we found:")
                      : model.phase == .running ? String(localized: "Working on it…") : String(localized: "Scanning your Mac…"))
@@ -259,9 +306,7 @@ struct SmartCareView: View {
 
     /// Every command Run starts, in order, for the ticked tiles that have something to do.
     private var runCommand: String {
-        [Module.cleanup, .performance, .projects, .installers]
-            // The same rule Run uses, so the line shows exactly what will start.
-            .filter { model.enabled.contains($0) && model.stage(of: $0, app) == .review }
+        model.runnableModules(app)
             .map { module -> String in
                 switch module {
                 case .cleanup: app.cleanup.command
@@ -294,7 +339,7 @@ private struct SmartTile: View {
                 if model.phase == .results, finding != nil {
                     Toggle("", isOn: Binding(get: { model.enabled.contains(module) },
                                              set: { if $0 { model.enabled.insert(module) } else { model.enabled.remove(module) } }))
-                        .toggleStyle(.checkbox).labelsHidden()
+                        .toggleStyle(.checkbox).labelsHidden().disabled(!model.canRun(module, app))
                 }
                 Text(module.title).font(.system(size: 16, weight: .semibold))
             }
@@ -305,7 +350,13 @@ private struct SmartTile: View {
                     .font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(1).truncationMode(.middle)
             } else if let error = model.error(module, app) {
                 Text("Could not check").font(.system(size: 22, weight: .semibold))
-                Text(error).font(.system(size: 12)).foregroundStyle(Palette.warn).lineLimit(2)
+                Text(error).font(.system(size: 12)).foregroundStyle(Palette.warn).lineLimit(2).help(error)
+                if model.phase == .results {
+                    Button("Retry") { model.retry(module, app) }.buttonStyle(GlassButtonStyle())
+                }
+            } else if stage == .done {
+                Text(model.headline(of: module, app)).font(.system(size: 18, weight: .semibold)).lineLimit(3)
+                Button("Review result") { app.reviewFromSmartCare(module) }.buttonStyle(GlassButtonStyle())
             } else if let finding {
                 Text(finding.value).font(.system(size: 36, weight: .semibold, design: .rounded)).lineLimit(1).minimumScaleFactor(0.6)
                 HStack {

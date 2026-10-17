@@ -7,6 +7,15 @@ public enum PTYRun {
         public let status: ExitStatus
         public let text: String
         public var succeeded: Bool { status == .exited(0) }
+
+        /// Preserve the full transcript for diagnostics, but never report the check as the run.
+        public func runPhaseResult() -> Result {
+            let lines = text.components(separatedBy: "\n")
+            guard let boundary = lines.lastIndex(where: {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines) == PrivilegeBroker.runMarker
+            }) else { return Result(status: status, text: "") }
+            return Result(status: status, text: lines.dropFirst(boundary + 1).joined(separator: "\n"))
+        }
     }
 
     /// - Parameters:

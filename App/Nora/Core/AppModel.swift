@@ -16,14 +16,15 @@ final class AppModel {
 
     var moleState: MoleState = .locating
     var selection: Module = .smartCare {
-        didSet { if selection != reviewOrigin { reviewOrigin = nil } }
+        didSet { if selection != oldValue { showConsole = false } }
     }
     /// A module opened from a Smart Care tile. Its screens lead back to Smart Care instead of
-    /// starting over, so the scan behind the tiles stays intact. Any other navigation clears it.
+    /// starting over, so the scan behind the tiles stays intact. Sidebar navigation preserves this return route.
     private(set) var reviewOrigin: Module?
 
     func reviewFromSmartCare(_ module: Module) {
         reviewOrigin = module
+        if module == .cleanup { cleanup.showList = false; cleanup.listSection = nil }
         selection = module
     }
     /// Debug launch arguments for screenshots and checks: `-NoraModule cleanup -NoraAutoScan 1`.
@@ -38,10 +39,7 @@ final class AppModel {
         #endif
         if !selection.isAvailable { selection = Module.available.first ?? .status }
     }
-    var showConsole = false {
-        // The console covers the orb; an invisible orb must not take clicks meant for it.
-        didSet { orb.hidden = showConsole; orb.updateHitArea() }
-    }
+    var showConsole = false
     let console = ConsoleLog()
     let status = StatusStore()
     let orb = OrbController()
@@ -85,6 +83,11 @@ final class AppModel {
         guard exclusiveRun == nil, !overlay.needsRecovery else { return false }
         exclusiveRun = id
         return true
+    }
+
+    func recoverProtection() throws {
+        guard exclusiveRun == nil else { throw WhitelistOverlayError.pendingRecovery }
+        try overlay.recoverIfNeeded()
     }
 
     func endExclusiveRun(_ id: String) {
@@ -164,7 +167,14 @@ final class AppModel {
             message: String(localized: "Nora needs your Mac password for this Mole command. Nora does not see or store it."),
             cancel: String(localized: "Cancel"),
             ok: String(localized: "OK"))
-        try? overlay.recoverIfNeeded()
+        do { try recoverProtection() }
+        catch {
+            cleanup.recoveryRequired = true
+            cleanup.failed = true
+            cleanup.resultHeadline = String(localized: "Recovery required")
+            cleanup.resultLines = [CleanupModel.describe(error)]
+            cleanup.stage = .done
+        }
         handover.recover()
     }
 
@@ -294,12 +304,13 @@ final class AppModel {
                 let status = screen.last { $0.hasPrefix(marker) }.flatMap { Int32($0.dropFirst(marker.count)) } ?? -1
                 let output = TerminalText.render(session.transcriptBytes)
                 try decide(String(output[..<(output.range(of: PrivilegeBroker.gateMarker)?.lowerBound ?? output.endIndex)]), status)
+                try Task.checkCancellation()
                 session.write("go\n")
             }
             console.replace(id, outcome.result.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init))
             try console.checkStopped(id)
             if case .exited(let code) = outcome.result.status { console.finish(id, status: code) } else { console.finish(id, status: -1) }
-            return outcome.result
+            return outcome.result.runPhaseResult()
         } catch {
             try console.checkStopped(id)
             console.fail(id, error: error)
@@ -311,23 +322,24 @@ final class AppModel {
     func run(_ arguments: [String], environment: [String: String] = [:]) async throws -> CommandResult {
         guard let mole else { throw NoraError.moleMissing }
         let id = console.begin(mole.command(arguments, environment: environment))
-        var out: [String] = [], err: [String] = []
-        var status: Int32 = 0
+        let console = self.console
         do {
-            for try await line in ProcessRunner.lines(mole.executable, arguments, environment: mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }) {
-                if line.isError { err.append(line.text) } else { out.append(line.text) }
-                console.append(id, [ANSI.strip(line.text)])
-            }
-        } catch let failure as ProcessFailure {
-            status = failure.status
+            // Unlike cancelling an AsyncStream iterator, this awaits process-group settlement.
+            let result = try await ProcessRunner.run(mole.executable, arguments,
+                environment: mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 },
+                onOutput: { line in
+                    Task { @MainActor in console.append(id, [ANSI.strip(line.text)]) }
+                })
+            let output = result.stdout + (result.stderr.isEmpty ? "" : "\n" + result.stderr)
+            console.replace(id, output.split(separator: "\n", omittingEmptySubsequences: false).map { ANSI.strip(String($0)) })
+            try console.checkStopped(id)
+            console.finish(id, status: result.status)
+            return result
         } catch {
             try console.checkStopped(id)
             console.fail(id, error: error)
             throw error
         }
-        try console.checkStopped(id)
-        console.finish(id, status: status)
-        return CommandResult(status: status, stdout: out.joined(separator: "\n"), stderr: err.joined(separator: "\n"))
     }
 }
 
@@ -369,6 +381,8 @@ final class ConsoleLog {
         let owner: Module?
         let startedAt = Date()
         var output: [String] = []
+        var revision = 0
+        var omittedLines = 0
         var status: Int32?
         var failure: String?
         var isRunning: Bool { status == nil && failure == nil }
@@ -394,25 +408,34 @@ final class ConsoleLog {
         guard Task.isCancelled else { return }
         if let i = entries.firstIndex(where: { $0.id == id }), entries[i].isRunning {
             entries[i].failure = String(localized: "Stopped")
+            entries[i].revision += 1
         }
         throw CancellationError()
     }
 
     func append(_ id: UUID, _ lines: [String]) {
-        guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        guard let i = entries.firstIndex(where: { $0.id == id }), entries[i].isRunning else { return }
+        entries[i].revision += 1
         entries[i].output.append(contentsOf: lines)
-        if entries[i].output.count > maxLines { entries[i].output.removeFirst(entries[i].output.count - maxLines) }
+        if entries[i].output.count > maxLines {
+            entries[i].omittedLines += entries[i].output.count - maxLines
+            entries[i].output.removeFirst(entries[i].output.count - maxLines)
+        }
     }
 
     /// Shows the live PTY screen while the command runs.
     func mirror(_ id: UUID, _ lines: [String]) {
         guard let i = entries.firstIndex(where: { $0.id == id }), entries[i].isRunning else { return }
         let trimmed = Array(lines.reversed().drop { $0.trimmingCharacters(in: .whitespaces).isEmpty }.reversed())
-        entries[i].output = trimmed
+        entries[i].revision += 1
+        entries[i].omittedLines = max(0, trimmed.count - maxLines)
+        entries[i].output = Array(trimmed.suffix(maxLines))
     }
 
     func replace(_ id: UUID, _ lines: [String]) {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        entries[i].revision += 1
+        entries[i].omittedLines = max(0, lines.count - maxLines)
         entries[i].output = Array(lines.suffix(maxLines))
     }
 
@@ -425,11 +448,13 @@ final class ConsoleLog {
 
     func finish(_ id: UUID, status: Int32) {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        entries[i].revision += 1
         entries[i].status = status
     }
 
     func fail(_ id: UUID, error: Error) {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        entries[i].revision += 1
         entries[i].failure = error.localizedDescription
     }
 }

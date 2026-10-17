@@ -38,11 +38,21 @@ struct NoraApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let app = AppModel()
+    /// Unit-test hosts must not start schedulers, update checks, recovery, or real scanners.
+    private var isUnitTestHost: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.environment["NORA_UNIT_TESTING"] == "1"
+            || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        #else
+        false
+        #endif
+    }
     private var menuBar: MenuBarController?
     private var scheduler: Timer?
     private var terminationSignal: DispatchSourceSignal?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        guard !isUnitTestHost else { return }
         // Launching Nora always shows its window. With the system's "keep windows when quitting"
         // on, a window closed before quitting would otherwise stay closed and leave only the menu
         // bar item. Set in Nora's own domain, so other apps keep the system setting.
@@ -50,6 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        guard !isUnitTestHost else { return }
         // SIGTERM (Activity Monitor's Quit, logout, pkill) goes through the normal quit, so
         // applicationWillTerminate stops Nora's child processes instead of orphaning them.
         signal(SIGTERM, SIG_IGN)
@@ -103,6 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        guard !isUnitTestHost else { return }
         app.security.shutdown()
         // Children first, and only once they are gone: Mole must not read the whitelist while
         // it is being put back. If one survives, the overlay stays until the next launch.

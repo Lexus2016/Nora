@@ -8,6 +8,9 @@ import SwiftUI
 final class ToolsModel {
     var touchIDEnabled: Bool?
     var touchIDBusy = false
+    var touchIDError: String?
+    @ObservationIgnored private var touchIDGeneration = UUID()
+    @ObservationIgnored private var refreshGeneration = UUID()
     var latestMole: String?
     var updateBusy = false
     /// A preview belongs to one drive as it was mounted then: choosing another drive, or
@@ -48,6 +51,11 @@ final class ToolsModel {
         externalVolume = nil
     }
     var completionPreview: [String] = []
+    var completionError: String?
+    var completionBusy = false
+    private(set) var completionPreviewValid = false
+    var removeError: String?
+    var removeBusy = false
     var removePreview: [String] = []
     var message: String?
 
@@ -57,32 +65,72 @@ final class ToolsModel {
     }
 
     func refresh(_ app: AppModel) {
+        let generation = UUID()
+        refreshGeneration = generation
         Task {
-            if let result = try? await app.run(["touchid", "status"]) {
-                let text = ANSI.strip(result.stdout).lowercased()
-                touchIDEnabled = text.contains("not configured") || text.contains("disabled") ? false : text.contains("enabled") || text.contains("configured")
+            if !touchIDBusy {
+                let statusGeneration = UUID()
+                touchIDGeneration = statusGeneration
+                let outcome = await Self.attempt { try await app.run(["touchid", "status"]) }
+                if touchIDGeneration == statusGeneration {
+                    applyTouchIDStatus(outcome)
+                }
             }
-            latestMole = try? await MoleSetup.latestVersion()
+            let latest = try? await MoleSetup.latestVersion()
+            guard refreshGeneration == generation else { return }
+            latestMole = latest
+        }
+    }
+
+    nonisolated static func touchIDState(_ result: CommandResult?) -> Bool? {
+        guard let result, result.succeeded else { return nil }
+        let text = ANSI.strip(result.stdout).lowercased()
+        if text.contains("not configured") || text.contains("not enabled") || text.contains("disabled") { return false }
+        if text.contains("enabled") || text.contains("configured") { return true }
+        return nil
+    }
+
+    private func applyTouchIDStatus(_ outcome: Attempt) {
+        touchIDEnabled = Self.touchIDState(outcome.result)
+        touchIDError = Self.commandFailure(outcome)
+        if touchIDEnabled == nil, touchIDError == nil {
+            touchIDError = String(localized: "Mole returned an unknown Touch ID status. Check the console and retry.")
         }
     }
 
     func setTouchID(_ on: Bool, _ app: AppModel) {
+        guard !touchIDBusy, touchIDEnabled != nil else { return }
+        touchIDGeneration = UUID() // Invalidate an older status read before mutating.
         touchIDBusy = true
+        touchIDError = nil
         Task {
             defer { touchIDBusy = false }
-            _ = try? await app.runPTY(["touchid", on ? "enable" : "disable"], sudo: true)
-            refresh(app)
+            do {
+                let result = try await app.runPTY(["touchid", on ? "enable" : "disable"], sudo: true)
+                guard result.succeeded else {
+                    touchIDEnabled = nil
+                    touchIDError = Self.lastLine(result.text) ?? String(localized: "The Touch ID change did not finish. Check the console and retry.")
+                    return
+                }
+                applyTouchIDStatus(await Self.attempt { try await app.run(["touchid", "status"]) })
+                if let actual = touchIDEnabled, actual != on {
+                    touchIDError = String(localized: "Touch ID does not match the requested setting. Check the console and retry.")
+                }
+            } catch {
+                touchIDEnabled = nil
+                touchIDError = error.localizedDescription
+            }
         }
     }
 
     func updateMole(_ app: AppModel) {
-        guard let mole = app.mole else { return }
+        guard !updateBusy, let mole = app.mole else { return }
         updateBusy = true
         Task {
             defer { updateBusy = false }
             do {
                 try await app.stream(MoleSetup.updateCommand(for: mole), environment: mole.environment)
-                message = String(localized: "Mole is up to date.")
+                message = String(localized: "The Mole update command finished. Check the installed version below.")
             } catch {
                 message = String(localized: "The update did not finish. The console shows the output.")
             }
@@ -91,7 +139,7 @@ final class ToolsModel {
     }
 
     func previewExternal(_ app: AppModel) {
-        guard let volume = externalVolume else { return }
+        guard !externalCleaning, let volume = externalVolume else { return }
         let generation = UUID()
         externalGeneration = generation
         previewedVolume = nil
@@ -112,7 +160,7 @@ final class ToolsModel {
     }
 
     func cleanExternal(_ app: AppModel) {
-        guard let volume = externalVolume, previewedVolume == volume else { return }
+        guard !externalBusy, !externalCleaning, let volume = externalVolume, previewedVolume == volume else { return }
         guard let identity = previewedIdentity, Self.identity(of: volume) == identity else {
             previewedVolume = nil
             externalPreview = [String(localized: "The drive was unplugged or changed since the preview. Preview it again.")]
@@ -168,19 +216,55 @@ final class ToolsModel {
         return "\(values.volumeUUIDString ?? "")|\(id)"
     }
 
+    /// Shared by the small tools: output alone never authorizes a follow-on action.
+    nonisolated static func commandFailure(_ attempt: Attempt) -> String? {
+        if let result = attempt.result {
+            guard !result.succeeded else { return nil }
+            return lastLine(result.stderr) ?? lastLine(result.stdout) ?? String(localized: "Mole exited with status \(result.status).")
+        }
+        return attempt.error?.localizedDescription ?? String(localized: "Mole could not start.")
+    }
+
+    func acceptCompletionPreview(_ outcome: Attempt) {
+        completionPreview = Self.meaningful(outcome.result?.stdout ?? "")
+        completionError = Self.commandFailure(outcome)
+        completionPreviewValid = outcome.result?.succeeded == true && !completionPreview.isEmpty
+    }
+
     func previewCompletion(_ app: AppModel) {
-        Task { completionPreview = Self.meaningful((try? await app.run(["completion", "--dry-run"]))?.stdout ?? "") }
+        guard !completionBusy else { return }
+        completionBusy = true
+        completionPreviewValid = false
+        completionError = nil
+        Task {
+            defer { completionBusy = false }
+            acceptCompletionPreview(await Self.attempt { try await app.run(["completion", "--dry-run"]) })
+        }
     }
 
     func installCompletion(_ app: AppModel) {
+        guard !completionBusy, completionPreviewValid else { return }
+        completionBusy = true
+        completionPreviewValid = false
+        completionError = nil
         Task {
-            let result = try? await app.run(["completion"])
-            completionPreview = Self.meaningful(result?.stdout ?? "")
+            defer { completionBusy = false }
+            let outcome = await Self.attempt { try await app.run(["completion"]) }
+            completionPreview = Self.meaningful(outcome.result?.stdout ?? "")
+            completionError = Self.commandFailure(outcome)
         }
     }
 
     func previewRemove(_ app: AppModel) {
-        Task { removePreview = Self.meaningful((try? await app.run(["remove", "--dry-run"]))?.stdout ?? "") }
+        guard !removeBusy else { return }
+        removeBusy = true
+        removeError = nil
+        Task {
+            defer { removeBusy = false }
+            let outcome = await Self.attempt { try await app.run(["remove", "--dry-run"]) }
+            removePreview = Self.meaningful(outcome.result?.stdout ?? "")
+            removeError = Self.commandFailure(outcome)
+        }
     }
 
     static func meaningful(_ text: String) -> [String] {
@@ -242,8 +326,12 @@ struct ToolsView: View {
     private var touchID: some View {
         tool("Touch ID for sudo", "touchid", command: model.touchIDEnabled == true ? "mo touchid disable" : "mo touchid enable") {
             Text("Approve administrator tasks with your fingerprint instead of typing the password.").font(.system(size: 13)).foregroundStyle(Palette.fg2)
+            if let error = model.touchIDError {
+                Notice(text: error, color: Palette.crit)
+                Button("Retry") { model.refresh(app) }.buttonStyle(GlassButtonStyle()).disabled(model.touchIDBusy)
+            }
             HStack {
-                Text(model.touchIDEnabled == nil ? "Checking…" : model.touchIDEnabled == true ? "On" : "Off").font(.system(size: 15, weight: .semibold))
+                Text(model.touchIDEnabled == nil ? (model.touchIDError == nil ? "Checking…" : "Unknown") : model.touchIDEnabled == true ? "On" : "Off").font(.system(size: 15, weight: .semibold))
                 Spacer()
                 if model.touchIDBusy { Spinner() }
                 Button(model.touchIDEnabled == true ? "Turn off" : "Turn on") { model.setTouchID(model.touchIDEnabled != true, app) }
@@ -255,14 +343,13 @@ struct ToolsView: View {
     private var moleUpdate: some View {
         let installed = app.mole?.version ?? "?"
         let latest = model.latestMole
-        let behind = latest.map { Mole.compare(installed, $0) == .orderedAscending } ?? false
         return tool("Mole", "arrow.triangle.2.circlepath", command: app.mole.map { MoleSetup.updateCommand(for: $0).description } ?? "mo update") {
             InfoRow(label: "Installed", value: installed)
             InfoRow(label: "Latest release", value: latest ?? "…")
             HStack {
                 Spacer()
                 if model.updateBusy { Spinner() }
-                Button(behind ? "Update Mole" : "Reinstall") { model.updateMole(app) }.buttonStyle(PrimaryButtonStyle()).disabled(model.updateBusy)
+                Button("Update Mole") { model.updateMole(app) }.buttonStyle(PrimaryButtonStyle()).disabled(model.updateBusy)
             }
         }
     }
@@ -296,26 +383,28 @@ struct ToolsView: View {
     private var completion: some View {
         tool("Shell completion", "terminal", command: "mo completion") {
             Text("Tab completion for mo in your shell. Nora shows the line it adds first.").font(.system(size: 13)).foregroundStyle(Palette.fg2)
+            if let error = model.completionError { Notice(text: error, color: Palette.crit) }
             ForEach(Array(model.completionPreview.prefix(3).enumerated()), id: \.offset) { _, line in
                 Text(line).font(.mono).foregroundStyle(Palette.fg2).lineLimit(1).truncationMode(.middle)
             }
             HStack {
                 Spacer()
-                Button("Preview") { model.previewCompletion(app) }.buttonStyle(GlassButtonStyle())
-                Button("Add") { model.installCompletion(app) }.buttonStyle(PrimaryButtonStyle()).disabled(model.completionPreview.isEmpty)
+                Button("Preview") { model.previewCompletion(app) }.buttonStyle(GlassButtonStyle()).disabled(model.completionBusy)
+                Button("Add") { model.installCompletion(app) }.buttonStyle(PrimaryButtonStyle()).disabled(!model.completionPreviewValid || model.completionBusy)
             }
         }
     }
 
     private var remove: some View {
-        tool("Remove Mole", "xmark.app", command: "mo remove") {
-            Text("What removing Mole would delete. Nora needs Mole, so the removal itself runs in Terminal.").font(.system(size: 13)).foregroundStyle(Palette.fg2)
+        tool("Preview Mole removal", "xmark.app", command: "mo remove --dry-run") {
+            Text("What removing Mole would delete. This card only previews; it does not remove Mole.").font(.system(size: 13)).foregroundStyle(Palette.fg2)
+            if let error = model.removeError { Notice(text: error, color: Palette.crit) }
             ForEach(Array(model.removePreview.prefix(5).enumerated()), id: \.offset) { _, line in
                 Text(line).font(.system(size: 12)).foregroundStyle(Palette.fg2).lineLimit(1).truncationMode(.middle)
             }
             HStack {
                 Spacer()
-                Button("Preview") { model.previewRemove(app) }.buttonStyle(GlassButtonStyle())
+                Button("Preview") { model.previewRemove(app) }.buttonStyle(GlassButtonStyle()).disabled(model.removeBusy)
             }
         }
     }

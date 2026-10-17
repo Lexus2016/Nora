@@ -22,10 +22,11 @@ final class ProtectionModel {
     var newPattern = ""
     var message: String?
     var loaded = false
+    private(set) var cleanupReady = false
     /// Lines of whitelist_optimize that are not task ids Nora knows (custom paths, newer ids).
     /// They are written back unchanged.
     private var optimizeOther: [String] = []
-    /// True while a Cleanup or Projects run has its temporary overlay on the whitelist.
+    /// True during an exclusive run or while recovery of its whitelist is pending.
     private var cleanListBusy: () -> Bool = { false }
 
     private var configDir: URL { FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/mole") }
@@ -36,31 +37,64 @@ final class ProtectionModel {
     var legacyOptimizeURL: URL { configDir.appendingPathComponent("whitelist_checks") }
 
     func load(_ app: AppModel) {
-        guard let mole = app.mole else { return }
-        defaults = (try? mole.installation.cleanWhitelistDefaults(home: app.home)) ?? []
-        // During a Cleanup or Projects run the file holds that run's temporary entries; read the
-        // user's own list from the journal instead.
-        let cleanLines = Self.lines(text: app.overlay.userWhitelist())
+        cleanListBusy = { [weak app] in app?.exclusiveRunActive ?? false }
+        loaded = false
+        cleanupReady = false
+        guard !cleanListLocked(), let mole = app.mole else { return }
+        guard loadDefaults({ try mole.installation.cleanWhitelistDefaults(home: app.home) }) else { return }
+        let cleanLines: [String]?
+        do {
+            cleanLines = try Self.readCleanLines(app.overlay.whitelistURL)
+        } catch {
+            cleanupReady = false
+            message = error.localizedDescription
+            return
+        }
         cleanFileExists = cleanLines != nil
         let home = app.home.path
         let expand: (String) -> String = { $0.hasPrefix("~/") ? home + $0.dropFirst(1) : $0 }
         let defaultSet = Set(defaults.map(expand))
         custom = (cleanLines ?? []).filter { !defaultSet.contains(expand($0)) }
-        tasks = (try? mole.installation.optimizeTasks(home: app.home)) ?? []
-        let optimizeLines = Self.lines(optimizeURL) ?? Self.lines(legacyOptimizeURL) ?? []
-        let known = Set(tasks.map(\.id))
-        excludedTasks = Set(optimizeLines.filter(known.contains))
-        optimizeOther = optimizeLines.filter { !known.contains($0) }
-        cleanListBusy = { [weak app] in app?.overlay.needsRecovery ?? false }
-        let purge = Self.lines(purgeURL)
-        projectFileExists = purge != nil
-        projectFolders = purge ?? []
+        do {
+            tasks = try mole.installation.optimizeTasks(home: app.home)
+            let optimizeLines = try Self.readCleanLines(optimizeURL) ?? Self.readCleanLines(legacyOptimizeURL) ?? []
+            let known = Set(tasks.map(\.id))
+            excludedTasks = Set(optimizeLines.filter(known.contains))
+            optimizeOther = optimizeLines.filter { !known.contains($0) }
+            let purge = try Self.readCleanLines(purgeURL)
+            projectFileExists = purge != nil
+            projectFolders = purge ?? []
+        } catch {
+            cleanupReady = false
+            message = error.localizedDescription
+            return
+        }
         loaded = true
     }
 
-    /// Non-empty, non-comment lines, or nil when the file is absent.
-    static func lines(_ url: URL) -> [String]? {
-        lines(text: try? String(contentsOf: url, encoding: .utf8))
+    /// A failed defaults read must never turn a first edit into an empty-default whitelist.
+    @discardableResult
+    func loadDefaults(_ read: () throws -> [String]) -> Bool {
+        cleanupReady = false
+        loaded = false
+        do {
+            defaults = try read()
+            cleanupReady = true
+            message = nil
+            return true
+        } catch {
+            message = String(localized: "Protection could not load Mole's defaults. Editing is disabled; retry loading. \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Only an absent file means defaults apply. Unreadable files must block editing.
+    static func readCleanLines(_ url: URL) throws -> [String]? {
+        do {
+            return lines(text: try String(contentsOf: url, encoding: .utf8))
+        } catch let error as NSError where error.domain == NSCocoaErrorDomain && error.code == NSFileReadNoSuchFileError {
+            return nil
+        }
     }
 
     static func lines(text: String?) -> [String]? {
@@ -77,7 +111,7 @@ final class ProtectionModel {
     }
 
     func addPattern(_ pattern: String) {
-        guard !cleanListLocked() else { return }
+        guard loaded, cleanupReady, !cleanListLocked() else { return }
         let p = pattern.trimmingCharacters(in: .whitespaces)
         guard !p.isEmpty, !custom.contains(p), !defaults.contains(p) else { return }
         custom.append(p)
@@ -85,12 +119,13 @@ final class ProtectionModel {
     }
 
     func removePattern(_ pattern: String) {
-        guard !cleanListLocked() else { return }
+        guard loaded, cleanupReady, !cleanListLocked() else { return }
         custom.removeAll { $0 == pattern }
         saveClean()
     }
 
     private func saveClean() {
+        guard cleanupReady else { return }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let body = (defaults + custom).map { $0.hasPrefix(home) ? "~" + $0.dropFirst(home.count) : $0 }
         write(cleanURL, header: "# Protected from mo clean. Written by Nora: Mole's optional defaults are kept at the top.", lines: body)
@@ -99,11 +134,13 @@ final class ProtectionModel {
 
     /// One write for a bulk change instead of one per task.
     func setAllTasks(included: Set<String>) {
+        guard loaded, !cleanListLocked() else { return }
         excludedTasks = Set(tasks.map(\.id)).subtracting(included)
         saveOptimize()
     }
 
     func setTask(_ id: String, excluded: Bool) {
+        guard loaded, !cleanListLocked() else { return }
         if excluded { excludedTasks.insert(id) } else { excludedTasks.remove(id) }
         saveOptimize()
     }
@@ -114,6 +151,7 @@ final class ProtectionModel {
     }
 
     func addProjectFolder(_ path: String) {
+        guard loaded, !cleanListLocked() else { return }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let p = path.hasPrefix(home) ? "~" + path.dropFirst(home.count) : path
         guard !projectFolders.contains(p) else { return }
@@ -122,6 +160,7 @@ final class ProtectionModel {
     }
 
     func removeProjectFolder(_ path: String) {
+        guard loaded, !cleanListLocked() else { return }
         projectFolders.removeAll { $0 == path }
         savePurge()
     }
@@ -173,9 +212,11 @@ struct ProtectionView: View {
                     case .projects: projects
                     }
                 }
+                .disabled(!model.loaded)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(18)
                 .glassPanel(radius: 20)
+                if !model.loaded { Button("Retry") { model.load(app) }.buttonStyle(GlassButtonStyle()) }
                 if let message = model.message { Text(message).font(.system(size: 12)).foregroundStyle(Palette.muted) }
             }
             .padding(.horizontal, 34).padding(.top, 6)

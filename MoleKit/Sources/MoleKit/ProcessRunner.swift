@@ -164,7 +164,8 @@ public enum ProcessRunner {
         _ arguments: [String],
         environment: [String: String],
         currentDirectory: URL? = nil,
-        qos: QualityOfService = .default
+        qos: QualityOfService = .default,
+        onOutput: (@Sendable (OutputLine) -> Void)? = nil
     ) async throws -> CommandResult {
         let process = makeProcess(executable, arguments, environment, currentDirectory)
         process.qualityOfService = qos
@@ -174,8 +175,16 @@ public enum ProcessRunner {
         process.standardInput = FileHandle.nullDevice
 
         let outBuffer = DataBuffer(), errBuffer = DataBuffer()
-        out.fileHandleForReading.readabilityHandler = { outBuffer.append($0.availableData) }
-        err.fileHandleForReading.readabilityHandler = { errBuffer.append($0.availableData) }
+        let outSplitter = LineSplitter { onOutput?(OutputLine(text: $0, isError: false)) }
+        let errSplitter = LineSplitter { onOutput?(OutputLine(text: $0, isError: true)) }
+        out.fileHandleForReading.readabilityHandler = {
+            let bytes = $0.availableData
+            outBuffer.append(bytes); outSplitter.feed(bytes)
+        }
+        err.fileHandleForReading.readabilityHandler = {
+            let bytes = $0.availableData
+            errBuffer.append(bytes); errSplitter.feed(bytes)
+        }
         let stopped = Flag()
 
         return try await withTaskCancellationHandler {
@@ -186,8 +195,11 @@ public enum ProcessRunner {
                     ChildProcesses.settleGroup(finished.processIdentifier, stopped: stopped.isSet)
                     out.fileHandleForReading.readabilityHandler = nil
                     err.fileHandleForReading.readabilityHandler = nil
-                    outBuffer.append(out.fileHandleForReading.readDataToEndOfFile())
-                    errBuffer.append(err.fileHandleForReading.readDataToEndOfFile())
+                    let remainingOut = out.fileHandleForReading.readDataToEndOfFile()
+                    let remainingErr = err.fileHandleForReading.readDataToEndOfFile()
+                    outBuffer.append(remainingOut); outSplitter.feed(remainingOut)
+                    errBuffer.append(remainingErr); errSplitter.feed(remainingErr)
+                    outSplitter.flush(); errSplitter.flush()
                     continuation.resume(returning: CommandResult(
                         status: ProcessFailure.status(of: finished),
                         stdout: outBuffer.string,
@@ -207,6 +219,7 @@ public enum ProcessRunner {
                     ChildProcesses.adoptGroup(process)
                     if Task.isCancelled { stopped.set() }
                     ChildProcesses.stopIfUnwanted(process, cancelled: Task.isCancelled)
+                    if stopped.isSet { Self.stopAndSettle(process) }
                 } catch {
                     ChildProcesses.unregister(process)
                     process.terminationHandler = nil
@@ -215,7 +228,19 @@ public enum ProcessRunner {
             }
         } onCancel: {
             stopped.set()
-            if process.isRunning { process.terminate() } else { ChildProcesses.signalGroup(process.processIdentifier) }
+            Self.stopAndSettle(process)
+        }
+    }
+
+    /// Escalation runs independently of the termination handler: a child ignoring SIGTERM
+    /// must not prevent that handler (and therefore the awaiting caller) from ever completing.
+    private static func stopAndSettle(_ process: Process) {
+        if process.isRunning { process.terminate() }
+        let pid = process.processIdentifier
+        guard pid > 0 else { return }
+        DispatchQueue.global(qos: .utility).async {
+            ChildProcesses.settleGroup(pid, stopped: true)
+            if process.isRunning { kill(pid, SIGKILL) }
         }
     }
 

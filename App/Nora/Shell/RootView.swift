@@ -1,3 +1,4 @@
+import AppKit
 import MoleKit
 import SwiftUI
 
@@ -40,6 +41,7 @@ struct MainView: View {
             }
             if app.showConsole {
                 ConsoleView()
+                    .padding(.bottom, app.orb.bottomClearance)
                     .padding(.leading, Rail.width)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -265,46 +267,119 @@ struct TopBarAction {
     }
 }
 
-/// Every command Nora ran, with its exact command line and output (⌘J).
+/// Latest command for the visible module by default; history is an explicit choice.
 struct ConsoleView: View {
     @Environment(AppModel.self) private var app
+    @State private var selectedEntry: UUID?
+    @State private var showHistory = false
+    @State private var followTail = true
+
+    private var entries: [ConsoleLog.Entry] {
+        if let selectedEntry { return app.console.entries.filter { $0.id == selectedEntry } }
+        if showHistory { return app.console.entries }
+        let owner: Module? = app.mole == nil ? nil : app.selection
+        return app.console.entries.last(where: { $0.owner == owner }).map { [$0] } ?? []
+    }
+    private var revision: String { entries.map { "\($0.id):\($0.revision)" }.joined(separator: "|") }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("Console").font(.system(size: 12, weight: .semibold))
+                Toggle("History", isOn: $showHistory).toggleStyle(.checkbox)
+                    .onChange(of: showHistory) { selectedEntry = nil; followTail = true }
+                if showHistory {
+                    Picker("Command", selection: $selectedEntry) {
+                        Text("All commands").tag(nil as UUID?)
+                        ForEach(app.console.entries.reversed()) { entry in
+                            Text(entry.command).tag(Optional(entry.id))
+                        }
+                    }.frame(maxWidth: 300)
+                }
                 Spacer()
-                Button { app.showConsole = false } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
+                Button("Close log") { app.showConsole = false }.buttonStyle(.plain)
             }
             .padding(.horizontal, 14).frame(height: 30)
             Divider().overlay(Palette.line)
             ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(app.console.entries) { entry in
-                            HStack(spacing: 6) {
-                                Text("$").foregroundStyle(Palette.pink)
-                                Text(entry.command).textSelection(.enabled)
-                                Spacer()
-                                if entry.isRunning { ProgressView().controlSize(.mini) }
-                                else if let status = entry.status { Text("exit \(status)").foregroundStyle(status == 0 ? Palette.good : Palette.crit) }
-                                else if let failure = entry.failure { Text(failure).foregroundStyle(Palette.crit) }
+                VStack(spacing: 0) {
+                    HStack {
+                        Text(showHistory ? String(localized: "Command history") : String(localized: "Latest command for this module"))
+                            .font(.system(size: 11)).foregroundStyle(Palette.fg2)
+                        Spacer()
+                        Button(followTail ? "Pause following" : "Jump to latest output") {
+                            followTail.toggle()
+                            if followTail { proxy.scrollTo("end", anchor: .bottom) }
+                        }.buttonStyle(.plain)
+                    }.padding(.horizontal, 14).padding(.vertical, 5)
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 2) {
+                            if entries.isEmpty { Text("No command output for this module yet.") }
+                            ForEach(entries) { entry in
+                                HStack(spacing: 6) {
+                                    Text("$").foregroundStyle(Palette.pink)
+                                    Text(entry.command).textSelection(.enabled)
+                                    Spacer()
+                                    if entry.isRunning { ProgressView().controlSize(.mini) }
+                                    else if let status = entry.status { Text("exit \(status)").foregroundStyle(status == 0 ? Palette.good : Palette.crit) }
+                                    else if let failure = entry.failure { Text(failure).foregroundStyle(Palette.crit) }
+                                }.padding(.top, 6)
+                                if entry.omittedLines > 0 || entry.output.count > 400 {
+                                    Text("Earlier output is truncated. Showing the latest 400 lines.").foregroundStyle(Palette.warn)
+                                }
+                                ForEach(Array(entry.output.suffix(400).enumerated()), id: \.offset) { _, line in
+                                    Text(line.isEmpty ? " " : line).foregroundStyle(Color(hex: 0xECE6FF)).textSelection(.enabled)
+                                }
                             }
-                            .padding(.top, 6)
-                            ForEach(Array(entry.output.suffix(400).enumerated()), id: \.offset) { _, line in
-                                Text(line.isEmpty ? " " : line).foregroundStyle(Color(hex: 0xECE6FF)).textSelection(.enabled)
-                            }
+                            Color.clear.frame(height: 1).id("end")
                         }
-                        Color.clear.frame(height: 1).id("end")
+                        .font(.mono)
+                        .padding(.horizontal, 14).padding(.bottom, 10)
+                        .background(ConsoleScrollObserver { followTail = false })
                     }
-                    .font(.mono)
-                    .padding(.horizontal, 14).padding(.bottom, 10)
+                    .onAppear { proxy.scrollTo("end", anchor: .bottom) }
+                    .onChange(of: revision) { if followTail { proxy.scrollTo("end", anchor: .bottom) } }
+                    .onChange(of: selectedEntry) { followTail = true; proxy.scrollTo("end", anchor: .bottom) }
+                    .onChange(of: showHistory) { proxy.scrollTo("end", anchor: .bottom) }
                 }
-                .onChange(of: app.console.entries.last?.output.count) { proxy.scrollTo("end") }
             }
         }
         .frame(height: 240)
-        .background(Color(hex: 0x090414, opacity: 0.9))
+        .background(Color(hex: 0x090414, opacity: 0.96))
         .overlay(alignment: .top) { Divider().overlay(Palette.line2) }
+    }
+}
+
+/// Live-scroll notifications describe user scrolling; programmatic tail scrolling does not pause follow.
+private struct ConsoleScrollObserver: NSViewRepresentable {
+    let onScroll: () -> Void
+    func makeNSView(context: Context) -> ObserverView {
+        let view = ObserverView()
+        view.onScroll = onScroll
+        return view
+    }
+    func updateNSView(_ view: ObserverView, context: Context) { view.onScroll = onScroll }
+    static func dismantleNSView(_ view: ObserverView, coordinator: ()) { view.stopObserving() }
+
+    final class ObserverView: NSView {
+        var onScroll: (() -> Void)?
+        private var token: NSObjectProtocol?
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            stopObserving()
+            guard window != nil else { return }
+            token = NotificationCenter.default.addObserver(forName: NSScrollView.willStartLiveScrollNotification,
+                                                            object: nil, queue: .main) { [weak self] note in
+                MainActor.assumeIsolated {
+                    guard let self, let scroll = note.object as? NSScrollView,
+                          scroll === self.enclosingScrollView else { return }
+                    self.onScroll?()
+                }
+            }
+        }
+        func stopObserving() {
+            if let token { NotificationCenter.default.removeObserver(token) }
+            token = nil
+        }
     }
 }

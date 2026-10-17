@@ -34,6 +34,7 @@ enum SecurityError: LocalizedError {
     case cannotWatch(String)
     case clamdDidNotStart
     case commandFailed(String)
+    case quarantineAfterUnloadFailed(label: String, detail: String)
 
     var errorDescription: String? {
         switch self {
@@ -41,6 +42,8 @@ enum SecurityError: LocalizedError {
         case .cannotWatch(let path): String(localized: "Nora cannot watch \(path).")
         case .clamdDidNotStart: String(localized: "ClamAV's daemon did not start. The console shows the details.")
         case .commandFailed(let text): text
+        case .quarantineAfterUnloadFailed(let label, let detail):
+            String(localized: "Quarantine failed after unloading \(label). The file was not moved; the launch agent remains unloaded. It was not restarted automatically. \(detail)")
         }
     }
 }
@@ -379,13 +382,22 @@ final class SecurityModel {
     private func quarantine(_ item: SecurityFinding, _ app: AppModel) async throws {
         let url = URL(fileURLWithPath: item.path)
         guard item.canQuarantine, await isMovable(url) else { throw SecurityError.notAllowed(item.title) }
-        if let label = item.launchLabel, await isLoaded(label) {
+        var unloadedLabel: String?
+        if let label = item.launchLabel, try await isLoaded(label) {
             let result = try await runLogged(ShellCommand("/bin/launchctl", ["bootout", "gui/\(getuid())/\(label)"]), app)
             guard result.succeeded else {
                 throw SecurityError.commandFailed(String(localized: "launchctl could not unload \(label). The file was not moved."))
             }
+            unloadedLabel = label
         }
-        try store.move(url, detection: item.reasons.joined(separator: " "))
+        do {
+            try store.move(url, detection: item.reasons.joined(separator: " "))
+        } catch {
+            if let label = unloadedLabel {
+                throw SecurityError.quarantineAfterUnloadFailed(label: label, detail: error.localizedDescription)
+            }
+            throw error
+        }
     }
 
     private func isMovable(_ url: URL) async -> Bool {
@@ -395,9 +407,12 @@ final class SecurityModel {
         return await Task.detached { !CodeSigning.isApple(at: url) }.value
     }
 
-    private func isLoaded(_ label: String) async -> Bool {
-        guard let result = try? await ProcessRunner.run(URL(fileURLWithPath: "/bin/launchctl"), ["list"],
-                                                        environment: BrewTools.environment) else { return false }
+    private func isLoaded(_ label: String) async throws -> Bool {
+        let result = try await ProcessRunner.run(URL(fileURLWithPath: "/bin/launchctl"), ["list"],
+                                                 environment: BrewTools.environment)
+        guard result.succeeded else {
+            throw SecurityError.commandFailed(String(localized: "Could not verify the launch agent status. The file was not moved."))
+        }
         return result.stdout.split(separator: "\n").contains { line in
             line.split(whereSeparator: \.isWhitespace).last == Substring(label)
         }

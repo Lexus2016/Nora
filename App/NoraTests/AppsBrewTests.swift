@@ -33,7 +33,16 @@ final class AppsBrewTests: XCTestCase {
 
     func testEmptyOutdatedListParses() throws {
         XCTAssertEqual(try Homebrew.parseOutdated(Data(#"{"formulae": [], "casks": []}"#.utf8)), [])
-        XCTAssertEqual(try Homebrew.parseOutdated(Data("{}".utf8)), [])
+        XCTAssertThrowsError(try Homebrew.parseOutdated(Data("{}".utf8)))
+    }
+
+    func testMalformedHomebrewEnvelopesCannotMeanEverythingUpdated() {
+        for json in ["{}", #"{"casks":null}"#, #"{"casks":{}}"#, #"{"formulae":[]}"#, "[]", "not json"] {
+            XCTAssertThrowsError(try Homebrew.parseOutdated(Data(json.utf8)), json)
+            XCTAssertThrowsError(try Homebrew.parseInfo(Data(json.utf8)), json)
+        }
+        XCTAssertThrowsError(try Homebrew.parseOutdated(Data(#"{"casks":[{"name":"a"},{"name":"a"}]}"#.utf8)))
+        XCTAssertThrowsError(try Homebrew.parseOutdated(Data(#"{"casks":[{"name":"--bad"}]}"#.utf8)))
     }
 
     func testParsesInfoAndTolerantlyReadsNullAndEmptyFields() throws {

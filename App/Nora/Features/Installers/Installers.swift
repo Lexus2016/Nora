@@ -23,12 +23,16 @@ final class InstallersModel {
     var resultLines: [String] = []
     var failed = false
     @ObservationIgnored private var task: Task<Void, Never>?
+    private var scanGeneration = UUID()
 
     static let trashEnvironment = ["MOLE_DELETE_MODE": "trash"]
 
     var selectedSize: Int64 { files.filter { selected.contains($0.id) }.reduce(0) { $0 + $1.size } }
 
     func scan(_ app: AppModel) {
+        guard stage != .scanning, stage != .running else { return }
+        let generation = UUID()
+        scanGeneration = generation
         error = nil
         stage = .scanning
         task = Task(.installers) {
@@ -36,12 +40,16 @@ final class InstallersModel {
                 let (rows, _) = try await app.drive(["installer", "--dry-run"]) { session in
                     try InstallerDriver().list(in: session)
                 }
+                guard generation == scanGeneration else { return }
+                try Task.checkCancellation()
                 files = rows.map { File(name: $0.name, sizeText: $0.size, source: $0.source) }
                 selected = Set(files.map(\.id))
                 stage = .review
             } catch is CancellationError {
+                guard generation == scanGeneration else { return }
                 stage = .start
             } catch {
+                guard generation == scanGeneration else { return }
                 self.error = error.localizedDescription
                 stage = .start
             }
@@ -49,6 +57,7 @@ final class InstallersModel {
     }
 
     func remove(_ app: AppModel) {
+        guard stage == .review else { return }
         let chosen = files.filter { selected.contains($0.id) }
         guard !chosen.isEmpty else { return }
         // Each file with the folder and size it was listed with, so a same-named file elsewhere, or
@@ -63,7 +72,7 @@ final class InstallersModel {
                 resultLines = MoleSummary.lines(result.text)
                 failed = !result.succeeded
                 resultHeadline = failed ? String(localized: "Removal did not finish")
-                    : String(localized: "\(Format.bytes(chosen.reduce(0) { $0 + $1.size })) moved to the Trash")
+                    : String(localized: "Installer command finished; check the Trash for moved files")
             } catch is CancellationError {
                 failed = true
                 resultHeadline = String(localized: "Removal stopped")
@@ -83,8 +92,14 @@ final class InstallersModel {
         }
     }
 
-    func stop() { task?.cancel() }
-    func reset() { stage = .start; files = []; selected = [] }
+    func stop() {
+        task?.cancel()
+        // Keep busy until the cancelled task exits; a replacement must not overlap it.
+    }
+    func reset() {
+        guard stage != .running, stage != .scanning else { return }
+        scanGeneration = UUID(); task?.cancel(); error = nil
+        stage = .start; files = []; selected = [] }
 
     /// Why the driver stopped before the final confirmation, in words. Nothing was touched.
     static func describe(_ refusal: InstallerDriverError) -> String {
@@ -139,7 +154,7 @@ struct InstallersView: View {
     private var review: some View {
         @Bindable var model = model
         return ModuleScene(module: module, leading: .startOver { model.reset() },
-                           orb: model.selected.isEmpty ? nil : OrbAction(title: "Remove", destructive: true, action: { model.remove(app) })) {
+                           orb: OrbAction(title: "Remove", destructive: true, enabled: !model.selected.isEmpty, disabledReason: String(localized: "Select installers to remove"), action: { model.remove(app) })) {
         VStack(alignment: .leading, spacing: 14) {
             StepHeader(module: module, title: "Review installers",
                        subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected")) {

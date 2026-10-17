@@ -37,9 +37,29 @@ final class SpaceMapModel {
     var canGoForward: Bool { !forward.isEmpty }
 
     var selectedEntries: [DiskAnalysis.Entry] {
-        let all = cache.values.flatMap { $0.entries + $0.largeFiles }
-        var seen = Set<String>()
-        return all.filter { selected.contains($0.path) && seen.insert($0.path).inserted }
+        Self.topLevelSelection(cache.values.flatMap { $0.entries + $0.largeFiles }, selected: selected)
+    }
+
+    /// Normalize lexically, not by resolving symlinks: Trash must move the link itself.
+    /// One deterministic set owns the count, byte estimate and execution plan.
+    static func topLevelSelection(_ entries: [DiskAnalysis.Entry], selected: Set<String>) -> [DiskAnalysis.Entry] {
+        let paths = Set(selected.map { URL(fileURLWithPath: $0).standardizedFileURL.path })
+        let ordered = entries.filter { paths.contains(URL(fileURLWithPath: $0.path).standardizedFileURL.path) }
+            .sorted {
+                let a = URL(fileURLWithPath: $0.path).standardizedFileURL.path
+                let b = URL(fileURLWithPath: $1.path).standardizedFileURL.path
+                if a.count != b.count { return a.count < b.count }
+                if a != b { return a < b }
+                if $0.size != $1.size { return $0.size > $1.size }
+                return $0.path < $1.path
+            }
+        var roots: [String] = []
+        return ordered.filter { entry in
+            let path = URL(fileURLWithPath: entry.path).standardizedFileURL.path
+            guard !roots.contains(where: { path == $0 || path.hasPrefix($0 == "/" ? "/" : $0 + "/") }) else { return false }
+            roots.append(path)
+            return true
+        }
     }
 
     var selectedSize: Int64 { selectedEntries.reduce(0) { $0 + $1.size } }
@@ -71,6 +91,7 @@ final class SpaceMapModel {
         stage = .scanning
         error = nil
         path = []
+        cache = [:]
         forward = []
         selected = []
         task = Task {
@@ -114,7 +135,7 @@ final class SpaceMapModel {
     }
 
     /// Loads one level. The spinner and the error belong to `request`: an older load that ends
-    /// late may still fill the cache, but it never touches what the screen shows now.
+    /// late cannot refill the cache or touch what the screen shows now.
     @discardableResult
     private func load(_ url: URL, _ app: AppModel, request: UUID) async -> Bool {
         // A task cancelled while queued never takes the spinner it could not hand back.
@@ -123,10 +144,12 @@ final class SpaceMapModel {
         defer { if requestID == request { loading = false } }
         do {
             let result = try await app.run(["analyze", "--json", url.path])
-            guard let data = result.stdout.data(using: .utf8), result.succeeded || !result.stdout.isEmpty else {
+            guard let data = result.stdout.data(using: .utf8), result.succeeded else {
                 throw NoraError.commandFailed(result.stderr.isEmpty ? String(localized: "Mole could not read this folder.") : result.stderr)
             }
-            cache[url] = try JSONDecoder().decode(DiskAnalysis.self, from: data)
+            let analysis = try JSONDecoder().decode(DiskAnalysis.self, from: data)
+            guard requestID == request, !Task.isCancelled else { return false }
+            cache[url] = analysis
             return true
         } catch is CancellationError {
             return false
@@ -137,23 +160,27 @@ final class SpaceMapModel {
     }
 
     /// Moves the selection to the Trash. Reversible, so it needs no extra dialog.
-    func trashSelected() {
+    func trashSelected(moveToTrash: (URL) throws -> Void = { url in
+        try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+    }) {
+        guard stage == .review, !loading else { return }
+        let targets = selectedEntries
+        guard !targets.isEmpty else { return }
+        _ = newRequest()
+        stage = .running
         trashed = []
         trashFailures = []
-        for entry in selectedEntries {
+        for entry in targets {
             do {
-                try FileManager.default.trashItem(at: URL(fileURLWithPath: entry.path), resultingItemURL: nil)
+                try moveToTrash(URL(fileURLWithPath: entry.path).standardizedFileURL)
                 trashed.append(entry.name)
             } catch {
                 trashFailures.append("\(entry.name): \(error.localizedDescription)")
             }
         }
-        let gone = Set(selectedEntries.map(\.path))
         selected = []
-        // Sizes above changed; drop the cached levels so a reopen measures again.
-        for (url, analysis) in cache where analysis.entries.contains(where: { gone.contains($0.path) }) || analysis.largeFiles.contains(where: { gone.contains($0.path) }) {
-            cache[url] = nil
-        }
+        // Every ancestor's aggregate and every cached descendant may have changed.
+        cache = [:]
         stage = .done
     }
 
@@ -210,7 +237,7 @@ private struct SpaceLens: View {
 
     var body: some View {
         ModuleScene(module: module, leading: .startOver { model.reset() },
-                    orb: model.selected.isEmpty ? nil : OrbAction(title: "Remove", destructive: true, action: { model.trashSelected() })) {
+                    orb: model.selectedEntries.isEmpty || model.loading ? nil : OrbAction(title: "Remove", destructive: true, action: { model.trashSelected() })) {
             VStack(spacing: 14) {
                 breadcrumb
                 // A folder that could not be opened says why instead of doing nothing.
@@ -330,7 +357,7 @@ private struct SpaceLens: View {
             }
             Spacer()
             Text(model.selected.isEmpty ? String(localized: "Select items to move them to the Trash")
-                 : String(localized: "\(model.selected.count) selected · \(Format.bytes(model.selectedSize))"))
+                 : String(localized: "\(model.selectedEntries.count) selected · \(Format.bytes(model.selectedSize))"))
                 .font(.system(size: 14, weight: .semibold))
             Spacer()
             Color.clear.frame(width: 120)

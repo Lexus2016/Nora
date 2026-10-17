@@ -33,12 +33,21 @@ struct ModuleScene<Content: View>: View {
         VStack(spacing: 0) {
             TopBar(title: module.title, leading: topLeading)
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
+            if let reason = orb?.disabledReason, orb?.enabled == false {
+                Text(reason).font(.system(size: 12)).foregroundStyle(Palette.fg2)
+            }
             Color.clear.frame(height: orb == nil ? 16 : app.orb.bottomClearance)
         }
         .background(alignment: .top) { HeaderShade(palette: module.palette) }
-        .onAppear { app.orb.publish(orb, palette: module.palette, owner: owner) }
-        .onChange(of: orb?.signature) { app.orb.publish(orb, palette: module.palette, owner: owner) }
+        .onAppear { publish() }
+        .onChange(of: orb?.signature) { publish() }
+        .onChange(of: app.selection) { if app.selection == module { publish() } }
         .onDisappear { app.orb.withdraw(owner: owner) }
+    }
+
+    private func publish() {
+        guard app.selection == module else { return }
+        app.orb.publish(orb, palette: module.palette, owner: owner)
     }
 }
 
@@ -46,9 +55,11 @@ struct OrbAction {
     let title: String
     var busy = false
     var destructive = false
+    var enabled = true
+    var disabledReason: String?
     let action: () -> Void
 
-    var signature: String { "\(title)|\(busy)|\(destructive)" }
+    var signature: String { "\(title)|\(busy)|\(destructive)|\(enabled)|\(disabledReason ?? "")" }
 }
 
 /// The big round action button with a specular highlight; busy shows a spinning ring.
@@ -89,6 +100,9 @@ struct BottomOrb: View {
             .animation(.easeOut(duration: 0.18), value: hovering)
         }
         .buttonStyle(.plain)
+        .disabled(!action.enabled)
+        .opacity(action.enabled ? 1 : 0.55)
+        .help(action.disabledReason ?? "")
         .onHover { hovering = $0 }
         .keyboardShortcut(.defaultAction)
         .accessibilityLabel(Text(LocalizedStringKey(action.title)))
@@ -277,7 +291,9 @@ struct DoneView: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
-        ModuleScene(module: module, leading: .startOver(onDone), orb: OrbAction(title: "Done", action: onDone)) {
+        ModuleScene(module: module, leading: .startOver(onDone), orb: OrbAction(title: "Done", action: {
+            if app.reviewOrigin == module { app.selection = .smartCare } else { onDone() }
+        })) {
             VStack(spacing: 18) {
                 Spacer(minLength: 0)
                 GlassImage(name: module.glass, size: 230, glow: failed ? Palette.crit : module.palette.glow)

@@ -19,7 +19,12 @@ struct CleanupView: View {
         case .running:
             WorkingView(module: module, title: "Cleaning…", detail: WorkingView.currentItem(app.console.output(of: module)), onStop: { model.stop() })
         case .done:
-            DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
+            VStack {
+                if model.recoveryRequired {
+                    Button("Retry protection recovery") { model.retryRecovery(app) }.buttonStyle(.bordered)
+                }
+                DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
+            }
         }
     }
 
@@ -49,9 +54,10 @@ private struct CleanupResults: View {
     var body: some View {
         let sections = model.rankedSections
         ModuleScene(module: module, leading: .startOver { model.reset() },
-                    orb: model.selected.isEmpty ? nil : OrbAction(title: "Clean", action: { model.clean(app) })) {
+                    orb: OrbAction(title: "Clean", enabled: model.canClean,
+                                   disabledReason: String(localized: "Select items from a complete scan to clean."), action: { model.clean(app) })) {
             VStack(spacing: 22) {
-                ResultHeadline(text: String(localized: "Your Mac has \(Format.bytes(model.selectedSize)) of junk."),
+                ResultHeadline(text: String(localized: "Your Mac has \(Format.bytes(model.preview?.items.reduce(0) { $0 + $1.addedSize } ?? 0)) of junk."),
                                button: ("Review all junk", { model.openList(nil) }))
                 CleanupNotes(model: model)
                 if sections.isEmpty {
@@ -95,7 +101,7 @@ private struct CleanupNotes: View {
 
     var body: some View {
         if let preview = model.preview {
-            let shown = preview.notes.filter { !$0.text.localizedCaseInsensitiveContains("need sudo") }.prefix(3)
+            let shown = model.reviewNotes
             VStack(alignment: .leading, spacing: 6) {
                 if preview.needsSudoForSystem && !model.includeSystem {
                     HStack {
@@ -103,20 +109,34 @@ private struct CleanupNotes: View {
                         Button("Include them") { model.includeSystem = true; model.scan(app) }.buttonStyle(.link)
                     }
                 }
-                ForEach(Array(shown.enumerated()), id: \.offset) { _, note in
-                    if note.text.localizedCaseInsensitiveContains("Full Disk Access") && !app.hasFullDiskAccess {
-                        HStack {
-                            // Mole's item label ("Trash"), translated when Nora's catalog knows it.
-                            let label = note.text.components(separatedBy: " · ").first ?? note.section
-                            Notice(text: String(localized: "\(Bundle.main.localizedString(forKey: label, value: label, table: nil)): skipped until Nora has Full Disk Access."), symbol: "hand.raised")
-                            Button("Open settings") { Permissions.openFullDiskAccess() }.buttonStyle(.link)
-                        }
+                ForEach(Array(shown.prefix(3).enumerated()), id: \.offset) { _, note in
+                    noteRow(note)
+                }
+                if shown.count > 3 {
+                    DisclosureGroup("More scan notes") {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 6) {
+                                ForEach(Array(shown.dropFirst(3).enumerated()), id: \.offset) { _, note in
+                                    noteRow(note)
+                                }
+                            }
+                        }.frame(maxHeight: 160)
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .center)
         }
     }
+
+    private func noteRow(_ note: CleanPreview.Note) -> some View {
+        HStack {
+            Notice(text: note.text, symbol: "exclamationmark.circle")
+            if note.text.localizedCaseInsensitiveContains("Full Disk Access") {
+                Button("Open settings") { Permissions.openFullDiskAccess() }.buttonStyle(.link)
+            }
+        }
+    }
+
 }
 
 /// The detailed list: every path with a checkbox, for one section or all of them.
@@ -133,9 +153,10 @@ private struct CleanupList: View {
         let size = scoped?.size ?? model.selectedSize
         let canClean = scoped.map { !$0.paths.isEmpty } ?? !model.selected.isEmpty
         ModuleScene(module: module, leading: .back { model.showList = false },
-                    orb: canClean ? OrbAction(title: "Clean", action: {
+                    orb: OrbAction(title: "Clean", enabled: canClean && model.canClean,
+                                   disabledReason: String(localized: "Select items from a complete scan to clean."), action: {
                         if let section = model.listSection { model.clean(section: section, app) } else { model.clean(app) }
-                    }) : nil) {
+                    })) {
             VStack(alignment: .leading, spacing: 14) {
                 StepHeader(module: module,
                            title: model.listSection.map { LocalizedStringKey(CleanSection($0).title) } ?? "All junk",

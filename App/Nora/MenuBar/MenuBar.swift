@@ -366,20 +366,31 @@ struct QuickMenu: View {
         .background(VolumeFill(radius: 12))
     }
 
+    private var cleanupActionTitle: LocalizedStringKey {
+        switch app.cleanup.stage {
+        case .start: "Scan"
+        case .review: "Review cleanup"
+        case .scanning, .running: "Show progress"
+        case .done: "Review result"
+        }
+    }
+
     /// Text on its own line and two equal buttons under it, so long translations never wrap.
     private var reclaim: some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                if let preview = app.cleanup.preview {
-                    Text(Format.bytes(preview.items.reduce(0) { $0 + $1.size })).font(.system(size: 18, weight: .semibold, design: .rounded))
-                    Text("can be cleaned").font(.system(size: 11)).foregroundStyle(Palette.fg2)
+                if app.cleanup.stage == .review, let preview = app.cleanup.preview {
+                    Text(Format.bytes(preview.items.reduce(0) { $0 + $1.addedSize })).font(.system(size: 18, weight: .semibold, design: .rounded))
+                    Text("found in the last scan").font(.system(size: 11)).foregroundStyle(Palette.fg2)
                 } else {
                     Text("Free up space").font(.system(size: 14, weight: .semibold))
-                    Text("Run a scan to see how much").font(.system(size: 11)).foregroundStyle(Palette.fg2)
+                    Text(app.cleanup.stage == .done ? String(localized: "Review the last result before scanning again")
+                         : app.isBusy(.cleanup) ? String(localized: "Cleanup is working")
+                         : String(localized: "Run a scan to see how much")).font(.system(size: 11)).foregroundStyle(Palette.fg2)
                 }
             }
             HStack(spacing: 10) {
-                Button { open(app.cleanup.preview == nil ? .smartCare : .cleanup) } label: { Text("Clean").frame(maxWidth: .infinity) }
+                Button { open(.cleanup) } label: { Text(cleanupActionTitle).frame(maxWidth: .infinity) }
                     .buttonStyle(PrimaryButtonStyle())
                 Button { open(.performance) } label: { Text("Optimize").frame(maxWidth: .infinity) }
                     .buttonStyle(GlassButtonStyle())

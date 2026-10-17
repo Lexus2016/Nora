@@ -49,7 +49,7 @@ final class OrbController {
         guard let panel else { return }
         let mouse = NSEvent.mouseLocation
         let distance = hypot(mouse.x - panel.frame.midX, mouse.y - panel.frame.midY)
-        panel.ignoresMouseEvents = action == nil || hidden || distance > Self.diameter / 2 + 6
+        panel.ignoresMouseEvents = action == nil || action?.enabled == false || hidden || distance > Self.diameter / 2 + 6
     }
 
     func attach(to window: NSWindow, app: AppModel) {
@@ -133,7 +133,7 @@ private struct OrbHost: View {
     var body: some View {
         let orb = app.orb
         ZStack {
-            if let action = orb.action, !orb.hidden, !app.showConsole {
+            if let action = orb.action, !orb.hidden {
                 BottomOrb(action: action, palette: orb.palette)
                     .transition(.scale(scale: 0.6).combined(with: .opacity))
             }

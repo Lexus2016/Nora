@@ -186,12 +186,16 @@ final class AppsOutsideTests: XCTestCase {
         return (dir, journal)
     }
 
-    /// A minimal app bundle: an Info.plist with an ID and a version, which is all `local` reads.
+    /// Synthetic executable fixture; tests only inspect it and never launch it.
     private func bundle(_ url: URL, _ version: String, id: String = "com.example.a") throws {
         try FileManager.default.createDirectory(at: url.appendingPathComponent("Contents"), withIntermediateDirectories: true)
-        let plist: [String: String] = ["CFBundleIdentifier": id, "CFBundleShortVersionString": version]
+        let plist: [String: String] = ["CFBundleIdentifier": id, "CFBundleShortVersionString": version, "CFBundleExecutable": "Fixture"]
         try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
             .write(to: url.appendingPathComponent("Contents/Info.plist"))
+        let executable = url.appendingPathComponent("Contents/MacOS/Fixture")
+        try FileManager.default.createDirectory(at: executable.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
     }
 
     private func version(_ url: URL) -> String? {
@@ -211,9 +215,11 @@ final class AppsOutsideTests: XCTestCase {
     @MainActor func testHandoverKeepsAVerifiedNewVersionAndTrashesTheOldCopy() async throws {
         let (dir, journal) = try sandbox()
         let (original, app) = try installed(dir)
-        let outcome = await OutsideApps.Handover(journal: journal).run(app) {
+        let outcome = await OutsideApps.Handover(journal: journal).run(app, targetVersion: "2.0") {
             XCTAssertFalse(FileManager.default.fileExists(atPath: original.path), "the old copy is set aside first")
             XCTAssertEqual(try? journal.entries().count, 1, "and journaled before that")
+            XCTAssertEqual(try? journal.entries().first?.installedVersion, "1.0")
+            XCTAssertEqual(try? journal.entries().first?.targetVersion, "2.0")
             try? self.bundle(original, "2.0")
         }
         XCTAssertEqual(outcome, .updated("2.0"))
@@ -231,11 +237,22 @@ final class AppsOutsideTests: XCTestCase {
             ("empty bundle", { try FileManager.default.createDirectory(at: $0, withIntermediateDirectories: true) }),
             ("other app", { try self.bundle($0, "2.0", id: "com.example.other") }),
             ("older", { try self.bundle($0, "0.9") }),
+            ("same", { try self.bundle($0, "1.0") }),
+            ("below target", { try self.bundle($0, "1.5") }),
+            ("incomparable", { try self.bundle($0, "3.0-beta") }),
+            ("missing executable", {
+                try self.bundle($0, "2.0")
+                try FileManager.default.removeItem(at: $0.appendingPathComponent("Contents/MacOS/Fixture"))
+            }),
+            ("not executable", {
+                try self.bundle($0, "2.0")
+                try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: $0.appendingPathComponent("Contents/MacOS/Fixture").path)
+            }),
         ]
         for (label, install) in results {
             let (dir, journal) = try sandbox()
             let (original, app) = try installed(dir)
-            let outcome = await OutsideApps.Handover(journal: journal).run(app) { try? install(original) }
+            let outcome = await OutsideApps.Handover(journal: journal).run(app, targetVersion: "2.0") { try? install(original) }
             XCTAssertEqual(outcome, .restored, label)
             XCTAssertEqual(version(original), "1.0", label)
             XCTAssertEqual(try journal.entries(), [], label)
@@ -253,12 +270,25 @@ final class AppsOutsideTests: XCTestCase {
         XCTAssertEqual(OutsideApps.Handover.describeMove(eperm), plain)
     }
 
+    @MainActor func testHandoverRefusesUnpromisingTargetBeforeMovingAnything() async throws {
+        for target in ["1.0", "0.9", "2.0-beta", "unknown"] {
+            let (dir, journal) = try sandbox()
+            let (original, app) = try installed(dir)
+            var installed = false
+            let outcome = await OutsideApps.Handover(journal: journal).run(app, targetVersion: target) { installed = true }
+            guard case .untouched = outcome else { return XCTFail("Unexpected outcome for \(target): \(outcome)") }
+            XCTAssertFalse(installed)
+            XCTAssertEqual(version(original), "1.0")
+            XCTAssertEqual(try journal.entries(), [])
+        }
+    }
+
     @MainActor func testHandoverChangesNothingWhenTheJournalCannotBeWritten() async throws {
         let (dir, journal) = try sandbox()
         let (original, app) = try installed(dir)
         try Data("not json".utf8).write(to: { try? FileManager.default.createDirectory(at: journal.url.deletingLastPathComponent(), withIntermediateDirectories: true); return journal.url }())
         var installs = 0
-        let outcome = await OutsideApps.Handover(journal: journal).run(app) { installs += 1 }
+        let outcome = await OutsideApps.Handover(journal: journal).run(app, targetVersion: "2.0") { installs += 1 }
         guard case .untouched = outcome else { return XCTFail("\(outcome)") }
         XCTAssertEqual(installs, 0)
         XCTAssertEqual(version(original), "1.0")
@@ -273,7 +303,7 @@ final class AppsOutsideTests: XCTestCase {
             let staged = journal.staging.appendingPathComponent("X/A.app")
             try bundle(staged, "1.0")
             if partial { try FileManager.default.createDirectory(at: original, withIntermediateDirectories: true) }
-            try journal.add(.init(original: original.path, staged: staged.path, bundleID: "com.example.a"))
+            try journal.add(.init(original: original.path, staged: staged.path, bundleID: "com.example.a", installedVersion: "1.0", targetVersion: "2.0"))
             XCTAssertEqual(journal.recover(), [original.path])
             XCTAssertEqual(version(original), "1.0")
             XCTAssertEqual(trashCount(dir), partial ? 1 : 0)
@@ -288,15 +318,15 @@ final class AppsOutsideTests: XCTestCase {
         let staged = journal.staging.appendingPathComponent("X/A.app")
         try bundle(original, "2.0")
         try bundle(staged, "1.0")
-        try journal.add(.init(original: original.path, staged: staged.path, bundleID: "com.example.a"))
+        try journal.add(.init(original: original.path, staged: staged.path, bundleID: "com.example.a", installedVersion: "1.0", targetVersion: "2.0"))
         XCTAssertEqual(journal.recover(), [])
         XCTAssertEqual(version(original), "2.0")
         XCTAssertEqual(trashCount(dir), 1)
         XCTAssertEqual(try journal.entries(), [])
     }
 
-    /// 1.1.0 journaled a copy in the Trash; it is read, and that copy is left where it is.
-    func testRecoverReadsA110EntryAndLeavesItsTrashCopy() throws {
+    /// A legacy entry has no promised version. Restore rather than guess it is safe to discard.
+    func testRecoverReadsA110EntryAndRestoresItsOldCopy() throws {
         let (dir, journal) = try sandbox()
         let original = dir.appendingPathComponent("Applications/A.app"), trashed = dir.appendingPathComponent("Old/A.app")
         try bundle(original, "2.0")
@@ -304,10 +334,61 @@ final class AppsOutsideTests: XCTestCase {
         try FileManager.default.createDirectory(at: journal.url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data(#"[{"original":"\#(original.path)","trashed":"\#(trashed.path)"}]"#.utf8).write(to: journal.url)
         XCTAssertEqual(try journal.entries().first?.staged, trashed.path)
-        XCTAssertEqual(journal.recover(), [])
-        XCTAssertEqual(version(original), "2.0")
-        XCTAssertEqual(version(trashed), "1.0")
+        XCTAssertEqual(journal.recover(), [original.path])
+        XCTAssertEqual(version(original), "1.0")
+        XCTAssertNil(version(trashed))
         XCTAssertEqual(try journal.entries(), [])
+    }
+
+    func testRecoveryRejectsSameOlderIncomparableAndBelowTargetVersions() throws {
+        for replacement in ["1.0", "0.9", "3.0-beta", "1.5"] {
+            let (dir, journal) = try sandbox()
+            let original = dir.appendingPathComponent("Applications/A.app")
+            let staged = journal.staging.appendingPathComponent("X/A.app")
+            try bundle(original, replacement)
+            try bundle(staged, "1.0")
+            try journal.add(.init(original: original.path, staged: staged.path, bundleID: "com.example.a",
+                                  installedVersion: "1.0", targetVersion: "2.0"))
+            XCTAssertEqual(journal.recover(), [original.path], replacement)
+            XCTAssertEqual(version(original), "1.0")
+            XCTAssertEqual(try journal.entries(), [])
+        }
+    }
+
+    func testRecoveryRejectsNewVersionWithoutExecutable() throws {
+        let (dir, journal) = try sandbox()
+        let original = dir.appendingPathComponent("Applications/A.app")
+        let staged = journal.staging.appendingPathComponent("X/A.app")
+        try bundle(original, "2.0")
+        try bundle(staged, "1.0")
+        try FileManager.default.removeItem(at: original.appendingPathComponent("Contents/MacOS/Fixture"))
+        try journal.add(.init(original: original.path, staged: staged.path, bundleID: "com.example.a",
+                              installedVersion: "1.0", targetVersion: "2.0"))
+        XCTAssertEqual(journal.recover(), [original.path])
+        XCTAssertEqual(version(original), "1.0")
+        XCTAssertTrue(OutsideApps.hasExecutable(at: original.path))
+    }
+
+    func testExecutableCannotEscapeBundleOrBeEmpty() throws {
+        let (dir, _) = try sandbox()
+        let (original, _) = try installed(dir)
+        let executable = original.appendingPathComponent("Contents/MacOS/Fixture")
+        try Data().write(to: executable)
+        XCTAssertFalse(OutsideApps.hasExecutable(at: original.path))
+        try FileManager.default.removeItem(at: executable)
+        let outside = dir.appendingPathComponent("outside")
+        try Data("synthetic".utf8).write(to: outside)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: outside.path)
+        try FileManager.default.createSymbolicLink(at: executable, withDestinationURL: outside)
+        XCTAssertFalse(OutsideApps.hasExecutable(at: original.path))
+    }
+
+    func testTargetComparisonRequiresComparableVersions() {
+        XCTAssertTrue(OutsideApps.meetsTarget("2.0.0", target: "2.0,123"))
+        XCTAssertTrue(OutsideApps.meetsTarget("2.1", target: "2.0"))
+        XCTAssertFalse(OutsideApps.meetsTarget("2.1beta", target: "2.0"))
+        XCTAssertFalse(OutsideApps.meetsTarget("unknown", target: "2.0"))
+        XCTAssertFalse(OutsideApps.meetsTarget("1.9", target: "2.0"))
     }
 
     func testAddAndRemoveKeepOneEntryPerApp() throws {

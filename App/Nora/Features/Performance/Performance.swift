@@ -13,6 +13,7 @@ final class PerformanceModel {
     var resultLines: [String] = []
     var failed = false
     @ObservationIgnored private var task: Task<Void, Never>?
+    private var scanGeneration = UUID()
 
     /// "Would apply 4 optimizations" → 4, as Mole counts them.
     var pendingCount: Int? {
@@ -21,6 +22,8 @@ final class PerformanceModel {
             return Int(line.dropFirst("Would apply ".count).prefix { $0.isNumber })
         }.first
     }
+
+    var canRun: Bool { stage == .review && report != nil && pendingCount != 0 }
 
     /// Nora's own one-line summary of the dry run instead of Mole's CLI wording
     /// ("Run without --dry-run to apply these changes" means nothing in a window).
@@ -45,18 +48,25 @@ final class PerformanceModel {
     }
 
     func scan(_ app: AppModel) {
+        guard stage != .scanning, stage != .running else { return }
+        let generation = UUID()
+        scanGeneration = generation
         error = nil
         stage = .scanning
         task = Task(.performance) {
             do {
                 let result = try await app.run(["optimize", "--dry-run"])
+                guard generation == scanGeneration else { return }
+                try Task.checkCancellation()
                 let parsed = OptimizeReport.parse(result.stdout)
-                guard !parsed.tasks.isEmpty else { throw NoraError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr) }
+                guard result.succeeded, !parsed.tasks.isEmpty else { throw NoraError.commandFailed(result.stderr.isEmpty ? result.stdout : result.stderr) }
                 report = parsed
                 stage = .review
             } catch is CancellationError {
+                guard generation == scanGeneration else { return }
                 stage = .start
             } catch {
+                guard generation == scanGeneration else { return }
                 self.error = error.localizedDescription
                 stage = .start
             }
@@ -64,6 +74,7 @@ final class PerformanceModel {
     }
 
     func run(_ app: AppModel) {
+        guard canRun else { return }
         stage = .running
         task = Task(.performance) {
             do {
@@ -76,7 +87,7 @@ final class PerformanceModel {
                 if declined > 0 {
                     resultLines.append(String(localized: "Mounted disk images were left as they are. Eject them in Finder if you no longer need them."))
                 }
-                resultHeadline = failed ? String(localized: "Maintenance stopped") : String(localized: "Your Mac is refreshed")
+                resultHeadline = failed ? String(localized: "Maintenance stopped") : String(localized: "Maintenance command finished; review its results")
             } catch is CancellationError {
                 failed = true
                 resultHeadline = String(localized: "Maintenance stopped")
@@ -89,8 +100,14 @@ final class PerformanceModel {
         }
     }
 
-    func stop() { task?.cancel() }
-    func reset() { stage = .start; report = nil }
+    func stop() {
+        task?.cancel()
+        // Keep busy until the cancelled task exits; a replacement must not overlap it.
+    }
+    func reset() {
+        guard stage != .running, stage != .scanning else { return }
+        scanGeneration = UUID(); task?.cancel(); error = nil
+        stage = .start; report = nil }
 }
 
 struct PerformanceView: View {
@@ -139,7 +156,7 @@ private struct PerformanceReview: View {
         let report = model.report
         let attention = (report?.tasks ?? []).filter { $0.outcome == .attention }
         let loginItems = report?.tasks.first { $0.title == "Login Items" }
-        return ModuleScene(module: module, leading: .startOver { model.reset() }, orb: OrbAction(title: "Run", action: { model.run(app) })) {
+        return ModuleScene(module: module, leading: .startOver { model.reset() }, orb: OrbAction(title: "Run", enabled: model.canRun, disabledReason: String(localized: "No maintenance tasks are ready to run"), action: { model.run(app) })) {
             VStack(spacing: 22) {
                 ResultHeadline(text: String(localized: "Run the recommended maintenance, or check each task first."),
                                button: ("Review all tasks", { showAll = true }))
@@ -205,7 +222,7 @@ private struct PerformanceReview: View {
 
     private var list: some View {
         let report = model.report
-        return ModuleScene(module: module, leading: .back { showAll = false }, orb: OrbAction(title: "Run", action: { model.run(app) })) {
+        return ModuleScene(module: module, leading: .back { showAll = false }, orb: OrbAction(title: "Run", enabled: model.canRun, disabledReason: String(localized: "No maintenance tasks are ready to run"), action: { model.run(app) })) {
             VStack(spacing: 16) {
                 StepHeader(module: module, title: "All tasks", subtitle: model.headerSummary)
                 ScrollView {

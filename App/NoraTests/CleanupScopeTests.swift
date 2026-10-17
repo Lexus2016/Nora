@@ -17,7 +17,10 @@ final class CleanupScopeTests: XCTestCase {
 
     private func scanned() -> CleanupModel {
         let model = CleanupModel()
-        model.preview = CleanPreview.parse(cleanList: list, stdout: "")
+        let now = Date()
+        model.preview = CleanPreview.validated(stdout: "Dry run complete\nPotential space: 60MB | Items: 3\nDetailed file list: synthetic",
+                                               list: list, listModified: now, since: now)
+        model.stage = .review
         model.selected = Set(model.preview?.items.map(\.path) ?? [])
         return model
     }
