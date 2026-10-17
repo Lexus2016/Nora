@@ -811,6 +811,88 @@
         }
       }
     },
+    "%lld entries removed. Disk space reclaimed may differ from logical size.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld entry removed. Disk space reclaimed may differ from logical size."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld entries removed. Disk space reclaimed may differ from logical size."
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Удалено записей: %lld. Освободившееся место может отличаться от логического размера."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Удалено записей: %lld. Освободившееся место может отличаться от логического размера."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Удалено записей: %lld. Освободившееся место может отличаться от логического размера."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Удалено записей: %lld. Освободившееся место может отличаться от логического размера."
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Видалено записів: %lld. Звільнений простір може відрізнятися від логічного обсягу."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Видалено записів: %lld. Звільнений простір може відрізнятися від логічного обсягу."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Видалено записів: %lld. Звільнений простір може відрізнятися від логічного обсягу."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Видалено записів: %lld. Звільнений простір може відрізнятися від логічного обсягу."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld failed": {
       "localizations": {
         "en": {
@@ -1265,6 +1347,88 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ядра продуктивності: %lld, ефективності: %lld"
+          }
+        }
+      }
+    },
+    "%lld reviewed items will be permanently deleted. This cannot be undone.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld reviewed item will be permanently deleted. This cannot be undone."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld reviewed items will be permanently deleted. This cannot be undone."
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
+                }
+              }
+            }
           }
         }
       }
@@ -1775,6 +1939,28 @@
         }
       }
     },
+    "A Trash operation or recovery check is in progress. Try again when it finishes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Trash operation or recovery check is in progress. Try again when it finishes."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполняется операция с корзиной или проверка восстановления. Повторите попытку после завершения."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Триває операція з кошиком або перевірка відновлення. Повторіть спробу після завершення."
+          }
+        }
+      }
+    },
     "A cleaning task is running. Change this list when it finishes.": {
       "localizations": {
         "ru": {
@@ -2155,6 +2341,72 @@
           "stringUnit": {
             "state": "translated",
             "value": "Також довго навантажують:"
+          }
+        }
+      }
+    },
+    "An app update needs recovery before the Trash can be emptied.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An app update needs recovery before the Trash can be emptied."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед очисткой корзины нужно восстановить прерванное обновление приложения."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед очищенням кошика потрібно відновити перерване оновлення програми."
+          }
+        }
+      }
+    },
+    "Another Nora operation is running. Try again when it finishes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another Nora operation is running. Try again when it finishes."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполняется другая операция Nora. Повторите попытку после её завершения."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Триває інша операція Nora. Повторіть спробу після її завершення."
+          }
+        }
+      }
+    },
+    "Another operation is using Trash. Wait until it finishes, then review again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another operation is using Trash. Wait until it finishes, then review again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Другая операция использует корзину. Дождитесь её завершения и проверьте снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Інша операція використовує кошик. Дочекайтеся її завершення та перевірте знову."
           }
         }
       }
@@ -2817,6 +3069,12 @@
     },
     "Cancel": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -2897,6 +3155,12 @@
     },
     "Check again": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check again"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3055,6 +3319,50 @@
         }
       }
     },
+    "Checking home Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking home Trash…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка домашней корзины…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка домашнього кошика…"
+          }
+        }
+      }
+    },
+    "Checking or restoring preserved Trash items…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking or restoring preserved Trash items…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка или восстановление сохранённых объектов корзины…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка або відновлення збережених об’єктів кошика…"
+          }
+        }
+      }
+    },
     "Checking your Mac…": {
       "localizations": {
         "ru": {
@@ -3073,16 +3381,22 @@
     },
     "Checking…": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверяю…"
+            "value": "Проверка…"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перевіряю…"
+            "value": "Перевірка…"
           }
         }
       }
@@ -3633,16 +3947,22 @@
     },
     "Cleaning…": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaning…"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Очищаю…"
+            "value": "Очистка…"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Очищаю…"
+            "value": "Очищення…"
           }
         }
       }
@@ -3803,6 +4123,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Очищає журнал Gatekeeper про завантажені файли."
+          }
+        }
+      }
+    },
+    "Close Trash reminder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Trash reminder"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть напоминание о корзине"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрити нагадування про кошик"
           }
         }
       }
@@ -4263,16 +4605,22 @@
     },
     "Delete permanently": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete permanently"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Удалить окончательно"
+            "value": "Удалить навсегда"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Видалити остаточно"
+            "value": "Видалити назавжди"
           }
         }
       }
@@ -4305,6 +4653,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видалити ці програми остаточно?"
+          }
+        }
+      }
+    },
+    "Delete these items permanently?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete these items permanently?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить эти объекты навсегда?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалити ці об’єкти назавжди?"
           }
         }
       }
@@ -4629,6 +4999,50 @@
         }
       }
     },
+    "Empty Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty Trash…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить корзину…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистити кошик…"
+          }
+        }
+      }
+    },
+    "Emptying reviewed Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emptying reviewed Trash…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаление проверенных объектов…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалення перевірених об’єктів…"
+          }
+        }
+      }
+    },
     "Energy mode": {
       "localizations": {
         "ru": {
@@ -4917,6 +5331,28 @@
         }
       }
     },
+    "Files will be permanently deleted. This cannot be undone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files will be permanently deleted. This cannot be undone."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файлы будут удалены навсегда. Отменить это действие невозможно."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файли буде видалено назавжди. Скасувати цю дію неможливо."
+          }
+        }
+      }
+    },
     "Find again": {
       "localizations": {
         "ru": {
@@ -4993,6 +5429,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Шукаю всі файли…"
+          }
+        }
+      }
+    },
+    "Finish the pending recovery in Nora before emptying Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish the pending recovery in Nora before emptying Trash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершите восстановление в Nora перед очисткой корзины."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершіть відновлення в Nora перед очищенням кошика."
           }
         }
       }
@@ -5333,6 +5791,28 @@
         }
       }
     },
+    "Go back": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назад"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назад"
+          }
+        }
+      }
+    },
     "Good": {
       "localizations": {
         "ru": {
@@ -5425,6 +5905,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Історія"
+          }
+        }
+      }
+    },
+    "Home Trash is empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home Trash is empty"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Домашняя корзина пуста"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Домашній кошик порожній"
           }
         }
       }
@@ -7913,6 +8415,28 @@
         }
       }
     },
+    "New files in your Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New files in your Trash"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В корзине появились новые файлы"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У кошику з’явилися нові файли"
+          }
+        }
+      }
+    },
     "New operations are not added to History while this is on. Earlier history remains available.": {
       "localizations": {
         "en": {
@@ -8111,6 +8635,28 @@
         }
       }
     },
+    "No items were found in your home Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No items were found in your home Trash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В домашней корзине объекты не найдены."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У домашньому кошику об’єктів не знайдено."
+          }
+        }
+      }
+    },
     "No listening TCP ports.": {
       "localizations": {
         "ru": {
@@ -8219,6 +8765,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nora"
+          }
+        }
+      }
+    },
+    "Nora Trash review": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora Trash review"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка корзины в Nora"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка кошика в Nora"
           }
         }
       }
@@ -8399,6 +8967,28 @@
         }
       }
     },
+    "Nora · Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora · Trash"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora · Корзина"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora · Кошик"
+          }
+        }
+      }
+    },
     "Nora: system status and quick actions": {
       "localizations": {
         "ru": {
@@ -8491,6 +9081,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не встановлено"
+          }
+        }
+      }
+    },
+    "Not now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не сейчас"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не зараз"
           }
         }
       }
@@ -8929,6 +9541,28 @@
         }
       }
     },
+    "Only reviewed items are eligible. Stopping may leave some items already deleted.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only reviewed items are eligible. Stopping may leave some items already deleted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаляются только проверенные объекты. До остановки некоторые из них уже могут быть удалены."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видаляються лише перевірені об’єкти. До зупинки деякі з них уже можуть бути видалені."
+          }
+        }
+      }
+    },
     "Only the selected apps are updated. An app from a download goes to the Trash first and comes back if Homebrew fails.": {
       "localizations": {
         "ru": {
@@ -8957,6 +9591,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Підключено лише системні образи симуляторів. Від’єднувати нічого не треба."
+          }
+        }
+      }
+    },
+    "Only ~/.Trash. External disks are excluded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only ~/.Trash. External disks are excluded."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Только ~/.Trash. Внешние диски исключены."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лише ~/.Trash. Зовнішні диски не включено."
           }
         }
       }
@@ -9201,6 +9857,28 @@
         }
       }
     },
+    "Permanently delete only the reviewed items from home Trash. This cannot be undone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently delete only the reviewed items from home Trash. This cannot be undone."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Навсегда удалить только проверенные объекты из домашней корзины. Это действие невозможно отменить."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назавжди видалити лише перевірені об’єкти з домашнього кошика. Цю дію неможливо скасувати."
+          }
+        }
+      }
+    },
     "Permission repair": {
       "localizations": {
         "ru": {
@@ -9245,6 +9923,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Енергоспоживання"
+          }
+        }
+      }
+    },
+    "Preserved items need review. Permanent deletion is blocked.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preserved items need review. Permanent deletion is blocked."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нужно проверить сохранённые объекты. Удаление навсегда заблокировано."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потрібно перевірити збережені об’єкти. Видалення назавжди заблоковано."
           }
         }
       }
@@ -9633,6 +10333,28 @@
         }
       }
     },
+    "Reading a bounded snapshot. Nothing is deleted.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading a bounded snapshot. Nothing is deleted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Идёт ограниченная проверка содержимого. Ничего не удаляется."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Триває обмежена перевірка вмісту. Нічого не видаляється."
+          }
+        }
+      }
+    },
     "Reading activity history…": {
       "localizations": {
         "ru": {
@@ -9809,6 +10531,28 @@
         }
       }
     },
+    "Refresh the contents before a separate permanent-deletion confirmation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh the contents before a separate permanent-deletion confirmation."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновить содержимое перед отдельным подтверждением удаления навсегда."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновити вміст перед окремим підтвердженням видалення назавжди."
+          }
+        }
+      }
+    },
     "Refreshes Quick Look thumbnails and the icon cache.": {
       "localizations": {
         "ru": {
@@ -9869,6 +10613,72 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновлюю…"
+          }
+        }
+      }
+    },
+    "Remind me about Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind me about Trash"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напоминать о корзине"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нагадувати про кошик"
+          }
+        }
+      }
+    },
+    "Reminders work while Nora is running. Only home Trash (~/.Trash) is checked; external disks are excluded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders work while Nora is running. Only home Trash (~/.Trash) is checked; external disks are excluded."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напоминания работают, пока запущена Nora. Проверяется только домашняя корзина (~/.Trash), без внешних дисков."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нагадування працюють, поки запущено Nora. Перевіряється лише домашній кошик (~/.Trash), без зовнішніх дисків."
+          }
+        }
+      }
+    },
+    "Reminders work while Nora is running. You can always review Trash manually.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders work while Nora is running. You can always review Trash manually."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напоминания работают, пока запущена Nora. Корзину всегда можно проверить вручную."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нагадування працюють, поки запущено Nora. Кошик завжди можна перевірити вручну."
           }
         }
       }
@@ -10209,6 +11019,28 @@
         }
       }
     },
+    "Restore preserved Trash items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore preserved Trash items"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстановить сохранённые объекты корзины"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відновити збережені об’єкти кошика"
+          }
+        }
+      }
+    },
     "Restoring does not load a launch agent again. It starts at the next login or when you load it yourself.": {
       "localizations": {
         "ru": {
@@ -10269,6 +11101,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Переглянути"
+          }
+        }
+      }
+    },
+    "Review again": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить снова"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірити знову"
           }
         }
       }
@@ -10353,6 +11207,28 @@
         }
       }
     },
+    "Review home Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review home Trash…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить домашнюю корзину…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірити домашній кошик…"
+          }
+        }
+      }
+    },
     "Review installers": {
       "localizations": {
         "ru": {
@@ -10365,6 +11241,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Переглянути інсталятори"
+          }
+        }
+      }
+    },
+    "Review recovery in Nora": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review recovery in Nora"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстановление в Nora"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відновлення в Nora"
           }
         }
       }
@@ -10413,6 +11311,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перегляньте останній результат перед повторним скануванням"
+          }
+        }
+      }
+    },
+    "Reviewed items removed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviewed items removed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверенные объекты удалены"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірені об’єкти видалено"
           }
         }
       }
@@ -11121,8 +12041,36 @@
         }
       }
     },
+    "Size is unknown. Unreadable items are never treated as an empty Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size is unknown. Unreadable items are never treated as an empty Trash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Размер неизвестен. Недоступные объекты не означают, что корзина пуста."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обсяг невідомий. Недоступні об’єкти не означають, що кошик порожній."
+          }
+        }
+      }
+    },
     "Size unknown": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size unknown"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -11132,7 +12080,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Розмір невідомий"
+            "value": "Обсяг невідомий"
           }
         }
       }
@@ -11791,6 +12739,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зупиняю"
+          }
+        }
+      }
+    },
+    "Stopping safely…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopping safely…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Безопасная остановка…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Безпечна зупинка…"
+          }
+        }
+      }
+    },
+    "Stopping…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopping…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остановка…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зупинка…"
           }
         }
       }
@@ -12831,6 +13823,248 @@
           "stringUnit": {
             "state": "translated",
             "value": "Кошик"
+          }
+        }
+      }
+    },
+    "Trash changed during cleanup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash changed during cleanup"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корзина изменилась во время очистки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кошик змінився під час очищення"
+          }
+        }
+      }
+    },
+    "Trash changed. Review the updated items before confirming.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash changed. Review the updated items before confirming."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Содержимое корзины изменилось. Проверьте обновлённые объекты перед подтверждением."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вміст кошика змінився. Перевірте оновлені об’єкти перед підтвердженням."
+          }
+        }
+      }
+    },
+    "Trash check was cancelled. Review again before deleting.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash check was cancelled. Review again before deleting."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка корзины отменена. Перед удалением проверьте ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірку кошика скасовано. Перед видаленням перевірте ще раз."
+          }
+        }
+      }
+    },
+    "Trash cleanup needs attention": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash cleanup needs attention"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте результат очистки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірте результат очищення"
+          }
+        }
+      }
+    },
+    "Trash cleanup stopped": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash cleanup stopped"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистка корзины остановлена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очищення кошика зупинено"
+          }
+        }
+      }
+    },
+    "Trash could not be checked": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash could not be checked"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить корзину"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити кошик"
+          }
+        }
+      }
+    },
+    "Trash logical size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash logical size"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Логический размер корзины"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Логічний обсяг кошика"
+          }
+        }
+      }
+    },
+    "Trash recovery finished. Review the remaining items again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash recovery finished. Review the remaining items again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстановление корзины завершено. Проверьте оставшиеся объекты ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відновлення кошика завершено. Перевірте решту об’єктів ще раз."
+          }
+        }
+      }
+    },
+    "Trash recovery needs attention": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash recovery needs attention"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корзина требует восстановления"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кошик потребує відновлення"
+          }
+        }
+      }
+    },
+    "Trash reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash reminders"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напоминания о корзине"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нагадування про кошик"
+          }
+        }
+      }
+    },
+    "Trash size is unavailable. Check access and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash size is unavailable. Check access and try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Размер корзины недоступен. Проверьте доступ и повторите попытку."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обсяг кошика недоступний. Перевірте доступ і повторіть спробу."
           }
         }
       }
@@ -14177,6 +15411,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "залишки видалених програм"
+          }
+        }
+      }
+    },
+    "logical size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "logical size"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "логический размер"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "логічний обсяг"
           }
         }
       }
