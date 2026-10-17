@@ -19,7 +19,11 @@ final class TrashPromptVisualTests: XCTestCase {
                     .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
                     name: "trash-panel-\(phase)-\(locale)-520x260", size: CGSize(width: 520, height: 260))
                 XCTAssertFalse(model.isMonitoring)
-                XCTAssertFalse(model.isWorking)
+                let busy = phase == .scanning || phase == .cleaning
+                XCTAssertEqual(model.isWorking, busy)
+                XCTAssertEqual(model.canCancelOperation, busy)
+                XCTAssertFalse(model.stopRequested)
+                XCTAssertFalse(model.snapshotFixtureHasScheduledWork)
                 XCTAssertFalse(model.isPresented)
             }
             let empty = TrashReminderModel(services: .disabled, monitor: InertTrashDirectoryMonitor(), permitsMonitoring: false)
@@ -27,6 +31,39 @@ final class TrashPromptVisualTests: XCTestCase {
             try capture(TrashPromptView(model: empty, animationEnabled: false)
                 .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
                 name: "trash-panel-empty-\(locale)-520x260", size: CGSize(width: 520, height: 260))
+        }
+    }
+
+    func testStoppingAndRecoveryInProgressPresentations() throws {
+        let snapshot = TrashReminderSnapshot(contentIdentity: "visual-stopping-only", topLevelItemCount: 8,
+                                             entryCount: 31, logicalBytes: 1_400_000_000)
+        for locale in ["en", "uk", "ru"] {
+            let stopping = TrashReminderModel(services: .disabled, monitor: InertTrashDirectoryMonitor(), permitsMonitoring: false)
+            stopping.setSnapshotFixture(phase: .cleaning, snapshot: snapshot, operation: .cleaning, stopRequested: true)
+            try capture(TrashPromptView(model: stopping, animationEnabled: false)
+                .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
+                name: "trash-panel-stopping-\(locale)-520x260", size: CGSize(width: 520, height: 260))
+            XCTAssertTrue(stopping.isWorking)
+            XCTAssertTrue(stopping.canCancelOperation)
+            XCTAssertTrue(stopping.stopRequested)
+            XCTAssertFalse(stopping.snapshotFixtureHasScheduledWork)
+
+            let recovering = TrashReminderModel(services: .disabled, monitor: InertTrashDirectoryMonitor(), permitsMonitoring: false)
+            recovering.setSnapshotFixture(phase: .recoveryRequired, snapshot: nil, operation: .recovering)
+            try capture(TrashPromptView(model: recovering, animationEnabled: false)
+                .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
+                name: "trash-panel-recovery-in-progress-\(locale)-520x260", size: CGSize(width: 520, height: 260))
+            try capture(Form { TrashReminderSettingsSection(model: recovering) }
+                .formStyle(.grouped).preferredColorScheme(.dark)
+                .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
+                name: "trash-settings-recovery-in-progress-\(locale)-640x260", size: CGSize(width: 640, height: 260))
+            XCTAssertTrue(recovering.isWorking)
+            XCTAssertFalse(recovering.canCancelOperation, "Safe restoration has no pretend Cancel action")
+            XCTAssertFalse(recovering.stopRequested)
+            XCTAssertTrue(recovering.recoveryPending)
+            XCTAssertFalse(recovering.snapshotFixtureHasScheduledWork)
+            XCTAssertFalse(recovering.isMonitoring)
+            XCTAssertFalse(recovering.isPresented)
         }
     }
 
