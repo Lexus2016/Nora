@@ -48,11 +48,11 @@ final class IconMotionVisualTests: XCTestCase {
                 }
             }
         }
-        .padding(28).background(Palette.window).environment(\.accessibilityReduceMotion, true)
-        try capture(board, name: "icons-discs-and-reduced-motion-stop", size: CGSize(width: 770, height: 420))
+        .padding(28).background(Palette.window)
+        try capture(board, name: "icons-discs-and-busy-stop", size: CGSize(width: 770, height: 420))
     }
 
-    func testTrashMascotRestWaveAndReduceMotionAtApprovedSizes() throws {
+    func testTrashMascotRestWaveAndDisabledMotionAtApprovedSizes() throws {
         let board = VStack(spacing: 18) {
             ForEach([CGFloat(64), 76, 80], id: \.self) { size in
                 HStack(spacing: 24) {
@@ -60,12 +60,12 @@ final class IconMotionVisualTests: XCTestCase {
                     TrashMascot(size: size, snapshotWaveAngle: 0)
                     TrashMascot(size: size, snapshotWaveAngle: -18)
                     TrashMascot(size: size, snapshotWaveAngle: 18)
-                    TrashMascot(size: size).environment(\.accessibilityReduceMotion, true)
+                    TrashMascot(size: size, animationEnabled: false)
                 }
             }
         }
         .padding(20).foregroundStyle(.white).background(Palette.window)
-        try capture(board, name: "trash-mascot-rest-wave-reduced", size: CGSize(width: 520, height: 320))
+        try capture(board, name: "trash-mascot-rest-wave-disabled", size: CGSize(width: 520, height: 320))
     }
 
     private func capture<V: View>(_ view: V, name: String, size: CGSize) throws {
