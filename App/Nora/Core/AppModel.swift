@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import Foundation
 import MoleKit
 import Observation
@@ -33,7 +34,8 @@ final class AppModel {
     /// Synthetic rendering only; release builds cannot enable this mode.
     let isVisualSnapshot: Bool
 
-    init(visualSnapshot: Bool = false, home: URL = FileManager.default.homeDirectoryForCurrentUser) {
+    init(visualSnapshot: Bool = false, home: URL = FileManager.default.homeDirectoryForCurrentUser,
+         trash: TrashReminderModel? = nil) {
         self.home = home
         #if DEBUG
         isVisualSnapshot = visualSnapshot
@@ -43,6 +45,8 @@ final class AppModel {
         isVisualSnapshot = false
         autoScan = false
         #endif
+        self.trash = trash ?? TrashReminderModel.live(visualSnapshot: isVisualSnapshot)
+        self.trash.externalBlocker = { [weak self] in self?.trashBlocker }
         if !selection.isAvailable { selection = Module.available.first ?? .status }
     }
     var showConsole = false
@@ -60,6 +64,7 @@ final class AppModel {
     let protection = ProtectionModel()
     let tools = ToolsModel()
     let security = SecurityModel()
+    let trash: TrashReminderModel
 
     let home: URL
 
@@ -87,7 +92,7 @@ final class AppModel {
     @ObservationIgnored private var protectionProbe: MoleProbeCancellation?
 
     func beginExclusiveRun(_ id: String) -> Bool {
-        guard exclusiveRun == nil, !overlay.needsRecovery,
+        guard !trash.blocksOtherMutations, exclusiveRun == nil, !overlay.needsRecovery,
               protectionProbe?.canRestoreProtection != false else { return false }
         // Invalidate the editor's asynchronous snapshot even if this run starts and finishes
         // before that read returns; a transient overlay must never become editable user rules.
@@ -160,6 +165,44 @@ final class AppModel {
     /// A preview taken now would not see what the running task protects for itself.
     var exclusiveRunActive: Bool {
         exclusiveRun != nil || overlay.needsRecovery || protectionProbe?.canRestoreProtection == false
+    }
+
+    static let trashBusyMessage = String(localized: "A Trash operation or recovery check is in progress. Try again when it finishes.")
+
+    private var trashBlocker: TrashReminderBlock? {
+        if exclusiveRunActive || Module.allCases.contains(where: { isBusy($0) })
+            || tools.touchIDBusy || tools.updateBusy || tools.externalBusy || tools.externalCleaning
+            || tools.completionBusy || tools.removeBusy || console.entries.contains(where: { $0.isRunning }) {
+            return .busy(String(localized: "Another Nora operation is running. Try again when it finishes."))
+        }
+        do {
+            if try hasPendingHandoverStrictly() {
+                return .recovery(String(localized: "An app update needs recovery before the Trash can be emptied."))
+            }
+        } catch {
+            return .recovery(String(localized: "An app update needs recovery before the Trash can be emptied."))
+        }
+        return nil
+    }
+
+    /// Absence is only ENOENT; unreadable paths, symlinks and corrupt journals block Trash.
+    private func hasPendingHandoverStrictly() throws -> Bool {
+        let url = home.appendingPathComponent("Library/Application Support/Nora/app-handover.json")
+        let fd = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK)
+        guard fd >= 0 else {
+            if errno == ENOENT { return false }
+            throw CocoaError(.fileReadNoPermission)
+        }
+        let file = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+        defer { try? file.close() }
+        var info = stat()
+        guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
+              info.st_size >= 0, info.st_size <= 16 * 1024 * 1024 else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let data = try file.read(upToCount: 16 * 1024 * 1024 + 1) ?? Data()
+        guard data.count <= 16 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
+        return !(try JSONDecoder().decode([OutsideApps.Journal.Entry].self, from: data)).isEmpty
     }
 
     static let busyScanMessage = String(localized: "A cleaning task is running. Scan again when it finishes.")
@@ -258,6 +301,7 @@ final class AppModel {
     /// Runs any command, streaming its output into the console. Throws `ProcessFailure` on a
     /// non-zero exit and `CancellationError` when its task was stopped.
     func stream(_ command: ShellCommand, environment: [String: String]) async throws {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         let id = console.begin(command)
         do {
             for try await line in ProcessRunner.lines(URL(fileURLWithPath: command.executable), command.arguments, environment: environment) {
@@ -279,6 +323,7 @@ final class AppModel {
 
     /// Runs a Mole command in a PTY (prompts, same-tty sudo), mirroring the screen into the console.
     func runPTY(_ arguments: [String], sudo: Bool = false, environment: [String: String] = [:]) async throws -> PTYRun.Result {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
         var env = mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }
         if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
@@ -307,6 +352,7 @@ final class AppModel {
         environment: [String: String] = [:],
         _ driver: @escaping @Sendable (PTYSession) throws -> T
     ) async throws -> (value: T, result: PTYRun.Result) {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
         var env = mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }
         if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
@@ -333,6 +379,7 @@ final class AppModel {
     /// the session waits; `run` starts only if it returns without throwing.
     func runGated(check: [String], run: [String],
                   decide: @escaping @Sendable (_ output: String, _ status: Int32) throws -> Void) async throws -> PTYRun.Result {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
         let env = PrivilegeBroker.environment(mole.environment.merging(userEnvironment) { $1 }, askpass: askpassURL)
         let (exe, args) = PrivilegeBroker.gated(executable: mole.executable.path, check: check, run: run)
@@ -362,6 +409,7 @@ final class AppModel {
 
     /// Runs a Mole command in pipe mode, streaming its output into the console as it arrives.
     func run(_ arguments: [String], environment: [String: String] = [:]) async throws -> CommandResult {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
         let id = console.begin(mole.command(arguments, environment: environment))
         let console = self.console
