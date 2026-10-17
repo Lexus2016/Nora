@@ -119,7 +119,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Children first, and only once they are gone: Mole must not read the whitelist while
         // it is being put back. If one survives, the overlay stays until the next launch.
         if ChildProcesses.terminateAllAndWait() {
-            try? app.overlay.recoverIfNeeded()
+            // No registered child does not prove a detached protection worker has finished:
+            // it may be between loading defaults and applying its overlay. Preserve the
+            // journal during an exclusive operation. This in-memory barrier does not prove
+            // settlement of a surviving helper across a later application launch.
+            if !app.exclusiveRunActive { try? app.recoverProtection() }
             app.handover.recover()
         }
     }
