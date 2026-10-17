@@ -130,7 +130,7 @@ final class CleanupModel {
         task = Task(.cleanup) {
             // Only this run's overlay is ever undone here; another module's stays in place.
             defer {
-                do { try app.overlay.recover(runID: runID) }
+                do { try app.recoverProtection(runID: runID) }
                 catch {
                     recoveryRequired = true
                     failed = true
@@ -145,6 +145,7 @@ final class CleanupModel {
                 // Always check again right before the run, with the same rights as the run, so junk
                 // that appeared since the review is protected too instead of riding along unseen.
                 let started = Date()
+                let cancellation = try app.probeCancellation(for: runID)
                 let decide: @Sendable (String, Bool) throws -> Void = { output, ok in
                     let listURL = home.appendingPathComponent(".config/mole/clean-list.txt")
                     let modified = (try? listURL.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
@@ -156,18 +157,26 @@ final class CleanupModel {
                         throw NoraError.commandFailed(String(localized: "The selected items are no longer in the cleanup preview. Nothing was removed. Scan again."))
                     }
                     try AppModel.protect(Self.protected(reviewed: reviewed, fresh: fresh, chosen: chosen, previewed: previewed),
-                                         overlay: overlay, installation: installation, home: home, runID: runID)
+                                         overlay: overlay, installation: installation, home: home, runID: runID,
+                                         cancellation: cancellation)
                 }
                 let text: String
                 let ok: Bool
                 if system {
-                    let result = try await app.runGated(check: ["clean", "--dry-run"], run: ["clean"]) { output, status in
-                        try decide(output, status == 0)
-                    }
+                    let result = try await withTaskCancellationHandler {
+                        try Task.checkCancellation()
+                        return try await app.runGated(check: ["clean", "--dry-run"], run: ["clean"]) { output, status in
+                            try decide(output, status == 0)
+                            try cancellation.checkCancellation()
+                        }
+                    } onCancel: { cancellation.cancel() }
                     text = result.text; ok = result.succeeded
                 } else {
                     let check = try await app.run(["clean", "--dry-run"])
-                    try await Task.detached { try decide(check.stdout, check.succeeded) }.value
+                    try await withTaskCancellationHandler {
+                        try Task.checkCancellation()
+                        try await Task.detached { try decide(check.stdout, check.succeeded) }.value
+                    } onCancel: { cancellation.cancel() }
                     try Task.checkCancellation()
                     let result = try await app.run(["clean"])
                     text = result.stdout + "\n" + result.stderr; ok = result.succeeded
