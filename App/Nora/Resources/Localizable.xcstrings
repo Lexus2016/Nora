@@ -2015,6 +2015,22 @@
         }
       }
     },
+    "Age is read from Nora's on-disk database. A successful freshclam check may leave unchanged definitions; it does not upgrade the engine.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Возраст определяется по базе Nora на диске. Успешная проверка freshclam может оставить сигнатуры без изменений; она не обновляет движок."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вік визначається за базою Nora на диску. Успішна перевірка freshclam може залишити сигнатури без змін; вона не оновлює рушій."
+          }
+        }
+      }
+    },
     "All commands": {
       "localizations": {
         "ru": {
@@ -2139,6 +2155,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Також довго навантажують:"
+          }
+        }
+      }
+    },
+    "Another security task is running. Wait for it to finish.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполняется другая задача безопасности. Дождитесь её завершения."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виконується інше завдання безпеки. Зачекайте, доки воно завершиться."
           }
         }
       }
@@ -2283,6 +2315,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Автоматично"
+          }
+        }
+      }
+    },
+    "Availability uses Homebrew's current catalog, which may need refreshing. Engine updates do not update virus definitions.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступность определяется по текущему каталогу Homebrew, которому может требоваться обновление. Обновление движка не обновляет вирусные сигнатуры."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступність визначається за поточним каталогом Homebrew, який може потребувати оновлення. Оновлення рушія не оновлює вірусні сигнатури."
           }
         }
       }
@@ -2783,6 +2831,22 @@
         }
       }
     },
+    "Catalog checked": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каталог проверен"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каталог перевірено"
+          }
+        }
+      }
+    },
     "Categories: %@": {
       "localizations": {
         "ru": {
@@ -2847,6 +2911,22 @@
         }
       }
     },
+    "Check engine updates": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить обновления движка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірити оновлення рушія"
+          }
+        }
+      }
+    },
     "Check finished, nothing changed": {
       "localizations": {
         "ru": {
@@ -2875,6 +2955,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевірити оновлення…"
+          }
+        }
+      }
+    },
+    "Check for an engine update and turn off Watch Downloads before upgrading.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед обновлением проверьте наличие новой версии движка и отключите наблюдение за Загрузками."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед оновленням перевірте наявність нової версії рушія та вимкніть стеження за Завантаженнями."
           }
         }
       }
@@ -2923,6 +3019,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевірте Кошик і консоль, щоб побачити, що вже переміщено."
+          }
+        }
+      }
+    },
+    "Checking ClamAV…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка ClamAV…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка ClamAV…"
           }
         }
       }
@@ -3003,6 +3115,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевіряє файлову систему."
+          }
+        }
+      }
+    },
+    "Choose History in the main window's console (⌘J) to review previous commands, output and stopped actions.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите «История» в консоли главного окна (⌘J), чтобы просмотреть предыдущие команды, вывод и остановленные действия."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть «Історія» в консолі головного вікна (⌘J), щоб переглянути попередні команди, вивід і зупинені дії."
           }
         }
       }
@@ -3103,6 +3231,38 @@
         }
       }
     },
+    "ClamAV action stopped.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Действие ClamAV остановлено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дію ClamAV зупинено."
+          }
+        }
+      }
+    },
+    "ClamAV action stopped. A partial installation may need retrying.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Действие ClamAV остановлено. Частичная установка может потребовать повторной попытки."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дію ClamAV зупинено. Часткове встановлення може потребувати повторної спроби."
+          }
+        }
+      }
+    },
     "ClamAV antivirus scan": {
       "localizations": {
         "ru": {
@@ -3135,6 +3295,22 @@
         }
       }
     },
+    "ClamAV command failed (exit %d). Check network access and folder permissions. The console has details. %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команда ClamAV завершилась ошибкой (код %d). Проверьте доступ к сети и права на папки. Подробности в консоли. %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команда ClamAV завершилася помилкою (код %d). Перевірте доступ до мережі та дозволи папок. Подробиці в консолі. %@"
+          }
+        }
+      }
+    },
     "ClamAV database": {
       "localizations": {
         "ru": {
@@ -3147,6 +3323,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "База ClamAV"
+          }
+        }
+      }
+    },
+    "ClamAV engine": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Движок ClamAV"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рушій ClamAV"
+          }
+        }
+      }
+    },
+    "ClamAV installation could not be verified. Check the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось подтвердить установку ClamAV. Посмотрите консоль."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося підтвердити встановлення ClamAV. Перегляньте консоль."
           }
         }
       }
@@ -3183,6 +3391,22 @@
         }
       }
     },
+    "ClamAV is still stopping. Wait before restarting the watch or updating the engine.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV ещё останавливается. Подождите, прежде чем перезапускать наблюдение или обновлять движок."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV ще зупиняється. Зачекайте, перш ніж перезапускати стеження або оновлювати рушій."
+          }
+        }
+      }
+    },
     "ClamAV kept stopping, so the Downloads watch is off. Turn it on again to retry.": {
       "localizations": {
         "ru": {
@@ -3211,6 +3435,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "ClamAV знайшов збіг із сигнатурою %@."
+          }
+        }
+      }
+    },
+    "ClamAV returned an unreadable version. Check the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV вернул нераспознанные данные версии. Посмотрите консоль."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV повернув нерозпізнані дані версії. Перегляньте консоль."
           }
         }
       }
@@ -3247,6 +3487,22 @@
         }
       }
     },
+    "ClamAV status could not be checked. The check timed out or its helper failed. Retry and check the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить состояние ClamAV. Время ожидания истекло или вспомогательный процесс завершился ошибкой. Повторите попытку и посмотрите консоль."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити стан ClamAV. Час очікування вичерпано або допоміжний процес завершився помилкою. Повторіть спробу та перегляньте консоль."
+          }
+        }
+      }
+    },
     "ClamAV stopped with an error or could not read some files, so this scan may be incomplete. The console shows the details.": {
       "localizations": {
         "ru": {
@@ -3263,6 +3519,22 @@
         }
       }
     },
+    "ClamAV stopped. Nora is restarting the Downloads watch.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV остановился. Nora перезапускает наблюдение за Загрузками."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV зупинився. Nora перезапускає стеження за Завантаженнями."
+          }
+        }
+      }
+    },
     "ClamAV stopped. Nora restarted the Downloads watch.": {
       "localizations": {
         "ru": {
@@ -3275,6 +3547,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "ClamAV зупинився. Nora перезапустила стеження за Завантаженнями."
+          }
+        }
+      }
+    },
+    "ClamAV virus definitions": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вирусные сигнатуры ClamAV"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вірусні сигнатури ClamAV"
           }
         }
       }
@@ -3925,6 +4213,70 @@
         }
       }
     },
+    "Definitions are at least 48 hours old. Update recommended.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатурам не менее 48 часов. Рекомендуется обновление."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатурам щонайменше 48 годин. Рекомендовано оновлення."
+          }
+        }
+      }
+    },
+    "Definitions are less than 48 hours old": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатурам менее 48 часов"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатурам менш ніж 48 годин"
+          }
+        }
+      }
+    },
+    "Definitions built": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатуры созданы"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатури створено"
+          }
+        }
+      }
+    },
+    "Definitions version": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия сигнатур"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версія сигнатур"
+          }
+        }
+      }
+    },
     "Delete": {
       "localizations": {
         "ru": {
@@ -4245,6 +4597,22 @@
         }
       }
     },
+    "Downloaded; freshness unknown": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загружено; актуальность неизвестна"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завантажено; актуальність невідома"
+          }
+        }
+      }
+    },
     "Downloading the virus database…": {
       "localizations": {
         "ru": {
@@ -4321,6 +4689,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Цей Mac не повідомляє режим енергоспоживання."
+          }
+        }
+      }
+    },
+    "Engine installation verified. Virus definitions are updated separately.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установка движка подтверждена. Вирусные сигнатуры обновляются отдельно."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановлення рушія підтверджено. Вірусні сигнатури оновлюються окремо."
+          }
+        }
+      }
+    },
+    "Engine package update available": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступно обновление пакета движка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступне оновлення пакета рушія"
+          }
+        }
+      }
+    },
+    "Engine update availability has not been checked.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наличие обновлений движка ещё не проверено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наявність оновлень рушія ще не перевірено."
+          }
+        }
+      }
+    },
+    "Engine updates need a Homebrew-managed ClamAV installation.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для обновления движка ClamAV должен быть установлен через Homebrew."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для оновлення рушія ClamAV має бути встановлений через Homebrew."
           }
         }
       }
@@ -5077,6 +5509,22 @@
         }
       }
     },
+    "Homebrew catalog version": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия в каталоге Homebrew"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версія в каталозі Homebrew"
+          }
+        }
+      }
+    },
     "Homebrew check failed. See the console.": {
       "localizations": {
         "ru": {
@@ -5157,6 +5605,38 @@
         }
       }
     },
+    "Homebrew finished, but the installed engine could not be verified as the catalog version. Check the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew завершил работу, но не удалось подтвердить, что установленный движок соответствует версии в каталоге. Посмотрите консоль."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew завершив роботу, але не вдалося підтвердити, що встановлений рушій відповідає версії в каталозі. Перегляньте консоль."
+          }
+        }
+      }
+    },
+    "Homebrew has pinned ClamAV. Unpin it before updating.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия ClamAV закреплена в Homebrew. Снимите закрепление перед обновлением."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версію ClamAV закріплено в Homebrew. Зніміть закріплення перед оновленням."
+          }
+        }
+      }
+    },
     "Homebrew is not installed. Open an app to let it install its update.": {
       "localizations": {
         "ru": {
@@ -5185,6 +5665,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Homebrew тепер описує цю програму інакше, ніж під час сканування. Проскануйте знову."
+          }
+        }
+      }
+    },
+    "Homebrew returned unreadable ClamAV metadata. Update availability is unknown.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew вернул нераспознанные данные ClamAV. Наличие обновлений неизвестно."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebrew повернув нерозпізнані дані ClamAV. Наявність оновлень невідома."
           }
         }
       }
@@ -5317,6 +5813,22 @@
         }
       }
     },
+    "Incomplete installation": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неполная установка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неповне встановлення"
+          }
+        }
+      }
+    },
     "Install ClamAV with Homebrew": {
       "localizations": {
         "ru": {
@@ -5365,6 +5877,22 @@
         }
       }
     },
+    "Installation": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановлення"
+          }
+        }
+      }
+    },
     "Installation failed. The console shows the output.": {
       "localizations": {
         "ru": {
@@ -5409,6 +5937,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Встановлено"
+          }
+        }
+      }
+    },
+    "Installed engine": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установленный движок"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановлений рушій"
           }
         }
       }
@@ -5573,6 +6117,22 @@
         }
       }
     },
+    "Installs the engine and then downloads Nora's virus definitions.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устанавливает движок, а затем загружает вирусные сигнатуры для Nora."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановлює рушій, а потім завантажує вірусні сигнатури для Nora."
+          }
+        }
+      }
+    },
     "It changed since the scan. Scan again.": {
       "localizations": {
         "ru": {
@@ -5713,6 +6273,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Дата останнього відкриття невідома"
+          }
+        }
+      }
+    },
+    "Last successful definitions check": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последняя успешная проверка сигнатур"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остання успішна перевірка сигнатур"
+          }
+        }
+      }
+    },
+    "Last verified engine install": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последняя подтверждённая установка движка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останнє підтверджене встановлення рушія"
           }
         }
       }
@@ -7503,6 +8095,22 @@
         }
       }
     },
+    "No engine update in this catalog": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В этом каталоге нет обновлений движка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У цьому каталозі немає оновлень рушія"
+          }
+        }
+      }
+    },
     "No installer files found.": {
       "localizations": {
         "ru": {
@@ -7611,6 +8219,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Старих тек збірки не знайдено."
+          }
+        }
+      }
+    },
+    "No successful definitions update recorded.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Успешных обновлений сигнатур ещё не зафиксировано."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Успішних оновлень сигнатур ще не зафіксовано."
           }
         }
       }
@@ -7851,6 +8475,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Недоступно на цій версії macOS."
+          }
+        }
+      }
+    },
+    "Not checked": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не проверено"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не перевірено"
           }
         }
       }
@@ -9201,6 +9841,22 @@
         }
       }
     },
+    "Refresh installed version": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить установленную версию"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірити встановлену версію"
+          }
+        }
+      }
+    },
     "Refreshes Quick Look thumbnails and the icon cache.": {
       "localizations": {
         "ru": {
@@ -10337,6 +10993,22 @@
         }
       }
     },
+    "Show ClamAV console": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать консоль ClamAV"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показати консоль ClamAV"
+          }
+        }
+      }
+    },
     "Show Nora in the menu bar": {
       "localizations": {
         "ru": {
@@ -11459,6 +12131,22 @@
         }
       }
     },
+    "The active Downloads watch may still use its previously loaded definitions until ClamAV reloads them or you restart the watch.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активное наблюдение за Загрузками может использовать прежние сигнатуры, пока ClamAV не перезагрузит их или вы не перезапустите наблюдение."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активне стеження за Завантаженнями може використовувати попередні сигнатури, доки ClamAV не перезавантажить їх або ви не перезапустите стеження."
+          }
+        }
+      }
+    },
     "The antivirus scan did not finish, so this result is incomplete.": {
       "localizations": {
         "ru": {
@@ -12003,6 +12691,22 @@
         }
       }
     },
+    "The virus database could not be updated. This scan used the local copy, last successfully checked on %@.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось обновить вирусную базу. Для сканирования использована локальная копия, которая последний раз успешно проверена %@."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося оновити вірусну базу. Для сканування використано локальну копію, яку востаннє успішно перевірено %@."
+          }
+        }
+      }
+    },
     "These are Mole's reported results, not a measurement of newly available disk space.": {
       "localizations": {
         "ru": {
@@ -12243,6 +12947,22 @@
         }
       }
     },
+    "Turn off Watch Downloads before updating the engine. Turn it back on afterwards to load the installed engine.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отключите наблюдение за Загрузками перед обновлением движка. После обновления включите его снова, чтобы загрузить установленный движок."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вимкніть стеження за Завантаженнями перед оновленням рушія. Після оновлення ввімкніть його знову, щоб завантажити встановлений рушій."
+          }
+        }
+      }
+    },
     "Turn on": {
       "localizations": {
         "ru": {
@@ -12387,6 +13107,22 @@
         }
       }
     },
+    "Update ClamAV engine": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновить движок ClamAV"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновити рушій ClamAV"
+          }
+        }
+      }
+    },
     "Update Mole": {
       "localizations": {
         "ru": {
@@ -12447,6 +13183,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновити вірусну базу"
+          }
+        }
+      }
+    },
+    "Update virus definitions": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновить вирусные сигнатуры"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновити вірусні сигнатури"
           }
         }
       }
@@ -12527,6 +13279,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновлення надходять із GitHub Releases і перевіряються підписом Nora EdDSA."
+          }
+        }
+      }
+    },
+    "Updating ClamAV engine…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновление движка ClamAV…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлення рушія ClamAV…"
           }
         }
       }
@@ -12643,6 +13411,22 @@
         }
       }
     },
+    "Virus definitions checked successfully. The engine was not upgraded.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вирусные сигнатуры успешно проверены. Движок не обновлялся."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вірусні сигнатури успішно перевірено. Рушій не оновлювався."
+          }
+        }
+      }
+    },
     "Visual map of your storage": {
       "localizations": {
         "ru": {
@@ -12655,6 +13439,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Візуальна карта сховища"
+          }
+        }
+      }
+    },
+    "Wait for the ClamAV installation to finish before starting Watch Downloads.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дождитесь завершения установки ClamAV, прежде чем включать наблюдение за Загрузками."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дочекайтеся завершення встановлення ClamAV, перш ніж увімкнути стеження за Завантаженнями."
           }
         }
       }
@@ -13425,6 +14225,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "знайдено під час останнього сканування"
+          }
+        }
+      }
+    },
+    "freshclam finished, but Nora's virus database is still missing. Check the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "freshclam завершил работу, но вирусной базы Nora по-прежнему нет. Посмотрите консоль."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "freshclam завершив роботу, але вірусної бази Nora досі немає. Перегляньте консоль."
           }
         }
       }
