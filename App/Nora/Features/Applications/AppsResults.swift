@@ -17,10 +17,12 @@ struct AppsResults: View {
                     HStack(alignment: .top, spacing: 18) {
                         updatesCard.frame(width: (geo.size.width - 36) / 3)
                         ScrollView {
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 18), GridItem(.flexible(), spacing: 18)], spacing: 18) {
-                                unusedCard.frame(height: max(170, (geo.size.height - 18) / 2))
-                                largestCard.frame(height: max(170, (geo.size.height - 18) / 2))
-                                installersCard.frame(height: max(170, (geo.size.height - 18) / 2))
+                            // Reflow at the minimum window width instead of squeezing
+                            // localized category captions beside their icons.
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 340), spacing: 18)], spacing: 18) {
+                                unusedCard.frame(height: max(220, (geo.size.height - 18) / 2))
+                                largestCard.frame(height: max(220, (geo.size.height - 18) / 2))
+                                installersCard.frame(height: max(220, (geo.size.height - 18) / 2))
                             }
                         }
                         .scrollIndicators(.never)
