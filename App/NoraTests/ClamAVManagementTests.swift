@@ -50,7 +50,7 @@ final class ClamAVManagementTests: XCTestCase {
 
     func testReadOnlyVersionAndCatalogChecksAreBoundedLoggedAndDistinct() async throws {
         var commands: [ShellCommand] = []
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { command, environment, timeout in
             commands.append(command)
             XCTAssertNotNil(timeout)
@@ -77,7 +77,7 @@ final class ClamAVManagementTests: XCTestCase {
 
     func testFailedRecheckClearsPreviousAvailableVersion() async throws {
         var fail = false
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { command, _, _ in
             if command.arguments.contains("--version") { return self.success("ClamAV 1.4.3") }
             if fail { return CommandResult(status: 1, stdout: "", stderr: "network unavailable") }
@@ -95,7 +95,7 @@ final class ClamAVManagementTests: XCTestCase {
     }
 
     func testMissingHomebrewAndUnmanagedEngineCannotUpgrade() async throws {
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let missing = model(run: { _, _, _ in XCTFail("No command expected"); throw CancellationError() }, brew: nil)
         XCTAssertNil(missing.checkEngineUpdate(app))
         XCTAssertNotNil(missing.engineResult)
@@ -113,7 +113,7 @@ final class ClamAVManagementTests: XCTestCase {
         var commands: [ShellCommand] = []
         let prior = now.addingTimeInterval(-100_000)
         preferences.set(prior, forKey: "security.clamav.lastUpdate")
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { command, environment, _ in
             commands.append(command)
             XCTAssertEqual(environment["HOMEBREW_NO_INSTALL_CLEANUP"], "1")
@@ -136,7 +136,7 @@ final class ClamAVManagementTests: XCTestCase {
 
     func testExitZeroWithoutChangedEngineIsNotVerifiedSuccess() async throws {
         var upgraded = false
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { command, _, _ in
             if command.arguments == ClamAVFormulaInfo.upgradeArguments { upgraded = true; return self.success() }
             if command.arguments.contains("--version") { return self.success("ClamAV 1.4.3") }
@@ -152,7 +152,7 @@ final class ClamAVManagementTests: XCTestCase {
     func testFreshclamFailurePreservesLastSuccessAndLogsPermissions() async throws {
         let prior = now.addingTimeInterval(-100_000)
         preferences.set(prior, forKey: "security.clamav.lastUpdate")
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { command, _, timeout in
             XCTAssertTrue(command.executable.hasSuffix("freshclam"))
             XCTAssertNil(timeout)
@@ -166,7 +166,7 @@ final class ClamAVManagementTests: XCTestCase {
     }
 
     func testFreshclamExitZeroRequiresDatabaseBeforeRecordingSuccess() async throws {
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { _, _, _ in self.success() }
         try await XCTUnwrap(model.updateDatabase(app)).value
         XCTAssertNil(model.lastDatabaseSuccess)
@@ -178,7 +178,7 @@ final class ClamAVManagementTests: XCTestCase {
         let directory = root.appendingPathComponent("clamav/database")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try Data("synthetic header".utf8).write(to: directory.appendingPathComponent("daily.cvd"))
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { command, _, _ in
             command.arguments.contains("--version") ? self.success("ClamAV 1.4.3/28000/Sat Oct 17 10:20:30 2026") : self.success("Database is up-to-date")
         }
@@ -191,7 +191,7 @@ final class ClamAVManagementTests: XCTestCase {
 
     func testCancellationSettlesBusyStateAndDoesNotWriteSuccess() async throws {
         var started = false
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { _, _, _ in
             started = true
             try await Task.sleep(for: .seconds(30))
@@ -212,7 +212,7 @@ final class ClamAVManagementTests: XCTestCase {
     }
     func testCancelledRunnerReturningBuffersKeepsDiagnosticsWithoutSuccess() async throws {
         var started = false
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { _, _, _ in
             started = true
             do { try await Task.sleep(for: .seconds(30)) } catch {}
@@ -231,7 +231,7 @@ final class ClamAVManagementTests: XCTestCase {
 
     func testEngineMutationWaitsForStoppedDaemonAndInFlightScanSettlement() async throws {
         var mutations = 0
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: root)
         let model = model { command, _, _ in
             if command.arguments.first == "upgrade" { mutations += 1 }
             return command.arguments.contains("--version") ? self.success("ClamAV 1.4.3") : self.success(self.catalog())
