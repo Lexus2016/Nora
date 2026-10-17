@@ -64,6 +64,8 @@ struct OrbAction {
 
 /// The big round action button with a specular highlight; busy shows a spinning ring.
 struct BottomOrb: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     let action: OrbAction
     let palette: ScenePalette
     @State private var hovering = false
@@ -73,8 +75,10 @@ struct BottomOrb: View {
             ZStack {
                 Circle()
                     .fill(RadialGradient(colors: [tint.blend(with: .white, by: 0.35), tint, tint.blend(with: palette.depth, by: 0.45)],
-                                         center: UnitPoint(x: 0.5, y: 0.25), startRadius: 2, endRadius: 64))
-                Circle().strokeBorder(.white.opacity(0.85), lineWidth: 2.5)
+                                         center: UnitPoint(x: 0.38, y: 0.2), startRadius: 2, endRadius: 72))
+                Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.88), tint.blend(with: .white, by: 0.25), .black.opacity(0.38)],
+                                                     startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 3)
+                Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1).padding(4)
                 Ellipse()
                     .fill(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0)], startPoint: .top, endPoint: .bottom))
                     .frame(width: 64, height: 27).offset(y: -30).blur(radius: 1.5)
@@ -95,9 +99,10 @@ struct BottomOrb: View {
                     Circle().stroke(.white.opacity(0.18), lineWidth: 5).padding(-9)
                 }
             }
-            .shadow(color: tint.opacity(hovering ? 0.95 : 0.7), radius: hovering ? 46 : 34)
-            .scaleEffect(hovering ? 1.03 : 1)
-            .animation(.easeOut(duration: 0.18), value: hovering)
+            .shadow(color: .black.opacity(0.3), radius: 4, y: 4)
+            .shadow(color: tint.opacity(hovering ? 0.65 : 0.48), radius: hovering ? 32 : 26)
+            .scaleEffect(hovering && DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? 1.02 : 1)
+            .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.18) : nil, value: hovering)
         }
         .buttonStyle(.plain)
         .disabled(!action.enabled)
@@ -175,7 +180,7 @@ extension ModuleStart where Extra == EmptyView {
     }
 }
 
-/// Small glossy disc with a white symbol (the bullets on start screens and card icons).
+/// Small solid glass disc: a rounded bevel, restrained top-left light and a crisp white symbol.
 struct FeatureDisc: View {
     let symbol: String
     let tint: Color
@@ -183,14 +188,19 @@ struct FeatureDisc: View {
 
     var body: some View {
         ZStack {
-            Circle().fill(RadialGradient(colors: [tint.blend(with: .white, by: 0.35), tint, tint.blend(with: .black, by: 0.35)],
-                                         center: UnitPoint(x: 0.5, y: 0.25), startRadius: 1, endRadius: size * 0.7))
-            Circle().strokeBorder(.white.opacity(0.4), lineWidth: 0.7)
+            Circle().fill(tint.blend(with: .black, by: 0.48)).offset(y: size * 0.045)
+            Circle().fill(RadialGradient(colors: [tint.blend(with: .white, by: 0.27), tint.blend(with: .black, by: 0.12), tint.blend(with: .black, by: 0.44)],
+                                         center: UnitPoint(x: 0.32, y: 0.2), startRadius: 1, endRadius: size * 0.8))
+            Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.72), .white.opacity(0.14), .black.opacity(0.25)],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: max(1, size * 0.035))
+            Circle().strokeBorder(.white.opacity(0.12), lineWidth: 0.5).padding(size * 0.08)
             Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold)).foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
+                .shadow(color: .black.opacity(0.35), radius: 0.5, y: 0.8)
         }
         .frame(width: size, height: size)
-        .shadow(color: tint.opacity(0.45), radius: 6)
+        .shadow(color: .black.opacity(0.22), radius: 2, y: 2)
+        .shadow(color: tint.opacity(0.22), radius: 4)
+        .accessibilityHidden(true)
     }
 }
 
