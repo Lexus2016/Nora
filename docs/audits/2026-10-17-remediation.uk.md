@@ -97,3 +97,9 @@ Recovery hold є in-memory. Після аварійного завершення
 Усі нові tests використовують injected tools і temporary fixtures. Додано Settings renders для installed/outdated/failed-check/missing-homebrew/missing-engine/busy, 640×580 і 640×1600, EN/UK/RU; окремі process-language reruns потрібні для model strings. 840 localization keys проходять локальний check; compiler extraction та native pixels на цьому patch ще pending. Реальний brew/freshclam/clamd на Mac користувача не запускався.
 
 Повторний pixel review також виявив декоративне перекриття українського Cleanup опису та обрізані російські Application captions при мінімальному вікні. Feature-local адаптивні ширини/scroll viewport виправлено, без приховування дій; наступний native render має це підтвердити.
+
+## Native receipt: managed probes та ClamAV
+
+Run `39049618579` / commit `021e52800a8dc6af1f637377398dbbfb9b48e6d8`: MoleKit XCTest 30 cases (28 passed, 2 gated skips), Swift Testing 80 cases/18 suites PASS; app 214 cases (213 passed, 1 gated skip), окремі uk/ru suites по 2 cases PASS. ManagedProbe timeout/cancellation/duplex stderr та Protection transient-exclusive-run regressions виконані на macOS. App compile issue у test-only semaphore helper виправлено; actor warning та unreachable switch default усунуто.
+
+Export: 298 PNG (168 базових, по 65 uk/ru). Pixel review нового ClamAV та повторних localized layouts триває. Єдина failure цього run — compiler-derived catalog freshness: 830 живих keys проти 840 записаних, missing translations = 0. Наступний patch замінює keys точним compiler artifact та перебудовує catalog; також передає temporary fixture homes у screenshot/ClamAV AppModel instances. Остаточний зелений exact-commit gate ще pending; цей failed workflow не названо повним PASS.
