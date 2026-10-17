@@ -391,6 +391,7 @@ private struct FindingRow: View {
 }
 
 private struct QuarantineRow: View {
+    @Environment(AppModel.self) private var app
     let model: SecurityModel
     let entry: QuarantineEntry
     let onDelete: () -> Void
@@ -412,7 +413,7 @@ private struct QuarantineRow: View {
                 .font(.system(size: 11))
                 .foregroundStyle(Palette.muted)
             HStack(spacing: 10) {
-                Button("Restore") { model.restore(entry) }.buttonStyle(GlassButtonStyle())
+                Button("Restore") { model.restore(entry, app: app) }.buttonStyle(GlassButtonStyle())
                 Button("Delete permanently", action: onDelete).buttonStyle(DestructiveButtonStyle())
             }
             .padding(.top, 4)
