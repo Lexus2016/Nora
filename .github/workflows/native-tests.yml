@@ -36,8 +36,10 @@ jobs:
           command -v xcodegen || brew install xcodegen
       - name: MoleKit synthetic tests
         working-directory: MoleKit
-        run: swift test
+        run: swift test --no-parallel
       - name: App build and synthetic tests (ad-hoc signed)
+        id: app_tests
+        if: ${{ !cancelled() }}
         run: |
           cd App
           xcodegen generate
@@ -47,6 +49,7 @@ jobs:
             CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= \
             OTHER_CODE_SIGN_FLAGS= test
       - name: Verify extracted localization keys
+        if: ${{ !cancelled() && steps.app_tests.outcome == 'success' }}
         run: |
           python3 scripts/l10n.py extract
           python3 scripts/l10n.py check
