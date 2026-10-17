@@ -128,6 +128,8 @@ final class OrbController {
 
 /// The SwiftUI side of the orb panel.
 private struct OrbHost: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     @Environment(AppModel.self) private var app
 
     var body: some View {
@@ -139,7 +141,7 @@ private struct OrbHost: View {
             }
         }
         .frame(width: OrbController.panelSize, height: OrbController.panelSize)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: orb.action?.signature)
+        .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .spring(response: 0.35, dampingFraction: 0.75) : nil, value: orb.action?.signature)
         .preferredColorScheme(.dark)
     }
 }
