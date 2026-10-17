@@ -56,7 +56,7 @@ final class TrashPromptVisualTests: XCTestCase {
             try capture(Form { TrashReminderSettingsSection(model: recovering) }
                 .formStyle(.grouped).preferredColorScheme(.dark)
                 .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
-                name: "trash-settings-recovery-in-progress-\(locale)-640x260", size: CGSize(width: 640, height: 260))
+                name: "trash-settings-recovery-in-progress-\(locale)-640x420", size: CGSize(width: 640, height: 420))
             XCTAssertTrue(recovering.isWorking)
             XCTAssertFalse(recovering.canCancelOperation, "Safe restoration has no pretend Cancel action")
             XCTAssertFalse(recovering.stopRequested)
