@@ -4,15 +4,23 @@ import XCTest
 /// Every writer is injected. No test reads or writes the user's Mole configuration.
 @MainActor
 final class ProtectionSaveRegressionTests: XCTestCase {
-    private func failingModel() -> ProtectionModel {
-        let model = ProtectionModel(write: { _, _ in throw CocoaError(.fileWriteNoPermission) })
-        XCTAssertTrue(model.loadDefaults { ["~/protected"] })
-        model.loaded = true
+    private func loadedModel(write: @escaping (URL, String) throws -> Void) async -> ProtectionModel {
+        let model = ProtectionModel(write: write)
+        let snapshot = ProtectionModel.Snapshot(home: URL(fileURLWithPath: "/fixture/home"),
+                                               defaults: ["~/protected"], cleanLines: nil, tasks: [],
+                                               optimizeLines: [], purgeLines: nil)
+        await model.load { _ in snapshot }?.value
+        XCTAssertTrue(model.loaded)
+        XCTAssertTrue(model.cleanupReady)
         return model
     }
 
-    func testFailedCleanupAddAndRemovalPreserveSavedState() {
-        let model = failingModel()
+    private func failingModel() async -> ProtectionModel {
+        await loadedModel(write: { _, _ in throw CocoaError(.fileWriteNoPermission) })
+    }
+
+    func testFailedCleanupAddAndRemovalPreserveSavedState() async {
+        let model = await failingModel()
         model.addPattern("~/new")
         XCTAssertTrue(model.custom.isEmpty)
         XCTAssertFalse(model.cleanFileExists)
@@ -24,8 +32,8 @@ final class ProtectionSaveRegressionTests: XCTestCase {
         XCTAssertTrue(model.cleanFileExists)
     }
 
-    func testFailedMaintenanceToggleAndBulkEditRestorePriorSelection() {
-        let model = failingModel()
+    func testFailedMaintenanceToggleAndBulkEditRestorePriorSelection() async {
+        let model = await failingModel()
         model.tasks = [("First", "first"), ("Second", "second")]
         model.excludedTasks = ["first"]
         model.setTask("second", excluded: true)
@@ -36,8 +44,8 @@ final class ProtectionSaveRegressionTests: XCTestCase {
         XCTAssertEqual(model.excludedTasks, ["first"])
     }
 
-    func testFailedProjectEditPreservesPathsAndExistenceFlag() {
-        let model = failingModel()
+    func testFailedProjectEditPreservesPathsAndExistenceFlag() async {
+        let model = await failingModel()
         model.addProjectFolder("/fixture/project")
         XCTAssertTrue(model.projectFolders.isEmpty)
         XCTAssertFalse(model.projectFileExists)
@@ -48,11 +56,9 @@ final class ProtectionSaveRegressionTests: XCTestCase {
         XCTAssertTrue(model.projectFileExists)
     }
 
-    func testSuccessfulInjectedWriteCommitsAndPreservesDefaults() {
+    func testSuccessfulInjectedWriteCommitsAndPreservesDefaults() async {
         var writes: [String] = []
-        let model = ProtectionModel(write: { _, body in writes.append(body) })
-        XCTAssertTrue(model.loadDefaults { ["~/protected"] })
-        model.loaded = true
+        let model = await loadedModel(write: { _, body in writes.append(body) })
         model.addPattern("~/new")
         XCTAssertEqual(model.custom, ["~/new"])
         XCTAssertTrue(model.cleanFileExists)
