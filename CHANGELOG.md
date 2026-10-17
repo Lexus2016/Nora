@@ -2,6 +2,32 @@
 
 Changes to the Nora app, newest first. Work that is merged but not released yet goes under **Unreleased**; at release time it becomes the next version's section and its release notes.
 
+## 1.3.0 (2026-10-17)
+
+A safety audit of every module, and a reminder for the Trash. The audit's main change is that Nora now refuses to act, instead of guessing, when Mole's output or a file's state cannot be trusted: an incomplete or stale preview, an unreadable protection list or a failed save no longer leads to a removal or to a "done" screen.
+
+### Added
+- Trash reminders. While Nora is running it notices new files in your home Trash (`~/.Trash`; external disks are not looked at) and offers a review in a small panel. Settings has a switch for the reminders, and "Review home Trash…" in Nora's menu works with them off. The reminder never deletes anything: after the review, "Delete permanently" is a separate step with its own confirmation that says it cannot be undone. Only the items you reviewed are removed; files that reach the Trash later are left alone, and if the Trash changed since the review you review it again. Stopping part-way leaves what was already deleted deleted. If an interruption leaves items set aside, deletion stays blocked until Nora has restored them. The result counts the entries removed, not freed space: the size shown is a logical size and can differ from the disk space returned.
+- The repository now runs the MoleKit and app tests on GitHub for every push to `main`.
+
+### Changed
+- Decorative glass animation is bounded: at most 24 frames a second, a smaller swing (up to 18°) and fewer layers on the busy hero, with a lighter shadow and a tinted edge. It stops completely while the window is inactive or hidden and when Reduce Motion is on.
+- The console opens on the last command of the current module, with a History picker, pause and "jump to latest"; scrolling by hand stops following the output, and a shortened log says so.
+- The README states the limits of the checks: Cleanup and Projects use Mole commands that rescan rather than run a fixed list of paths, so a file that appears after the check can still be affected. See `docs/audits/2026-10-17-remediation.uk.md`.
+
+### Fixed
+- Cleanup, Projects and Installers previews are rejected, not shown, when the list is incomplete, older than the last scan, has duplicate or ambiguous rows, or is empty without Mole saying so. An Installers scan that exits with an error no longer reads as "no installers". A file name with two spaces in a row is no longer cut short, and the final confirmation is sent only after the whole prompt has arrived and matches your selection exactly.
+- Cleanup no longer reports the size of a preview as space freed; without a report from Mole the result says it is unverified. Projects, Installers and Performance no longer promise space they did not measure.
+- Review shows every warning Mole gave, and the Full Disk Access explanation stays available.
+- If restoring the protection list fails, Nora shows it with a Retry button and blocks the next run. When something else changed the protection file meanwhile, both versions are kept and you are asked to reconcile them. If the defaults cannot be read, Protection cannot be edited over them, and a failed save is rolled back.
+- Smart Care and Cleanup no longer show a stale scan or results after Start over or a new scan, and Done returns to Smart Care when you came from there. Clean, Run and Remove stay visible but disabled with the reason, the found size is kept apart from the selected size, and error tiles have Retry. Opening the console no longer hides the action button.
+- Space Map no longer counts a folder and its contents twice, and refuses a stale or failed load. Tools checks Touch ID setup by its exit status and shows errors. Uninstall confirms the app and its helpers are gone, a malformed Homebrew reply is rejected, and updates that were blocked or stopped are not counted as done.
+- Security: a failed `launchctl` status check stops the action, and a quarantine that unloaded an agent but could not move it says so. Notices from manual database updates now show in Settings.
+- History shows a loading state and, when Mole fails, an error with Retry instead of an empty dashboard. Checking the latest Mole release shows the failure with Retry. Commands from Tools, Security, History and Space Map are logged under their own module, so "see console" no longer opens an empty log.
+- "Update Mole" is named for what it does, and a successful exit is no longer presented as proof that a new version is installed.
+- Space Map's Start over no longer takes Command-[ from Back, and Performance's Run is disabled when there is nothing to do.
+- Checkboxes in Space Map and Security, the external-drive picker and the selected sidebar item now have accessible names and traits.
+
 ## 1.2.1 (2026-10-15)
 
 Nora now uses far less CPU when none of it is on screen. In 1.2.0 a closed or hidden window could keep it at up to a third of a CPU core in the background; the same situations now measure under 1%.

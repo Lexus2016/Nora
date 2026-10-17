@@ -24,7 +24,8 @@ step "Release gate: clean tree, translations, MoleKit and app tests"
 # The DMG must come from a commit, so the tag and the tests describe exactly what ships.
 [[ -z "$(git -C "$ROOT" status --porcelain -- App MoleKit scripts)" ]] || { echo "Commit or stash the changes in App, MoleKit and scripts first." >&2; exit 1; }
 python3 "$ROOT/scripts/l10n.py" check
-(cd "$ROOT/MoleKit" && swift test --quiet)
+# Serial, as in CI: the PTY suites spawn real child processes with timeouts and fail when they run in parallel.
+(cd "$ROOT/MoleKit" && swift test --no-parallel --quiet)
 
 rm -rf "$BUILD" && mkdir -p "$BUILD" "$DIST"
 
