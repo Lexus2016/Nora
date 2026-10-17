@@ -245,6 +245,7 @@ extension View {
 /// See `showsLiveStatus`. `onAppear` alone is not enough: SwiftUI keeps a closed window's screen
 /// alive, and a covered, minimised or other-Space window never disappears at all.
 private struct LiveStatusViewer: ViewModifier {
+    @Environment(AppModel.self) private var app
     let store: StatusStore
     let onChange: ((Bool) -> Void)?
     @State private var shown = false
@@ -260,7 +261,7 @@ private struct LiveStatusViewer: ViewModifier {
     }
 
     private func sync() {
-        let wanted = shown && visible
+        let wanted = shown && visible && !app.isVisualSnapshot
         guard wanted != holding else { return }
         holding = wanted
         if wanted { store.retain() } else { store.release() }

@@ -44,6 +44,9 @@ struct SecuritySettingsSection: View {
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
 
+            if let notice = model.notice {
+                Label(notice, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+            }
             LabeledContent("ClamAV database") {
                 HStack {
                     if model.updatingDatabase {

@@ -30,11 +30,16 @@ final class AppModel {
     /// Debug launch arguments for screenshots and checks: `-NoraModule cleanup -NoraAutoScan 1`.
     let autoScan: Bool
 
-    init() {
+    /// Synthetic rendering only; release builds cannot enable this mode.
+    let isVisualSnapshot: Bool
+
+    init(visualSnapshot: Bool = false) {
         #if DEBUG
+        isVisualSnapshot = visualSnapshot
         if let name = UserDefaults.standard.string(forKey: "NoraModule"), let module = Module(rawValue: name) { selection = module }
-        autoScan = UserDefaults.standard.bool(forKey: "NoraAutoScan")
+        autoScan = !visualSnapshot && UserDefaults.standard.bool(forKey: "NoraAutoScan")
         #else
+        isVisualSnapshot = false
         autoScan = false
         #endif
         if !selection.isAvailable { selection = Module.available.first ?? .status }

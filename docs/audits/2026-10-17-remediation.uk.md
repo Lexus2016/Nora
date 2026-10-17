@@ -48,7 +48,8 @@ R1: публікація orb обмежена активним модулем. �
 - Нові suites: CleanupLifecycleRegressionTests, CleanupValidationRegressionTests, OverlayConflictRegressionTests, ProcessCancellationRegressionTests, NavigationConsistencyRegressionTests, ToolsProtectionSpaceMapRegressionTests, AppsRemovalTests, SecurityPartialOutcomeTests. Розширено AppsOutsideTests, AppsBrewTests, CleanupScopeTests.
 - Локальне середовище Linux не має Swift/Xcode. Жоден Python/source-model PASS не названо Swift compilation або passing native tests.
 - Додано `.github/workflows/native-tests.yml`: офіційний standard `xcode-27` runner, read-only repository token, pinned actions, synthetic MoleKit/app tests, ad-hoc signing, compiler localization extraction. `NORA_MOLE_E2E=0`, `NORA_MOLE_SUDO=0`; production startup tasks у DEBUG test host вимкнено. Workflow не збирає DMG, не підписує Developer ID, не deploy і не release.
-- Нативний CI на момент підготовки звіту: **ще не запущено**. Остаточний commit/run статус додається в супровідний результат; queued/failed не є PASS.
+- Native run `39045329698` на `3ee6a6b`: MoleKit PASS (XCTest 22, 2 gated skips; Swift Testing 57 cases). Попередній parallel run мав PTY timeouts; serial mode усунув тестову конкуренцію, це не доказ production concurrency. App compile виявив Swift 6 isolation error console observer; виправлено перед наступним run. Остаточний статус exact commit додається до результату; queued/failed не є PASS.
+- Розширений прохід меню: див. [матрицю режимів](2026-10-17-menu-modes.uk.md). Додано attribution команд, History loading/retry/exit status, Security notice, Protection rollback та 9 tests. 80 native snapshot probes чекають CI та огляду PNG; це не live click-through і не автоматичне схвалення дизайну.
 
 ## Відкриті архітектурні межі
 

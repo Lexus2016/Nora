@@ -54,11 +54,19 @@ jobs:
           python3 scripts/l10n.py extract
           python3 scripts/l10n.py check
           git diff --exit-code -- App/Localization/keys.json
+      - name: Export visual snapshot attachments
+        if: ${{ !cancelled() && steps.app_tests.outcome == 'success' }}
+        run: |
+          xcrun xcresulttool export attachments --path build/NoraTests.xcresult --output-path build/visual-smoke
       - name: Retain native test result
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-test-results
-          path: build/NoraTests.xcresult
+          path: |
+            build/NoraTests.xcresult
+            build/visual-smoke
+            App/Localization/keys.json
+            App/Localization/missing-*.json
           if-no-files-found: ignore
           retention-days: 7

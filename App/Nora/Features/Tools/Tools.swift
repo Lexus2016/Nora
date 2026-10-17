@@ -67,7 +67,7 @@ final class ToolsModel {
     func refresh(_ app: AppModel) {
         let generation = UUID()
         refreshGeneration = generation
-        Task {
+        Task(.tools) {
             if !touchIDBusy {
                 let statusGeneration = UUID()
                 touchIDGeneration = statusGeneration
@@ -103,7 +103,7 @@ final class ToolsModel {
         touchIDGeneration = UUID() // Invalidate an older status read before mutating.
         touchIDBusy = true
         touchIDError = nil
-        Task {
+        Task(.tools) {
             defer { touchIDBusy = false }
             do {
                 let result = try await app.runPTY(["touchid", on ? "enable" : "disable"], sudo: true)
@@ -126,7 +126,7 @@ final class ToolsModel {
     func updateMole(_ app: AppModel) {
         guard !updateBusy, let mole = app.mole else { return }
         updateBusy = true
-        Task {
+        Task(.tools) {
             defer { updateBusy = false }
             do {
                 try await app.stream(MoleSetup.updateCommand(for: mole), environment: mole.environment)
@@ -145,7 +145,7 @@ final class ToolsModel {
         previewedVolume = nil
         externalBusy = true
         let identity = Self.identity(of: volume)
-        Task {
+        Task(.tools) {
             defer { if externalGeneration == generation { externalBusy = false } }
             let outcome = await Self.attempt { try await app.run(["clean", "--external", volume.path, "--dry-run"]) }
             // A newer preview or another drive took over meanwhile: this result is stale.
@@ -169,7 +169,7 @@ final class ToolsModel {
         let generation = UUID()
         externalGeneration = generation
         externalCleaning = true
-        externalTask = Task {
+        externalTask = Task(.tools) {
             defer { externalCleaning = false }
             let outcome = await Self.attempt { try await app.run(["clean", "--external", volume.path]) }
             // Only this run's own screen state is written; a newer preview stays as it is.
@@ -236,7 +236,7 @@ final class ToolsModel {
         completionBusy = true
         completionPreviewValid = false
         completionError = nil
-        Task {
+        Task(.tools) {
             defer { completionBusy = false }
             acceptCompletionPreview(await Self.attempt { try await app.run(["completion", "--dry-run"]) })
         }
@@ -247,7 +247,7 @@ final class ToolsModel {
         completionBusy = true
         completionPreviewValid = false
         completionError = nil
-        Task {
+        Task(.tools) {
             defer { completionBusy = false }
             let outcome = await Self.attempt { try await app.run(["completion"]) }
             completionPreview = Self.meaningful(outcome.result?.stdout ?? "")
@@ -259,7 +259,7 @@ final class ToolsModel {
         guard !removeBusy else { return }
         removeBusy = true
         removeError = nil
-        Task {
+        Task(.tools) {
             defer { removeBusy = false }
             let outcome = await Self.attempt { try await app.run(["remove", "--dry-run"]) }
             removePreview = Self.meaningful(outcome.result?.stdout ?? "")
@@ -302,7 +302,7 @@ struct ToolsView: View {
             }
             .scrollIndicators(.never)
         }
-        .task { model.refresh(app) }
+        .task { if !app.isVisualSnapshot { model.refresh(app) } }
     }
 
     private func tool<Content: View>(_ title: LocalizedStringKey, _ symbol: String, command: String, @ViewBuilder _ content: () -> Content) -> some View {

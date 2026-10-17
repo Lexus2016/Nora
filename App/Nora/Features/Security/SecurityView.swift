@@ -25,8 +25,8 @@ struct SecurityView: View {
                 }
             }
         }
-        .onAppear { model.refreshTools() }
-        .task { await model.loadPreviewLaunchPaths() }
+        .onAppear { if !app.isVisualSnapshot { model.refreshTools() } }
+        .task { if !app.isVisualSnapshot { await model.loadPreviewLaunchPaths() } }
     }
 }
 

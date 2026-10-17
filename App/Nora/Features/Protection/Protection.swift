@@ -29,6 +29,16 @@ final class ProtectionModel {
     /// True during an exclusive run or while recovery of its whitelist is pending.
     private var cleanListBusy: () -> Bool = { false }
 
+    /// Injected in regression tests; the production writer remains atomic.
+    @ObservationIgnored private let persist: (URL, String) throws -> Void
+
+    init(write: @escaping (URL, String) throws -> Void = { url, text in
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try text.write(to: url, atomically: true, encoding: .utf8)
+    }) {
+        persist = write
+    }
+
     private var configDir: URL { FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/mole") }
     var cleanURL: URL { configDir.appendingPathComponent("whitelist") }
     var optimizeURL: URL { configDir.appendingPathComponent("whitelist_optimize") }
@@ -114,38 +124,43 @@ final class ProtectionModel {
         guard loaded, cleanupReady, !cleanListLocked() else { return }
         let p = pattern.trimmingCharacters(in: .whitespaces)
         guard !p.isEmpty, !custom.contains(p), !defaults.contains(p) else { return }
+        let previous = custom
         custom.append(p)
-        saveClean()
+        if !saveClean() { custom = previous }
     }
 
     func removePattern(_ pattern: String) {
         guard loaded, cleanupReady, !cleanListLocked() else { return }
+        let previous = custom
         custom.removeAll { $0 == pattern }
-        saveClean()
+        if !saveClean() { custom = previous }
     }
 
-    private func saveClean() {
-        guard cleanupReady else { return }
+    private func saveClean() -> Bool {
+        guard cleanupReady else { return false }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let body = (defaults + custom).map { $0.hasPrefix(home) ? "~" + $0.dropFirst(home.count) : $0 }
-        write(cleanURL, header: "# Protected from mo clean. Written by Nora: Mole's optional defaults are kept at the top.", lines: body)
+        guard write(cleanURL, header: "# Protected from mo clean. Written by Nora: Mole's optional defaults are kept at the top.", lines: body) else { return false }
         cleanFileExists = true
+        return true
     }
 
     /// One write for a bulk change instead of one per task.
     func setAllTasks(included: Set<String>) {
         guard loaded, !cleanListLocked() else { return }
+        let previous = excludedTasks
         excludedTasks = Set(tasks.map(\.id)).subtracting(included)
-        saveOptimize()
+        if !saveOptimize() { excludedTasks = previous }
     }
 
     func setTask(_ id: String, excluded: Bool) {
         guard loaded, !cleanListLocked() else { return }
+        let previous = excludedTasks
         if excluded { excludedTasks.insert(id) } else { excludedTasks.remove(id) }
-        saveOptimize()
+        if !saveOptimize() { excludedTasks = previous }
     }
 
-    private func saveOptimize() {
+    private func saveOptimize() -> Bool {
         write(optimizeURL, header: "# Tasks mo optimize skips. Written by Nora; other lines are kept.",
               lines: tasks.map(\.id).filter(excludedTasks.contains) + optimizeOther)
     }
@@ -155,28 +170,32 @@ final class ProtectionModel {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let p = path.hasPrefix(home) ? "~" + path.dropFirst(home.count) : path
         guard !projectFolders.contains(p) else { return }
+        let previous = projectFolders
         projectFolders.append(p)
-        savePurge()
+        if !savePurge() { projectFolders = previous }
     }
 
     func removeProjectFolder(_ path: String) {
         guard loaded, !cleanListLocked() else { return }
+        let previous = projectFolders
         projectFolders.removeAll { $0 == path }
-        savePurge()
+        if !savePurge() { projectFolders = previous }
     }
 
-    private func savePurge() {
-        write(purgeURL, header: "# Mole Purge Paths, edited in Nora. One folder per line, ~ for the home folder.", lines: projectFolders)
+    private func savePurge() -> Bool {
+        guard write(purgeURL, header: "# Mole Purge Paths, edited in Nora. One folder per line, ~ for the home folder.", lines: projectFolders) else { return false }
         projectFileExists = true
+        return true
     }
 
-    private func write(_ url: URL, header: String, lines: [String]) {
+    private func write(_ url: URL, header: String, lines: [String]) -> Bool {
         do {
-            try FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
-            try (([header, ""] + lines).joined(separator: "\n") + "\n").write(to: url, atomically: true, encoding: .utf8)
+            try persist(url, ([header, ""] + lines).joined(separator: "\n") + "\n")
             message = String(localized: "Saved to \((url.path as NSString).abbreviatingWithTildeInPath)")
+            return true
         } catch {
             message = error.localizedDescription
+            return false
         }
     }
 }
@@ -221,7 +240,7 @@ struct ProtectionView: View {
             }
             .padding(.horizontal, 34).padding(.top, 6)
         }
-        .task { if !model.loaded { model.load(app) } }
+        .task { if !app.isVisualSnapshot && !model.loaded { model.load(app) } }
     }
 
     private var cleanup: some View {

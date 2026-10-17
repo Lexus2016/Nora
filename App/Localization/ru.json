@@ -917,5 +917,9 @@
   "Cleanup is working": "Очистка выполняется",
   "Protection recovery failed: %@": "Не удалось восстановить защиту: %@",
   "The protection file at %@ changed outside Nora. The edited file and recovery copy are preserved. Resolve the file conflict before retrying recovery.": "Файл защиты %@ изменён вне Nora. Изменённый файл и копия для восстановления сохранены. Устраните конфликт файлов перед повторным восстановлением.",
-  "More scan notes": "Другие примечания сканирования"
+  "More scan notes": "Другие примечания сканирования",
+  "Refresh": "Обновить",
+  "Reading activity history…": "Чтение истории действий…",
+  "No activity history yet.": "История действий пока пуста.",
+  "Activity history could not be loaded. Check the console and retry.": "Не удалось загрузить историю действий. Проверьте консоль и повторите попытку."
 }

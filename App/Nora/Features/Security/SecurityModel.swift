@@ -193,7 +193,7 @@ final class SecurityModel {
         progress = String(localized: "Reading launch items")
         let scope = self.scope
         let home = self.home
-        task = Task {
+        task = Task(.security) {
             defer { self.task = nil }
             do {
                 let report = await LaunchAudit.scan(LaunchAudit.defaultDirectories)
@@ -351,7 +351,7 @@ final class SecurityModel {
         stage = .running
         stopRequested = false
         progress = String(localized: "Moving \(selected.count) items to quarantine")
-        task = Task {
+        task = Task(.security) {
             defer { self.task = nil }
             var done = Set<UUID>()
             var problems: [String] = []
@@ -435,7 +435,7 @@ final class SecurityModel {
     func updateDatabase(_ app: AppModel) {
         guard task == nil, let freshclam = clamav.freshclam else { return }
         updatingDatabase = true
-        task = Task {
+        task = Task(.security) {
             defer { self.task = nil; self.updatingDatabase = false }
             self.notice = await self.refreshDatabase(freshclam, app)
         }
@@ -474,7 +474,7 @@ final class SecurityModel {
             return
         }
         installing = formula
-        task = Task {
+        task = Task(.security) {
             defer { self.task = nil; self.installing = nil; self.downloadingDatabase = false }
             do {
                 try await app.stream(ShellCommand(brew.path, ["install", formula]), environment: BrewTools.environment)
@@ -551,7 +551,7 @@ final class SecurityModel {
         SecurityNotifier.requestAuthorization()
         watchStarting = true
         watchGeneration = generation
-        watchStart = Task {
+        watchStart = Task(.security) {
             defer { if self.watchGeneration == generation { self.watchStarting = false } }
             do {
                 try await session.start()
@@ -614,7 +614,7 @@ final class SecurityModel {
     }
 
     private func inspectDownload(_ file: URL, session: ClamdSession, generation: UUID, _ app: AppModel) {
-        Task {
+        Task(.security) {
             let result = try? await self.runLogged(session.scanCommand(for: file), app)
             // A result for a watch that has since stopped or restarted changes nothing.
             guard self.watchGeneration == generation else { return }

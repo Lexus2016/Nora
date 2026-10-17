@@ -370,9 +370,11 @@ private struct ConsoleScrollObserver: NSViewRepresentable {
             guard window != nil else { return }
             token = NotificationCenter.default.addObserver(forName: NSScrollView.willStartLiveScrollNotification,
                                                             object: nil, queue: .main) { [weak self] note in
+                // Carry only a Sendable identity across isolation, not Notification/Any.
+                let sourceID = note.object.map { ObjectIdentifier($0 as AnyObject) }
                 MainActor.assumeIsolated {
-                    guard let self, let scroll = note.object as? NSScrollView,
-                          scroll === self.enclosingScrollView else { return }
+                    guard let self, let scroll = self.enclosingScrollView,
+                          sourceID == ObjectIdentifier(scroll) else { return }
                     self.onScroll?()
                 }
             }

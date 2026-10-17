@@ -2147,6 +2147,22 @@
         }
       }
     },
+    "Activity history could not be loaded. Check the console and retry.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить историю действий. Проверьте консоль и повторите попытку."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося завантажити історію дій. Перевірте консоль і повторіть спробу."
+          }
+        }
+      }
+    },
     "Adapter": {
       "localizations": {
         "ru": {
@@ -7687,6 +7703,22 @@
         }
       }
     },
+    "No activity history yet.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "История действий пока пуста."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Історія дій поки порожня."
+          }
+        }
+      }
+    },
     "No app was removed": {
       "localizations": {
         "ru": {
@@ -9321,6 +9353,22 @@
         }
       }
     },
+    "Reading activity history…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтение истории действий…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Читання історії дій…"
+          }
+        }
+      }
+    },
     "Reading launch items": {
       "localizations": {
         "ru": {
@@ -9429,6 +9477,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Потрібне відновлення"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновити"
           }
         }
       }

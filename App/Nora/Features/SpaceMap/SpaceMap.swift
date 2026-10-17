@@ -94,7 +94,7 @@ final class SpaceMapModel {
         cache = [:]
         forward = []
         selected = []
-        task = Task {
+        task = Task(.spaceMap) {
             let ok = await load(root, app, request: id)
             guard requestID == id else { return }
             if ok { path = [root]; stage = .review } else { stage = .start }
@@ -105,7 +105,7 @@ final class SpaceMapModel {
         let id = newRequest()
         forward = []
         error = nil
-        task = Task {
+        task = Task(.spaceMap) {
             if cache[url] == nil {
                 let ok = await load(url, app, request: id)
                 guard requestID == id, ok else { return }

@@ -95,7 +95,12 @@ final class AppsModel {
             parts.append(Homebrew.command(path, Homebrew.outdatedArguments()).description)
             parts.append(Homebrew.command(path, Homebrew.infoArguments()).description)
         }
-        if let cache = try? OutsideApps.cacheURL() { parts.append(OutsideApps.catalogCommand(cache: cache).description) }
+        // A command preview must not create a cache directory merely by rendering the view.
+        if let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            let cache = folder.appendingPathComponent(Bundle.main.bundleIdentifier ?? "Nora", isDirectory: true)
+                .appendingPathComponent("cask.json")
+            parts.append(OutsideApps.catalogCommand(cache: cache).description)
+        }
         parts.append("curl -fsSL --max-time 20 <SUFeedURL>")
         return parts.joined(separator: "; ")
     }
