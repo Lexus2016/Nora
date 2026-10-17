@@ -389,13 +389,37 @@ final class TrashReminderModel {
     }
 
     #if DEBUG
+    enum SnapshotOperation: Equatable { case idle, scanning, cleaning, recovering }
+
+    /// Presentation state only. The fixture is terminally stopped so even a queued control action
+    /// cannot start a scanner, executor, recovery operation, or watcher. No Task/token is created.
     func setSnapshotFixture(phase: Phase, snapshot: TrashReminderSnapshot?, notice: String? = nil,
-                            outcome: TrashReminderOutcome? = nil) {
-        precondition(!isMonitoring && work == nil)
+                            outcome: TrashReminderOutcome? = nil, operation: SnapshotOperation? = nil,
+                            stopRequested: Bool = false) {
+        precondition(!permitsMonitoring && !isMonitoring && !snapshotFixtureHasScheduledWork)
+        let operation = operation ?? (phase == .scanning ? .scanning : phase == .cleaning ? .cleaning : .idle)
+        precondition(!stopRequested || operation == .scanning || operation == .cleaning)
+        stopped = true
         self.phase = phase
         self.snapshot = snapshot
         self.notice = notice
         self.outcome = outcome
+        self.stopRequested = stopRequested
+        operationInProgress = operation != .idle
+        canCancelOperation = operation == .scanning || operation == .cleaning
+        recoveryChecked = true
+        recoveryPending = phase == .recoveryRequired
+        switch operation {
+        case .idle: workKind = nil
+        case .scanning: workKind = .scan
+        case .cleaning: workKind = .execution
+        case .recovering: workKind = .recovery
+        }
+    }
+
+    /// Distinguishes a rendered busy state from real work in native image assertions.
+    var snapshotFixtureHasScheduledWork: Bool {
+        work != nil || cancellation != nil || debounce != nil || fallback != nil || cooldown != nil || pendingScan != nil
     }
     #endif
 }
