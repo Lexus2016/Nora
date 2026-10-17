@@ -5,7 +5,11 @@ struct TrashPromptView: View {
     @Bindable var model: TrashReminderModel
     var animationEnabled = true
     var openNora: () -> Void = {}
+    /// The delete button stays inert this long after the confirmation appears. It takes the place of the
+    /// "Empty Trash…" button the moment the check ends, so the second click of a double-click must not land on it.
+    var confirmationDelay: Duration = .milliseconds(700)
     @Environment(\.locale) private var locale
+    @State private var confirmationArmed = false
 
     private let foreground = Color(hex: 0xEBFFF9)
 
@@ -72,6 +76,12 @@ struct TrashPromptView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(primaryDisabled)
+                .task(id: model.phase) {
+                    confirmationArmed = false
+                    guard model.phase == .confirmation, confirmationDelay > .zero else { return }
+                    try? await Task.sleep(for: confirmationDelay)
+                    if !Task.isCancelled { confirmationArmed = true }
+                }
                 // Deliberately no defaultAction/Return shortcut on either deletion step.
                 .accessibilityHint(primaryHint)
                 Button(action: secondaryAction) {
@@ -175,6 +185,7 @@ struct TrashPromptView: View {
 
     private var primaryDisabled: Bool {
         model.isWorking || model.phase == .scanning || model.phase == .cleaning
+            || (model.phase == .confirmation && confirmationDelay > .zero && !confirmationArmed)
     }
 
     private var primaryHint: Text {

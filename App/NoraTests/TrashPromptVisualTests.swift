@@ -15,7 +15,7 @@ final class TrashPromptVisualTests: XCTestCase {
                 model.setSnapshotFixture(phase: phase, snapshot: [.unavailable, .recoveryRequired].contains(phase) ? nil : snapshot,
                     outcome: phase == .finished ? .init(status: .cancelled, deletedEntryCount: 5,
                                                        detail: "Synthetic partial result. Nothing was executed.") : nil)
-                try capture(TrashPromptView(model: model, animationEnabled: false)
+                try capture(TrashPromptView(model: model, animationEnabled: false, confirmationDelay: .zero)
                     .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
                     name: "trash-panel-\(phase)-\(locale)-520x260", size: CGSize(width: 520, height: 260))
                 XCTAssertFalse(model.isMonitoring)
