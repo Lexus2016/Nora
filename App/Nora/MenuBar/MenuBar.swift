@@ -174,6 +174,7 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
             entry.image = NSImage(systemSymbolName: module.symbol, accessibilityDescription: nil)
         }
         menu.addItem(.separator())
+        menu.addItem(withTitle: String(localized: "Review home Trash…"), action: #selector(openTrash), keyEquivalent: "").target = self
         menu.addItem(withTitle: String(localized: "Settings…"), action: #selector(openSettings), keyEquivalent: ",").target = self
         menu.addItem(withTitle: String(localized: "Quit Nora"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item?.menu = menu
@@ -186,6 +187,8 @@ final class MenuBarController: NSObject, NSPopoverDelegate {
     @objc private func openModule(_ sender: NSMenuItem) {
         app.showMain((sender.representedObject as? String).flatMap(Module.init(rawValue:)))
     }
+
+    @objc private func openTrash() { app.trash.openReview() }
 
     @objc private func openSettings() {
         app.showSettings()
