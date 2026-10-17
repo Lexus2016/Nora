@@ -11,11 +11,23 @@ final class HomeTrashSafetyTests: XCTestCase {
         var trash: URL { home.appendingPathComponent(".Trash", isDirectory: true) }
         var recovery: URL { home.appendingPathComponent("Library/Application Support/Nora/TrashRecovery", isDirectory: true) }
         init() throws {
-            home = FileManager.default.temporaryDirectory
+            // Resolve the EXISTING parent first. Foundation can leave /var -> /private/var
+            // unresolved when resolving a URL whose UUID descendant does not exist yet.
+            // Production correctly rejects every symlink component, so fixtures must use
+            // the physical temporary path rather than weakening that no-follow contract.
+            guard let physicalParent = realpath(FileManager.default.temporaryDirectory.path, nil) else {
+                throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno),
+                              userInfo: [NSLocalizedDescriptionKey: "Cannot resolve the existing temporary fixture parent"])
+            }
+            defer { free(physicalParent) }
+            home = URL(fileURLWithPath: String(cString: physicalParent), isDirectory: true)
                 .appendingPathComponent("nora-trash-fixture-\(UUID().uuidString)", isDirectory: true)
-                .resolvingSymlinksInPath()
             try FileManager.default.createDirectory(at: home, withIntermediateDirectories: false)
             try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: false)
+            let fixtureRoot = try TrashFS.open(home)
+            XCTAssertEqual(try TrashFS.identity(fixtureRoot).type, .directory,
+                           "The generated fixture must pass the production no-follow root open")
+            _ = try TrashFS.open(".Trash", in: fixtureRoot)
         }
         deinit { try? FileManager.default.removeItem(at: home) }
         func file(_ path: String, _ text: String = "fixture", under root: URL? = nil) throws {
@@ -482,8 +494,15 @@ final class HomeTrashSafetyTests: XCTestCase {
         let descriptor = bytes.withUnsafeBufferPointer {
             open($0.baseAddress!, O_CREAT | O_EXCL | O_WRONLY, mode_t(0o600))
         }
-        XCTAssertGreaterThanOrEqual(descriptor, 0)
-        if descriptor >= 0 { close(descriptor) }
+        guard descriptor >= 0 else {
+            let code = errno
+            if code == EILSEQ || code == EINVAL {
+                throw XCTSkip("This filesystem rejects non-UTF-8 filenames (\(String(cString: strerror(code)))); the scanner case cannot be created here.")
+            }
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(code),
+                          userInfo: [NSLocalizedDescriptionKey: "Failed to create the isolated invalid-filename fixture"])
+        }
+        close(descriptor)
         XCTAssertThrowsError(try fixture.service().scan())
     }
 
