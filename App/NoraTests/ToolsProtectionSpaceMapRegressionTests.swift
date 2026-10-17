@@ -49,11 +49,18 @@ final class ToolsProtectionSpaceMapRegressionTests: XCTestCase {
         XCTAssertEqual(model.trashFailures.count, 1)
     }
 
-    func testDefaultsFailureBlocksEditsEvenAfterEarlierSuccess() {
-        let model = ProtectionModel()
-        XCTAssertTrue(model.loadDefaults { ["~/safe"] })
-        model.loaded = true
-        XCTAssertFalse(model.loadDefaults { throw CocoaError(.fileReadNoPermission) })
+    func testDefaultsFailureBlocksEditsEvenAfterEarlierSuccess() async {
+        let model = ProtectionModel(write: { _, _ in XCTFail("Failed defaults must prevent writes") })
+        let snapshot = ProtectionModel.Snapshot(home: URL(fileURLWithPath: "/fixture/home"),
+                                               defaults: ["~/safe"], cleanLines: nil, tasks: [],
+                                               optimizeLines: [], purgeLines: nil)
+        await model.load { _ in snapshot }?.value
+        XCTAssertTrue(model.loaded)
+        await model.load { cancellation in
+            try ProtectionModel.readSnapshot(home: snapshot.home, cancellation: cancellation,
+                readDefaults: { throw CocoaError(.fileReadNoPermission) }, readTasks: { [] },
+                readClean: { nil }, readOptimize: { [] }, readPurge: { nil })
+        }?.value
         XCTAssertFalse(model.cleanupReady)
         XCTAssertFalse(model.loaded)
         XCTAssertNotNil(model.message)
