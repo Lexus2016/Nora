@@ -55,7 +55,7 @@ R1: публікація orb обмежена активним модулем. �
 
 1. **Broad command race.** Cleanup/Projects усе ще застосовують Mole broad clean/purge з denylist відомих невибраних шляхів. Новий файл після fresh check може потрапити у run. Повне закриття потребує upstream atomic immutable plan/allowlist з identity recheck. Новий код не підміняє це небезпечним самописним permanent-delete executor і не вимикає модуль непомітно.
 2. **Повнота текстового списку.** Malformed/ambiguous/empty/stale/incomplete відхиляються, але truncation точно на межі валідного рядка не виявити без authenticated count/checksum manifest. Aggregate Items не дорівнює кількості path rows.
-3. **Blocking protection probe.** `MoleInstallation.unprotected` і synchronous loader мають двобічний pipe-протокол без керованого timeout/cancellation. Звичайний pipe run тепер joined, але цей окремий probe потребує міграції до managed runner; безпечне відновлення overlay не має випереджати helper.
+3. **Protection probe validation.** Міграцію `MoleInstallation.unprotected` і synchronous loader до bounded managed runner реалізовано й незалежно перевірено на рівні source. Timeout/cancellation, duplex stdout/stderr, strict framing та settlement мають synthetic regressions; exact-commit native validation ще pending. In-memory recovery hold не доводить cross-launch survivor containment.
 4. **Format capability.** Minimum Mole version не гарантує текстовий формат; нові guards відмовляють на невідомому output, але повний capability handshake потребує backend підтримки.
 5. **Recovery migration.** Нові journals виявляють зовнішні зміни whitelist; старі не містять applied bytes і зберігають попередній recovery contract. Конфлікт нового journal зберігає обидві версії й потребує ручного узгодження перед повторною спробою.
 6. **Signed-Mac acceptance.** Ще потрібні callbacks/NSPanel, keyboard/default action, manual scrolling, native PTY/quit races, FDA/TCC, installed Mole compatibility і вимірювання disk delta. Навіть успішні hosted unit tests не замінюють це.
@@ -80,3 +80,20 @@ R1: публікація orb обмежена активним модулем. �
 | Підтримка | Pinned safe CI, compiler localization gate, синтетичні fixtures, coverage matrix | Сумісність із версіями Mole, runtime regression ownership і release checklist |
 
 Це вимірювані критерії, а не твердження про перевагу над конкурентом чи відсутність усіх майбутніх помилок. Остаточний статус exact SHA визначає відповідний GitHub Actions run; жоден queued/running статус не означає PASS.
+
+## Повторна native перевірка та наступний safety patch
+
+Commit `6a948521b883e616322f2c3e7942a62640c02a44`, Actions run `39047238038`: native build/tests PASS; app 187 cases (186 passed, 1 gated skip), MoleKit XCTest 22 (2 gated skips) і Swift Testing suites PASS. Compiler localization: 789 keys, 0 issues. Оглянуто 190 PNG (132 базові + по 29 з окремих uk/ru процесів): Security overlap усунуто, unavailable updates показують чесну помилку, Notice contrast ≥ приблизно 5.78:1. Додатково виправлено низький контраст failure lines у completion view; новий contrast regression потребує наступного native run.
+
+Наступний patch додає bounded managed protection probes: nonblocking duplex I/O, deadline, обмеження output, strict UTF-8/count framing, cancellation із settlement/reap та recovery hold при невизначеному ownership. Protection load перенесено поза main actor; snapshot commit атомарний, stale generation/помилки не дозволяють editing. Початок exclusive run синхронно скасовує старий load. Незалежний source review не знайшов відкритого blocker; native compile/tests для цього patch ще pending, тож source checks не є runtime доказом.
+
+Recovery hold є in-memory. Після аварійного завершення startup recovery не перевіряє surviving helper з попереднього процесу Nora; persisted cross-launch containment залишається архітектурним обмеженням. Broad-command allowlist race і невизначеність valid-prefix truncated preview також не усунені цим patch.
+
+
+## ClamAV: окреме керування рушієм і сигнатурами
+
+Додано installed engine version/location, явно датовану перевірку Homebrew catalog (з revisions), окремі дії engine upgrade та freshclam definitions update, build date/version on-disk бази, окремі success timestamps і результати/помилки/скасування в Security console. Catalog не названо глобальним доказом latest; перевірка сигнатур не названа оновленням рушія. Engine mutation блокується до завершення активних scan/startup tasks та фактичного виходу зупиненого watcher daemon. Existing daemon не названо оновленим після зміни binary на диску.
+
+Усі нові tests використовують injected tools і temporary fixtures. Додано Settings renders для installed/outdated/failed-check/missing-homebrew/missing-engine/busy, 640×580 і 640×1600, EN/UK/RU; окремі process-language reruns потрібні для model strings. 840 localization keys проходять локальний check; compiler extraction та native pixels на цьому patch ще pending. Реальний brew/freshclam/clamd на Mac користувача не запускався.
+
+Повторний pixel review також виявив декоративне перекриття українського Cleanup опису та обрізані російські Application captions при мінімальному вікні. Feature-local адаптивні ширини/scroll viewport виправлено, без приховування дій; наступний native render має це підтвердити.
