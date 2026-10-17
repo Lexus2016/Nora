@@ -48,7 +48,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #endif
     }
     private var menuBar: MenuBarController?
+    private var trashPrompt: TrashPromptController?
+    private var waitingForTrashTermination = false
     private var scheduler: Timer?
+    private var startupTask: Task<Void, Never>?
     private var terminationSignal: DispatchSourceSignal?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -69,10 +72,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         term.resume()
         terminationSignal = term
         app.prepare()
+        trashPrompt = TrashPromptController(model: app.trash, openNora: { [weak self] in self?.app.showSettings() })
         _ = Updater.shared
-        Task {
+        startupTask = Task {
+            await app.trash.checkRecovery()
+            guard !Task.isCancelled else { return }
+            app.trash.start()
             await app.security.reapOrphanedScanners()
+            guard !Task.isCancelled else { return }
             await app.locate()
+            guard !Task.isCancelled else { return }
             menuBar = MenuBarController(app: app)
             app.security.resumeWatchIfEnabled(app)
             #if DEBUG
@@ -114,8 +123,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !isUnitTestHost else { return .terminateNow }
+        guard !waitingForTrashTermination else { return .terminateLater }
+        startupTask?.cancel()
+        let needsSettlement = app.trash.isWorking
+        app.trash.shutdown()
+        guard needsSettlement else { return .terminateNow }
+        waitingForTrashTermination = true
+        Task { @MainActor in
+            await app.trash.waitUntilSettled()
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         guard !isUnitTestHost else { return }
+        startupTask?.cancel()
+        app.trash.shutdown()
+        trashPrompt?.shutdown()
         app.security.shutdown()
         // Children first, and only once they are gone: Mole must not read the whitelist while
         // it is being put back. If one survives, the overlay stays until the next launch.
