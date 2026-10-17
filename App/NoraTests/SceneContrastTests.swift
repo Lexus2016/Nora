@@ -22,6 +22,17 @@ final class SceneContrastTests: XCTestCase {
         print(report.joined(separator: "\n"))
     }
 
+    func testCompletionFailureTextContrastOnEveryScene() throws {
+        let color = try XCTUnwrap(NSColor(DoneView.failureTextColor).usingColorSpace(.sRGB))
+        let foreground = Contrast.RGB(r: Double(color.redComponent), g: Double(color.greenComponent),
+                                     b: Double(color.blueComponent))
+        for module in Module.allCases {
+            let background = try brightestCardPixel(module.palette)
+            XCTAssertGreaterThanOrEqual(Contrast.ratio(foreground, over: background), 4.5,
+                                        "\(module) failure summary text on its panel")
+        }
+    }
+
     /// Text that sits on the scene itself: the header subtitle over HeaderShade, the command line
     /// on its dark chip, and notices on their glass chip.
     func testTextOnSceneContrast() throws {
