@@ -72,7 +72,6 @@ struct ModuleDetail: View {
         case .protection: ProtectionView()
         case .tools: ToolsView()
         case .security: SecurityView(model: app.security)
-        default: EmptyView()
         }
     }
 }
