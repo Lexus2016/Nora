@@ -306,6 +306,7 @@ final class AppsModel {
     /// decides the result, because the upgrade's exit status does not say which cask failed.
     /// Selected apps from a download follow, one at a time (see `replace`).
     func upgrade(_ app: AppModel) {
+        guard !app.trash.blocksOtherMutations else { updatesNote = AppModel.trashBusyMessage; askingToQuit = false; return }
         guard let path = Homebrew.executable() else { return }
         let tokens = selectedTokens
         let commands = tokens.compactMap { Homebrew.upgradeCommand(tokens: [$0], executable: path) }
