@@ -18,7 +18,7 @@ final class ClamAVSettingsVisualTests: XCTestCase {
                 try? FileManager.default.removeItem(at: root)
                 preferences.removePersistentDomain(forName: suite)
             }
-            let app = AppModel(visualSnapshot: true)
+            let app = AppModel(visualSnapshot: true, home: root)
             var calls = 0
             var services = ClamAVManagementServices()
             services.locate = {
