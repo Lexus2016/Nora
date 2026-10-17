@@ -325,6 +325,8 @@ struct SmartCareView: View {
 
 /// One Smart Care tile: the module's glass object off the corner, its finding, Review.
 private struct SmartTile: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     let module: Module
     @Bindable var model: SmartCareModel
     @Environment(AppModel.self) private var app
@@ -383,6 +385,6 @@ private struct SmartTile: View {
         .volumeCard(radius: 24, tint: module.palette.glow)
         .overlay(shape.strokeBorder(.white.opacity(working ? 0.4 : 0), lineWidth: 1.2))
         .shadow(color: module.palette.glow.opacity(working ? 0.45 : 0), radius: 24)
-        .animation(.easeInOut(duration: 0.3), value: working)
+        .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeInOut(duration: 0.3) : nil, value: working)
     }
 }
