@@ -237,7 +237,10 @@ private struct SpaceLens: View {
 
     var body: some View {
         ModuleScene(module: module, leading: .startOver(bindBackShortcut: false) { model.reset() },
-                    orb: model.selectedEntries.isEmpty || model.loading ? nil : OrbAction(title: "Remove", destructive: true, action: { model.trashSelected() })) {
+                    orb: model.selectedEntries.isEmpty || model.loading ? nil : OrbAction(title: "Remove", destructive: true, action: {
+                        guard !app.trash.blocksOtherMutations else { model.error = AppModel.trashBusyMessage; return }
+                        model.trashSelected()
+                    })) {
             VStack(spacing: 14) {
                 breadcrumb
                 // A folder that could not be opened says why instead of doing nothing.
