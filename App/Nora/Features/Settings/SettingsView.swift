@@ -85,6 +85,7 @@ enum MenuBarStyle: String, CaseIterable, Identifiable {
 }
 
 private struct GeneralSettings: View {
+    @Environment(AppModel.self) private var app
     @AppStorage("showMenuBar") private var showMenuBar = true
     @AppStorage("menuBarStyle") private var style = MenuBarStyle.icon.rawValue
     @AppStorage(MenuBarStyle.temperatureKey) private var showTemperature = false
@@ -107,6 +108,7 @@ private struct GeneralSettings: View {
                     }
                 if let loginError { Text(loginError).font(.system(size: 12)).foregroundStyle(.red) }
             }
+            TrashReminderSettingsSection(model: app.trash)
             Section("Menu bar") {
                 Toggle("Show Nora in the menu bar", isOn: $showMenuBar)
                 Picker("Menu bar item", selection: $style) {
