@@ -132,10 +132,38 @@ int nora_trash_lock(int directory) {
     if (flock(fd, LOCK_EX | LOCK_NB)) return close_error(fd);
     return fd;
 }
+#if defined(__APPLE__)
+/* acl_get_fd_np returns NULL/ENOENT both through its underlying stat path and
+   for an absent FILESEC_ACL property. Read/query separately so an absent ACL
+   is proven, while filesystem/permission/descriptor errors still fail closed.
+   Apple Libc: posix1e/acl_file.c, gen/filesec.c, sys/statx_np.c. */
+static int read_directory_acl(int directory, acl_t *result) {
+    *result = NULL;
+    filesec_t security = filesec_init();
+    if (!security) return -1;
+    struct stat identity;
+    int present = 0;
+    if (fstatx_np(directory, &identity, security) ||
+        filesec_query_property(security, FILESEC_ACL, &present)) {
+        int error = errno; filesec_free(security); errno = error; return -1;
+    }
+    if (!present) { filesec_free(security); return 0; }
+    if (filesec_get_property(security, FILESEC_ACL, result)) {
+        int error = errno; filesec_free(security); errno = error; return -1;
+    }
+    filesec_free(security);
+    if (!*result) { errno = EINVAL; return -1; }
+    if (acl_valid(*result)) {
+        int error = errno; acl_free(*result); *result = NULL; errno = error; return -1;
+    }
+    return 0;
+}
+#endif
 int nora_trash_require_no_acl(int directory) {
 #if defined(__APPLE__)
-    acl_t acl = acl_get_fd_np(directory, ACL_TYPE_EXTENDED);
-    if (!acl) return -1; /* Unknown ACL state is not private staging. */
+    acl_t acl = NULL;
+    if (read_directory_acl(directory, &acl)) return -1;
+    if (!acl) return 0; /* Successfully inspected; no extended ACL property. */
     acl_entry_t entry;
     errno = 0;
     int found = acl_get_entry(acl, ACL_FIRST_ENTRY, &entry);
@@ -151,8 +179,9 @@ int nora_trash_require_no_acl(int directory) {
 }
 int nora_trash_require_no_grant_acl(int directory) {
 #if defined(__APPLE__)
-    acl_t acl = acl_get_fd_np(directory, ACL_TYPE_EXTENDED);
-    if (!acl) return -1;
+    acl_t acl = NULL;
+    if (read_directory_acl(directory, &acl)) return -1;
+    if (!acl) return 0;
     acl_entry_t entry;
     int selector = ACL_FIRST_ENTRY;
     for (;;) {
