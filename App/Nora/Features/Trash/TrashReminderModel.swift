@@ -36,6 +36,7 @@ final class TrashReminderModel {
     @ObservationIgnored private var debounce: (any TrashReminderScheduledCall)?
     @ObservationIgnored private var fallback: (any TrashReminderScheduledCall)?
     @ObservationIgnored private var cooldown: (any TrashReminderScheduledCall)?
+    @ObservationIgnored private var completionClose: (any TrashReminderScheduledCall)?
     @ObservationIgnored private var work: Task<Void, Never>?
     @ObservationIgnored private var workKind: WorkKind?
     @ObservationIgnored private var cancellation: TrashCancellationToken?
@@ -50,6 +51,8 @@ final class TrashReminderModel {
     static let fallbackInterval: TimeInterval = 10
     static let debounceInterval: TimeInterval = 1
     static let dismissalCooldown: TimeInterval = 30 * 60
+    /// How long the "items removed" result stays up before the panel closes on its own.
+    static let completionDisplayInterval: TimeInterval = 3
 
     init(services: TrashReminderServices, monitor: any TrashDirectoryMonitoring,
          clock: any TrashReminderScheduling = TrashReminderClock(), preferences: UserDefaults? = nil,
@@ -119,6 +122,8 @@ final class TrashReminderModel {
         invalidateScan()
         cancellation?.cancel()
         pendingScan = nil
+        completionClose?.cancel()
+        completionClose = nil
         present(false)
     }
 
@@ -145,6 +150,8 @@ final class TrashReminderModel {
     /// Always available from Nora's menu and settings, even when automatic reminders are off.
     func openReview() {
         guard !stopped else { return }
+        completionClose?.cancel()
+        completionClose = nil
         present(true)
         guard workKind != .execution && workKind != .recovery else { return }
         enqueueScan(.manual)
@@ -198,6 +205,7 @@ final class TrashReminderModel {
             self.dismissedSnapshot = reviewed
             self.dismissUntil = self.clock.now.addingTimeInterval(Self.dismissalCooldown)
             self.finishWork()
+            if result.status == .completed { self.scheduleCompletionClose() }
         }
     }
 
@@ -344,6 +352,18 @@ final class TrashReminderModel {
                 if purpose != .automatic { self.present(true) }
             }
             self.finishWork()
+        }
+    }
+
+    /// Only a fully successful deletion closes itself. A cancelled, failed, changed or recovery result
+    /// needs to be read and acted on, so it stays until the user dismisses it.
+    private func scheduleCompletionClose() {
+        completionClose?.cancel()
+        completionClose = clock.schedule(after: Self.completionDisplayInterval) { [weak self] in
+            guard let self else { return }
+            self.completionClose = nil
+            guard self.phase == .finished, self.outcome?.status == .completed else { return }
+            self.present(false)
         }
     }
 

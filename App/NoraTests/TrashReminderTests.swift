@@ -350,6 +350,53 @@ final class TrashReminderTests: XCTestCase {
         XCTAssertFalse(fixture.model.isWorking)
     }
 
+    func testSuccessfulDeletionClosesThePanelOnItsOwnAfterTheResultHasBeenShown() async {
+        let fixture = Fixture()
+        fixture.model.openReview()
+        await settle()
+        fixture.model.requestDeletionConfirmation()
+        await settle()
+        fixture.model.confirmDeletion()
+        await settle()
+        XCTAssertEqual(fixture.model.phase, .finished)
+        XCTAssertEqual(fixture.model.outcome?.status, .completed)
+        XCTAssertTrue(fixture.model.isPresented, "The result is shown first")
+        fixture.clock.advance(by: TrashReminderModel.completionDisplayInterval - 0.5)
+        XCTAssertTrue(fixture.model.isPresented, "Still readable just before the interval ends")
+        fixture.clock.advance(by: 1)
+        XCTAssertFalse(fixture.model.isPresented)
+        fixture.model.shutdown()
+    }
+
+    func testCancelledDeletionAndAReopenedReviewStayOnScreen() async {
+        let fixture = Fixture()
+        fixture.model.openReview()
+        await settle()
+        fixture.model.requestDeletionConfirmation()
+        await settle()
+        fixture.service.holdExecution = true
+        fixture.model.confirmDeletion()
+        await settle()
+        fixture.service.releaseExecution(.init(status: .cancelled, deletedEntryCount: 1, detail: "Synthetic stop."))
+        await settle()
+        XCTAssertEqual(fixture.model.outcome?.status, .cancelled)
+        fixture.clock.advance(by: TrashReminderModel.completionDisplayInterval * 4)
+        XCTAssertTrue(fixture.model.isPresented, "A partial result needs to be read, so it never closes by itself")
+
+        fixture.service.holdExecution = false
+        fixture.model.openReview()
+        await settle()
+        fixture.model.requestDeletionConfirmation()
+        await settle()
+        fixture.model.confirmDeletion()
+        await settle()
+        XCTAssertEqual(fixture.model.outcome?.status, .completed)
+        fixture.model.openReview()
+        fixture.clock.advance(by: TrashReminderModel.completionDisplayInterval * 2)
+        XCTAssertTrue(fixture.model.isPresented, "Reopening the review cancels the pending automatic close")
+        fixture.model.shutdown()
+    }
+
     private func settle() async { for _ in 0..<30 { await Task.yield() } }
     private func sample(_ id: String, bytes: Int64 = 1_400_000_000) -> TrashReminderSnapshot {
         .init(contentIdentity: id, topLevelItemCount: 2, entryCount: 4, logicalBytes: bytes)
