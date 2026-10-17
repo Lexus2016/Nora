@@ -314,9 +314,11 @@ private final class PausedProtectionRead: @unchecked Sendable {
     }
 
     func waitUntilStarted() async -> Bool {
-        await Task.detached { [self] in
-            started.wait(timeout: .now() + .seconds(3)) == .success
-        }.value
+        await Task.detached { [self] in waitForStartSignal() }.value
+    }
+
+    private func waitForStartSignal() -> Bool {
+        started.wait(timeout: .now() + .seconds(3)) == .success
     }
 
     func resume() { resumed.signal() }
