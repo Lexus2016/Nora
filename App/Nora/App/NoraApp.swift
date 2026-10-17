@@ -95,9 +95,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { note in
-            let identifier = (note.object as? NSWindow)?.identifier?.rawValue
+            let windowID = (note.object as? NSWindow).map(ObjectIdentifier.init)
             MainActor.assumeIsolated {
-                guard identifier == "main" else { return }
+                guard let windowID,
+                      NSApp.windows.first(where: { ObjectIdentifier($0) == windowID })?.identifier?.rawValue == "main" else { return }
                 // With the menu bar item on, Nora keeps running there without a Dock icon.
                 if UserDefaults.standard.object(forKey: "showMenuBar") as? Bool ?? true { NSApp.setActivationPolicy(.accessory) }
             }
