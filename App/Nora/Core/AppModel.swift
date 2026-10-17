@@ -33,7 +33,8 @@ final class AppModel {
     /// Synthetic rendering only; release builds cannot enable this mode.
     let isVisualSnapshot: Bool
 
-    init(visualSnapshot: Bool = false) {
+    init(visualSnapshot: Bool = false, home: URL = FileManager.default.homeDirectoryForCurrentUser) {
+        self.home = home
         #if DEBUG
         isVisualSnapshot = visualSnapshot
         if let name = UserDefaults.standard.string(forKey: "NoraModule"), let module = Module(rawValue: name) { selection = module }
@@ -60,7 +61,7 @@ final class AppModel {
     let tools = ToolsModel()
     let security = SecurityModel()
 
-    let home = FileManager.default.homeDirectoryForCurrentUser
+    let home: URL
 
     /// `~/Library/Application Support/Nora`: askpass helper, whitelist journal, history.
     var supportDirectory: URL {
@@ -83,20 +84,42 @@ final class AppModel {
     /// One Cleanup or Projects run at a time, from its fresh check until the whitelist is put
     /// back: a second run would read the first one's temporary protection as the user's choice.
     @ObservationIgnored private var exclusiveRun: String?
+    @ObservationIgnored private var protectionProbe: MoleProbeCancellation?
 
     func beginExclusiveRun(_ id: String) -> Bool {
-        guard exclusiveRun == nil, !overlay.needsRecovery else { return false }
+        guard exclusiveRun == nil, !overlay.needsRecovery,
+              protectionProbe?.canRestoreProtection != false else { return false }
+        // Invalidate the editor's asynchronous snapshot even if this run starts and finishes
+        // before that read returns; a transient overlay must never become editable user rules.
+        protection.cancelLoad()
         exclusiveRun = id
+        protectionProbe = MoleProbeCancellation()
         return true
+    }
+
+    func probeCancellation(for runID: String) throws -> MoleProbeCancellation {
+        guard exclusiveRun == runID, let protectionProbe else { throw WhitelistOverlayError.pendingRecovery }
+        return protectionProbe
     }
 
     func recoverProtection() throws {
         guard exclusiveRun == nil else { throw WhitelistOverlayError.pendingRecovery }
+        guard protectionProbe?.canRestoreProtection != false else { throw MoleProbeError.unsettled }
         try overlay.recoverIfNeeded()
     }
 
+    /// Both cleanup defers and manual recovery pass through the same settlement barrier.
+    func recoverProtection(runID: String) throws {
+        guard exclusiveRun == runID else { throw WhitelistOverlayError.pendingRecovery }
+        guard protectionProbe?.canRestoreProtection != false else { throw MoleProbeError.unsettled }
+        try overlay.recover(runID: runID)
+    }
+
     func endExclusiveRun(_ id: String) {
-        if exclusiveRun == id { exclusiveRun = nil }
+        if exclusiveRun == id {
+            exclusiveRun = nil
+            if protectionProbe?.canRestoreProtection == true { protectionProbe = nil }
+        }
     }
 
     /// Protects `paths` for one run through the whitelist overlay, then asks Mole whether each
@@ -105,15 +128,27 @@ final class AppModel {
     /// run stops here instead. The caller's `recover(runID:)` takes the overlay off again.
     func protect(_ paths: [String], with mole: Mole, runID: String) async throws {
         let (overlay, installation, home) = (overlay, mole.installation, home)
-        try await Task.detached { try Self.protect(paths, overlay: overlay, installation: installation, home: home, runID: runID) }.value
+        let cancellation = try probeCancellation(for: runID)
+        try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            try await Task.detached {
+                try Self.protect(paths, overlay: overlay, installation: installation, home: home,
+                                 runID: runID, cancellation: cancellation)
+            }.value
+            try Task.checkCancellation()
+        } onCancel: { cancellation.cancel() }
     }
 
     /// `protect` without the main actor, for drivers that decide inside a PTY session.
     nonisolated static func protect(_ paths: [String], overlay: WhitelistOverlay, installation: MoleInstallation,
-                                    home: URL, runID: String) throws {
+                                    home: URL, runID: String, cancellation: MoleProbeCancellation) throws {
+        try cancellation.checkCancellation()
         guard !paths.isEmpty else { return }
-        try overlay.apply(protecting: paths, defaults: try installation.cleanWhitelistDefaults(home: home), runID: runID)
-        let open = try installation.unprotected(paths, home: home)
+        let defaults = try installation.cleanWhitelistDefaults(home: home, cancellation: cancellation)
+        try cancellation.checkCancellation()
+        try overlay.apply(protecting: paths, defaults: defaults, runID: runID)
+        let open = try installation.unprotected(paths, home: home, cancellation: cancellation)
+        try cancellation.checkCancellation()
         if let first = open.first {
             let path = first.replacingOccurrences(of: home.path, with: "~", options: .anchored)
             throw NoraError.commandFailed(open.count == 1
@@ -123,7 +158,9 @@ final class AppModel {
     }
 
     /// A preview taken now would not see what the running task protects for itself.
-    var exclusiveRunActive: Bool { exclusiveRun != nil || overlay.needsRecovery }
+    var exclusiveRunActive: Bool {
+        exclusiveRun != nil || overlay.needsRecovery || protectionProbe?.canRestoreProtection == false
+    }
 
     static let busyScanMessage = String(localized: "A cleaning task is running. Scan again when it finishes.")
 
