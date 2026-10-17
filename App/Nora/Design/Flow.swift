@@ -302,6 +302,9 @@ struct ResultHeadline: View {
 
 /// Result screen: the headline number, Mole's own summary lines and Done.
 struct DoneView: View {
+    /// The failure marker and wording carry meaning; white stays readable on every scene.
+    static let failureTextColor = Color.white
+
     static func problemsFirst(_ lines: [String]) -> [String] {
         lines.filter { $0.hasPrefix("✕") } + lines.filter { !$0.hasPrefix("✕") }
     }
@@ -330,7 +333,7 @@ struct DoneView: View {
                             ForEach(Array(Self.problemsFirst(lines).enumerated()), id: \.offset) { _, line in
                                 // Mole's summary lines arrive in English; Nora's own pass through.
                                 Text(MoleSummaryText.localize(line)).font(.system(size: 13))
-                                    .foregroundStyle(line.hasPrefix("✕") ? Palette.crit : Palette.fg2)
+                                    .foregroundStyle(line.hasPrefix("✕") ? Self.failureTextColor : Palette.fg2)
                                     .textSelection(.enabled)
                             }
                         }
