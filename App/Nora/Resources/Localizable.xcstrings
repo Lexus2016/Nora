@@ -3311,22 +3311,6 @@
         }
       }
     },
-    "ClamAV database": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "База ClamAV"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "База ClamAV"
-          }
-        }
-      }
-    },
     "ClamAV engine": {
       "localizations": {
         "ru": {
@@ -3531,22 +3515,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "ClamAV зупинився. Nora перезапускає стеження за Завантаженнями."
-          }
-        }
-      }
-    },
-    "ClamAV stopped. Nora restarted the Downloads watch.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ClamAV остановился. Nora перезапустила слежение за Загрузками."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ClamAV зупинився. Nora перезапустила стеження за Завантаженнями."
           }
         }
       }
@@ -9713,22 +9681,6 @@
         }
       }
     },
-    "Ready": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готово"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готово"
-          }
-        }
-      }
-    },
     "Rebuilds the search index only if search is slow.": {
       "localizations": {
         "ru": {
@@ -12355,38 +12307,6 @@
         }
       }
     },
-    "The database update failed.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось обновить базу."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося оновити базу."
-          }
-        }
-      }
-    },
-    "The database update was stopped.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обновление вирусной базы остановлено."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оновлення вірусної бази зупинено."
-          }
-        }
-      }
-    },
     "The disk has problems. Run in Terminal: sudo diskutil repairVolume /": {
       "localizations": {
         "ru": {
@@ -12671,22 +12591,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вірусну базу не вдалося оновити, тому сканування пройшло з копією, що вже є на цьому Mac."
-          }
-        }
-      }
-    },
-    "The virus database could not be updated, so this scan used the copy from %@.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вирусную базу не удалось обновить, поэтому сканирование прошло с копией от %@."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вірусну базу не вдалося оновити, тому сканування пройшло з копією від %@."
           }
         }
       }
@@ -13155,22 +13059,6 @@
         }
       }
     },
-    "Update now": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обновить сейчас"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оновити зараз"
-          }
-        }
-      }
-    },
     "Update virus database": {
       "localizations": {
         "ru": {
@@ -13199,22 +13087,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновити вірусні сигнатури"
-          }
-        }
-      }
-    },
-    "Updated %@": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обновлено %@"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оновлено %@"
           }
         }
       }
@@ -14017,38 +13889,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "щонайменше %@"
-          }
-        }
-      }
-    },
-    "brew install %@ did not finish. The console shows the output.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "brew install %@ не завершился. Вывод есть в консоли."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "brew install %@ не завершився. Вивід є в консолі."
-          }
-        }
-      }
-    },
-    "brew install %@ was stopped. Install again when you are ready.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "brew install %@ остановлен. Установите снова, когда будете готовы."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "brew install %@ зупинено. Встановіть знову, коли будете готові."
           }
         }
       }
