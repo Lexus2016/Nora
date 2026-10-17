@@ -80,7 +80,7 @@ final class ProjectsModel {
         stage = .running
         task = Task(.projects) {
             defer {
-                do { try app.overlay.recover(runID: runID) }
+                do { try app.recoverProtection(runID: runID) }
                 catch {
                     failed = true
                     resultHeadline = String(localized: "Removal needs attention")
