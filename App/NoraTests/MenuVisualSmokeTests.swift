@@ -10,6 +10,11 @@ import XCTest
 @MainActor
 final class MenuVisualSmokeTests: XCTestCase {
     private let syntheticHome = URL(fileURLWithPath: "/Users/visual-fixture")
+    private let isolatedAppHome = FileManager.default.temporaryDirectory.appendingPathComponent("nora-menu-visual-\(UUID().uuidString)")
+
+    override func tearDown() async throws {
+        try? FileManager.default.removeItem(at: isolatedAppHome)
+    }
     private let failure = "Synthetic preview unavailable. Nothing was changed. Review the log and try again."
 
     func testEverySidebarModuleAtDefaultAndMinimumSize() throws {
@@ -194,7 +199,7 @@ final class MenuVisualSmokeTests: XCTestCase {
     }
 
     private func fixture(_ module: Module) -> AppModel {
-        let app = AppModel(visualSnapshot: true)
+        let app = AppModel(visualSnapshot: true, home: isolatedAppHome)
         XCTAssertTrue(app.isVisualSnapshot, "Snapshots require a DEBUG test host")
         XCTAssertFalse(app.autoScan)
         app.selection = module
