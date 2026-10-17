@@ -65,10 +65,15 @@ private struct CleanupResults: View {
                 } else {
                     GeometryReader { geo in
                         HStack(alignment: .top, spacing: 18) {
-                            card(sections[0], large: true).frame(width: (geo.size.width - 36) / 3)
+                            // Keep localized details above the decorative artwork. At short
+                            // window heights the complete card, including its actions, scrolls.
                             ScrollView {
-                                LazyVGrid(columns: [GridItem(.flexible(), spacing: 18), GridItem(.flexible(), spacing: 18)], spacing: 18) {
-                                    ForEach(sections.dropFirst(), id: \.self) { card($0).frame(height: max(170, (geo.size.height - 18) / 2)) }
+                                card(sections[0], large: true).frame(height: max(420, geo.size.height))
+                            }
+                            .frame(width: max(320, (geo.size.width - 36) / 3))
+                            ScrollView {
+                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 18)], spacing: 18) {
+                                    ForEach(sections.dropFirst(), id: \.self) { card($0).frame(height: max(200, (geo.size.height - 18) / 2)) }
                                 }
                             }
                             .scrollIndicators(.never)
