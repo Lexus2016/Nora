@@ -48,6 +48,17 @@ jobs:
             -resultBundlePath ../build/NoraTests.xcresult \
             CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= \
             OTHER_CODE_SIGN_FLAGS= test
+      - name: Localized model-copy snapshots
+        if: ${{ !cancelled() && steps.app_tests.outcome == 'success' }}
+        run: |
+          for language in uk ru; do
+            xcodebuild -project App/Nora.xcodeproj -scheme Nora -configuration Debug \
+              -destination 'platform=macOS' -derivedDataPath build/DerivedData \
+              -resultBundlePath "build/NoraVisual-$language.xcresult" \
+              -only-testing:NoraTests/MenuVisualSmokeTests/testRepresentativeLocalizedAndInnerScreens \
+              -testLanguage "$language" CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY=- \
+              DEVELOPMENT_TEAM= OTHER_CODE_SIGN_FLAGS= test-without-building
+          done
       - name: Verify extracted localization keys
         if: ${{ !cancelled() && steps.app_tests.outcome == 'success' }}
         run: |
@@ -57,15 +68,20 @@ jobs:
       - name: Export visual snapshot attachments
         if: ${{ !cancelled() && steps.app_tests.outcome == 'success' }}
         run: |
-          xcrun xcresulttool export attachments --path build/NoraTests.xcresult --output-path build/visual-smoke
+          mkdir -p build/test-summaries
+          for result in build/*.xcresult; do
+            name="$(basename "$result" .xcresult)"
+            xcrun xcresulttool export attachments --path "$result" --output-path "build/visual-smoke/$name"
+            xcrun xcresulttool get test-results summary --path "$result" > "build/test-summaries/$name.json"
+          done
       - name: Retain native test result
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-test-results
           path: |
-            build/NoraTests.xcresult
             build/visual-smoke
+            build/test-summaries
             App/Localization/keys.json
             App/Localization/missing-*.json
           if-no-files-found: ignore

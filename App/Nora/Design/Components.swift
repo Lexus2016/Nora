@@ -221,12 +221,20 @@ struct Spinner: View {
 /// a core with nothing on screen.
 struct Spinning: ViewModifier {
     let period: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var visible = true
 
     func body(content: Content) -> some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !visible)) { context in
-            let turns = context.date.timeIntervalSinceReferenceDate / period
-            content.rotationEffect(.degrees((turns - turns.rounded(.down)) * 360))
+        Group {
+            if reduceMotion {
+                // Keep the busy ring and its accessibility label, but create no animation timer.
+                content
+            } else {
+                TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !visible)) { context in
+                    let turns = context.date.timeIntervalSinceReferenceDate / period
+                    content.rotationEffect(.degrees((turns - turns.rounded(.down)) * 360))
+                }
+            }
         }
         .background(VisibilityProbe(visible: $visible))
     }

@@ -10,8 +10,9 @@ final class ToolsModel {
     var touchIDBusy = false
     var touchIDError: String?
     @ObservationIgnored private var touchIDGeneration = UUID()
-    @ObservationIgnored private var refreshGeneration = UUID()
     var latestMole: String?
+    private(set) var latestBusy = false
+    private(set) var latestError: String?
     var updateBusy = false
     /// A preview belongs to one drive as it was mounted then: choosing another drive, or
     /// unplugging and remounting it, voids it, and Clean only runs for the drive that was previewed.
@@ -65,8 +66,7 @@ final class ToolsModel {
     }
 
     func refresh(_ app: AppModel) {
-        let generation = UUID()
-        refreshGeneration = generation
+        refreshLatest()
         Task(.tools) {
             if !touchIDBusy {
                 let statusGeneration = UUID()
@@ -76,9 +76,22 @@ final class ToolsModel {
                     applyTouchIDStatus(outcome)
                 }
             }
-            let latest = try? await MoleSetup.latestVersion()
-            guard refreshGeneration == generation else { return }
-            latestMole = latest
+        }
+    }
+
+    /// Retry only the release lookup; failures must not look like an endless loading state.
+    @discardableResult
+    func refreshLatest(read: @escaping @MainActor () async throws -> String = {
+        try await MoleSetup.latestVersion()
+    }) -> Task<Void, Never>? {
+        guard !latestBusy else { return nil }
+        latestBusy = true
+        latestError = nil
+        latestMole = nil
+        return Task(.tools) {
+            defer { latestBusy = false }
+            do { latestMole = try await read() }
+            catch { latestError = String(localized: "Could not check the latest Mole release. Try again.") }
         }
     }
 
@@ -345,7 +358,11 @@ struct ToolsView: View {
         let latest = model.latestMole
         return tool("Mole", "arrow.triangle.2.circlepath", command: app.mole.map { MoleSetup.updateCommand(for: $0).description } ?? "mo update") {
             InfoRow(label: "Installed", value: installed)
-            InfoRow(label: "Latest release", value: latest ?? "…")
+            InfoRow(label: "Latest release", value: model.latestBusy ? String(localized: "Checking…") : latest ?? String(localized: "Unavailable"))
+            if let error = model.latestError {
+                Notice(text: error, color: Palette.warn)
+                Button("Retry") { model.refreshLatest() }.buttonStyle(GlassButtonStyle()).disabled(model.latestBusy)
+            }
             HStack {
                 Spacer()
                 if model.updateBusy { Spinner() }
@@ -358,7 +375,7 @@ struct ToolsView: View {
         @Bindable var model = model
         return tool("External drive", "externaldrive", command: "mo clean --external \(model.externalVolume.map { ShellQuote.word($0.path) } ?? "/Volumes/…")") {
             Text("Removes macOS metadata such as .DS_Store and ._ files from a drive you plug in.").font(.system(size: 13)).foregroundStyle(Palette.fg2)
-            Picker("", selection: $model.externalVolume) {
+            Picker("External drive", selection: $model.externalVolume) {
                 Text("Choose a drive").tag(URL?.none)
                 ForEach(model.volumes, id: \.self) { Text($0.lastPathComponent).tag(URL?.some($0)) }
             }

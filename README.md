@@ -30,8 +30,8 @@
 
 [Mole](https://github.com/tw93/Mole) is a free, open-source toolkit that does what CleanMyMac, AppCleaner, DaisyDisk and iStat Menus do, but you run it in Terminal. Nora gives Mole a native Mac window and keeps everything it does in plain sight.
 
-- **Nothing is deleted before you review it.** Every module works the same way: Scan, Review, Done. You see each item and its size first.
-- **Checkboxes that mean something.** An unticked item is really kept: Nora protects it for that run and checks Mole's own confirmation screen against your choice before it agrees. If anything does not match, Nora cancels and nothing is removed.
+- **Review before removal.** Cleaning modules show a preview and require your action before removal starts. Preview checks reduce risk but are not an atomic filesystem plan.
+- **Selection is checked.** Nora protects known unticked paths for the run. Installers also require an exact match with Mole’s confirmation before approval. A rejected check cancels the run; a later failure can leave a partial result, which Nora reports.
 - **Nothing hidden.** The console (<kbd>⌘J</kbd>) shows every command Nora ran and Mole's output: the last 400 lines of each of the latest 60 commands. You can also show the exact command under each action in Settings.
 - **Antivirus built in.** ClamAV and Apple's own XProtect rules check your apps, downloads and launch items. One click installs ClamAV, and Nora updates its virus database every day while it runs.
 - **Installs Mole for you.** No Terminal needed. Nora uses Homebrew if you have it, otherwise Mole's official installer with a pinned version and a verified checksum. No admin password.
@@ -120,7 +120,7 @@ To build Nora yourself, see [docs/BUILD.md](docs/BUILD.md).
 - Your password goes straight to `sudo` through the system dialog or Touch ID. Nora never sees or stores it.
 - No telemetry. Nora goes online only to check for updates to Nora, Mole and your apps (Homebrew's public app list and each app's own update feed), to update the ClamAV database if you installed ClamAV, and to download what you ask it to install: Mole, ClamAV and yara, and app updates through Homebrew.
 
-Known limits, because Mole works this way: Mole removes build folders by rescanning rather than from a list, so a folder created in the seconds before removal is not protected; and installers are matched by name, folder and size, as Mole's menu shows no full path.
+Known limits: Cleanup and Projects use Mole commands that rescan rather than execute an immutable path allowlist, so a new file or folder appearing after the check can still be affected. Text previews cannot prove completeness without a backend manifest. Installers are matched by name, folder and size because Mole’s menu does not provide a full path. See the [audit and acceptance limits](docs/audits/2026-10-17-remediation.uk.md).
 
 ## Documentation
 
@@ -153,3 +153,5 @@ Known limits, because Mole works this way: Mole removes build folders by rescann
 You may use, copy, modify and share Nora's code for any noncommercial purpose: personal use, study, research and hobby projects, and use by charities, schools and public institutions. Commercial use needs a separate license from the author. Open an issue to ask.
 
 Mole is a separate GPL-3.0 project. Nora runs it as an external program and does not include its code, so Mole's license is unaffected.
+
+Compatibility: the minimum accepted Mole version is 1.55.0, while the installer/reference parser fixtures target 1.59.1 / 1.59.x. Accepting a version is not proof that every newer backend is compatible. Unknown or incomplete output is rejected by the guarded previews; a complete mutation-capability/version gate remains a release requirement.

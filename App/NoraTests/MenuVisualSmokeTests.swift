@@ -65,10 +65,131 @@ final class MenuVisualSmokeTests: XCTestCase {
         // Environment locale covers SwiftUI localized keys. String(localized:) in model code
         // follows the process language; these are layout probes, not complete translation tests.
         for locale in ["en", "uk", "ru"] {
-            let app = fixture(.tools)
-            try capture(SettingsView().environment(app).environment(\.locale, Locale(identifier: locale))
-                .preferredColorScheme(.dark).allowsHitTesting(false),
-                name: "settings-general-\(locale)", size: CGSize(width: 640, height: 580))
+            for tab in ["general", "mole", "security", "updates"] {
+                let app = fixture(.tools)
+                try capture(SettingsView(snapshotTab: tab).environment(app).environment(\.locale, Locale(identifier: locale))
+                    .preferredColorScheme(.dark).allowsHitTesting(false),
+                    name: "settings-\(tab)-\(locale)", size: CGSize(width: 640, height: 580))
+                XCTAssertTrue(app.console.entries.isEmpty)
+            }
+        }
+    }
+
+    /// Presentation coverage only: assignments below are not an integration run or evidence
+    /// that cancelling, retrying, recovery, or a destructive operation actually succeeds.
+    func testOperationalStagePresentations() throws {
+        let modules: [Module] = [.cleanup, .projects, .installers, .applications,
+                                 .performance, .spaceMap, .security, .smartCare]
+        for module in modules {
+            for state in ["scanning", "running", "done", "done-partial-failure"] {
+                let app = fixture(module)
+                try configure(app, module: module, state: "review")
+                setOperationalState(app, module: module, state: state)
+                try snapshot(app, name: "\(module.rawValue)-\(state)-en")
+            }
+        }
+    }
+
+    func testCancellationRecoveryAndRetryPresentations() throws {
+        let apps = fixture(.applications)
+        apps.apps.stage = .running
+        apps.apps.stopRequested = true
+        try snapshot(apps, name: "applications-cancel-finishing-current-en")
+        apps.apps.stopRequested = false
+        apps.apps.reopening = true
+        try snapshot(apps, name: "applications-reopening-after-update-en")
+
+        let smart = fixture(.smartCare)
+        smart.smartCare.phase = .running
+        smart.smartCare.stopRequested = true
+        try snapshot(smart, name: "smartCare-cancel-stopping-en")
+        smart.smartCare.phase = .done
+        smart.smartCare.doneLines = ["Synthetic fixture: stopped after the current task; other tasks were not started."]
+        try snapshot(smart, name: "smartCare-cancel-stopped-en")
+
+        let cleanup = fixture(.cleanup)
+        cleanup.cleanup.stage = .done
+        cleanup.cleanup.failed = true
+        cleanup.cleanup.recoveryRequired = true
+        cleanup.cleanup.resultHeadline = "Recovery required"
+        cleanup.cleanup.resultLines = ["✕ Synthetic protection recovery is pending. No real journal exists."]
+        try snapshot(cleanup, name: "cleanup-recovery-required-en")
+
+        let projects = fixture(.projects)
+        projects.projects.stage = .done
+        projects.projects.failed = true
+        projects.projects.recoveryRequired = true
+        projects.projects.resultHeadline = "Recovery required"
+        projects.projects.resultLines = cleanup.cleanup.resultLines
+        try snapshot(projects, name: "projects-recovery-required-en")
+
+        let retry = fixture(.cleanup)
+        retry.cleanup.error = failure
+        try snapshot(retry, name: "cleanup-retry-available-en")
+        retry.cleanup.error = nil
+        retry.cleanup.stage = .scanning
+        try snapshot(retry, name: "cleanup-retry-scanning-en")
+    }
+
+    func testConsoleCurrentHistoryAndPausedPresentations() throws {
+        let app = fixture(.cleanup)
+        // ConsoleLog only stores strings. These commands are deliberately never executed.
+        let first = app.console.begin(ShellCommand("/synthetic/never-executed", ["earlier-preview"]))
+        app.console.append(first, ["Synthetic earlier preview output", "No files were touched."])
+        app.console.finish(first, status: 0)
+        let latest = app.console.begin(ShellCommand("/synthetic/never-executed", ["current-preview"]))
+        app.console.append(latest, ["Synthetic current preview output", "Waiting for synthetic fixture input…"])
+        let entryIDs = app.console.entries.map(\.id)
+        for (name, history, following) in [("current", false, true), ("history", true, true), ("paused", false, false)] {
+            try capture(ConsoleView(snapshotHistory: history, snapshotFollowTail: following)
+                .environment(app).preferredColorScheme(.dark).allowsHitTesting(false),
+                name: "console-\(name)-en", size: CGSize(width: 1040, height: 240))
+            XCTAssertEqual(app.console.entries.map(\.id), entryIDs, "Rendering must not launch commands")
+            XCTAssertNil(app.console.entries.last?.status, "Rendering must not complete a command")
+        }
+    }
+
+    private func setOperationalState(_ app: AppModel, module: Module, state: String) {
+        let failed = state == "done-partial-failure"
+        let stage: FlowStage = state == "scanning" ? .scanning : state == "running" ? .running : .done
+        let headline = failed ? "Synthetic task finished with problems" : "Synthetic task complete"
+        let lines = failed ? ["✓ One synthetic step completed", "✕ One synthetic step could not finish. Review the log."]
+                           : ["✓ Synthetic task completed. No product action was executed."]
+        switch module {
+        case .cleanup:
+            app.cleanup.stage = stage; app.cleanup.failed = failed
+            app.cleanup.resultHeadline = headline; app.cleanup.resultLines = lines
+        case .projects:
+            app.projects.stage = stage; app.projects.failed = failed
+            app.projects.resultHeadline = headline; app.projects.resultLines = lines
+        case .installers:
+            app.installers.stage = stage; app.installers.failed = failed
+            app.installers.resultHeadline = headline; app.installers.resultLines = lines
+        case .applications:
+            app.apps.stage = stage; app.apps.failed = failed
+            app.apps.resultHeadline = headline; app.apps.resultLines = lines
+        case .performance:
+            app.performance.stage = stage; app.performance.failed = failed
+            app.performance.resultHeadline = headline; app.performance.resultLines = lines
+        case .spaceMap:
+            // Space Map's running state shares the interactive lens with review.
+            app.spaceMap.stage = stage
+            app.spaceMap.trashed = ["Synthetic Example.dmg"]
+            app.spaceMap.trashFailures = failed ? ["Synthetic Example.dmg: could not move to Trash"] : []
+        case .security:
+            // Security .done is its result screen, not DoneView.
+            app.security.stage = stage
+            app.security.progress = "Synthetic example item"
+            app.security.clamavIncomplete = failed
+            app.security.notice = failed ? failure : nil
+        case .smartCare:
+            app.smartCare.phase = state == "scanning" ? .scanning : state == "running" ? .running : .done
+            app.smartCare.doneLines = lines
+            app.smartCare.failedModules = failed ? [.cleanup] : []
+            if stage == .scanning { app.cleanup.stage = .scanning }
+            if stage == .running { app.cleanup.stage = .running }
+        default:
+            XCTFail("This module has no operational FlowStage: \(module.rawValue)")
         }
     }
 

@@ -44,6 +44,7 @@ private struct SecurityStart: View {
                                Feature(symbol: "ladybug", text: "ClamAV antivirus scan"),
                                Feature(symbol: "arrow.uturn.backward.circle", text: "Quarantine with one click back")],
                     command: model.scanCommand,
+                    scrollable: true,
                     action: { model.scan(app) }) {
             Picker("Scope", selection: $model.scope) {
                 ForEach(ScanScope.allCases) { Text($0.title).tag($0) }
@@ -122,10 +123,12 @@ private struct SecurityResults: View {
                     HStack(alignment: .top, spacing: 18) {
                         launchCard.frame(width: (geo.size.width - 36) / 3)
                         ScrollView {
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 18), GridItem(.flexible(), spacing: 18)], spacing: 18) {
-                                xprotectCard.frame(height: 190)
-                                clamavCard.frame(height: 190)
-                                quarantineCard.frame(height: 190)
+                            // Localized setup buttons need more room than two narrow columns
+                            // provide. Reflow the cards rather than clipping their actions.
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 540), spacing: 18)], spacing: 18) {
+                                xprotectCard.frame(height: 210)
+                                clamavCard.frame(height: 210)
+                                quarantineCard.frame(height: 210)
                             }
                         }
                         .scrollIndicators(.never)
@@ -347,6 +350,8 @@ private struct FindingRow: View {
                     }))
                     .toggleStyle(.checkbox)
                     .labelsHidden()
+                    .accessibilityLabel(Text(finding.title))
+                    .accessibilityHint(Text(finding.path))
                     .padding(.top, 2)
             } else {
                 Image(systemName: "lock")

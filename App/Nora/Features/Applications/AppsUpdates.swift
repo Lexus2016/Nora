@@ -19,7 +19,7 @@ struct AppsUpdates: View {
             }
             if let note = model.updatesNote { Notice(text: note, symbol: "info.circle", color: Palette.muted) }
             if model.updateCount == 0 {
-                Text("Every app is up to date.").font(.system(size: 15)).foregroundStyle(Palette.fg2)
+                Text(Self.emptyStateMessage(updatesNote: model.updatesNote)).font(.system(size: 15)).foregroundStyle(Palette.fg2)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
@@ -56,6 +56,11 @@ struct AppsUpdates: View {
         } message: {
             Text("Open now: \(Array(Set(model.openToQuit.map(\.name))).sorted().formatted(.list(type: .and))). Nora quits them, updates them and opens them again. Each app can ask you to save your work first.")
         }
+    }
+
+    /// Missing or failed update providers cannot establish that every app is current.
+    static func emptyStateMessage(updatesNote: String?) -> String {
+        updatesNote == nil ? String(localized: "Every app is up to date.") : String(localized: "Could not check")
     }
 
     /// An app Nora cannot install: opening it lets its own updater do the job.

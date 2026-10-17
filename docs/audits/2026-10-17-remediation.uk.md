@@ -48,8 +48,8 @@ R1: публікація orb обмежена активним модулем. �
 - Нові suites: CleanupLifecycleRegressionTests, CleanupValidationRegressionTests, OverlayConflictRegressionTests, ProcessCancellationRegressionTests, NavigationConsistencyRegressionTests, ToolsProtectionSpaceMapRegressionTests, AppsRemovalTests, SecurityPartialOutcomeTests. Розширено AppsOutsideTests, AppsBrewTests, CleanupScopeTests.
 - Локальне середовище Linux не має Swift/Xcode. Жоден Python/source-model PASS не названо Swift compilation або passing native tests.
 - Додано `.github/workflows/native-tests.yml`: офіційний standard `xcode-27` runner, read-only repository token, pinned actions, synthetic MoleKit/app tests, ad-hoc signing, compiler localization extraction. `NORA_MOLE_E2E=0`, `NORA_MOLE_SUDO=0`; production startup tasks у DEBUG test host вимкнено. Workflow не збирає DMG, не підписує Developer ID, не deploy і не release.
-- Native run `39045329698` на `3ee6a6b`: MoleKit PASS (XCTest 22, 2 gated skips; Swift Testing 57 cases). Попередній parallel run мав PTY timeouts; serial mode усунув тестову конкуренцію, це не доказ production concurrency. App compile виявив Swift 6 isolation error console observer; виправлено перед наступним run. Остаточний статус exact commit додається до результату; queued/failed не є PASS.
-- Розширений прохід меню: див. [матрицю режимів](2026-10-17-menu-modes.uk.md). Додано attribution команд, History loading/retry/exit status, Security notice, Protection rollback та 9 tests. 80 native snapshot probes чекають CI та огляду PNG; це не live click-through і не автоматичне схвалення дизайну.
+- Native run `39045329698` на `3ee6a6b`: MoleKit PASS (XCTest 22, 2 gated skips; Swift Testing 57 cases). Попередній parallel run мав PTY timeouts; serial mode усунув тестову конкуренцію, це не доказ production concurrency. App compile виявив Swift 6 isolation error console observer; виправлено перед наступним run. Run `39045925591` на `018bb2c`: native app build + 179 XCTest cases (1 gated skip) PASS; 80 PNG export PASS. Compiler extraction знайшов відсутній Retry і застарілі keys: оновлено за compiler output перед наступним run. Остаточний статус exact commit додається до результату; queued/failed не є PASS.
+- Розширений прохід меню: див. [матрицю режимів](2026-10-17-menu-modes.uk.md). Додано attribution команд, History loading/retry/exit status, Security notice, Protection rollback та 13 tests. Також виправлено offline latest-release feedback/retry, zero-work Performance button, Space Map keyboard shortcut і доступні назви controls. 132 native snapshot probes чекають CI та огляду PNG; це не live click-through і не автоматичне схвалення дизайну.
 
 ## Відкриті архітектурні межі
 
@@ -63,3 +63,20 @@ R1: публікація orb обмежена активним модулем. �
 ## Перед merge/release
 
 Потрібні зелені native build/tests та compiler-derived localization check на точному commit; окремо ручний macOS acceptance у sandbox. Release/sign/notarize/merge не є частиною цієї публікації. До розв'язання наведених архітектурних обмежень не стверджувати, що всі можливі помилки або всі ризики очищення усунуто.
+
+## Нативний візуальний огляд
+
+80 PNG з run `39045925591` завантажено для огляду фактичних пікселів. Знайдено підтверджений дефект Security при 1040×620: локалізовані кнопки розсували дві вузькі картки, текст/дії перекривалися; стартова сторінка стискала опис і setup controls. Виправлення: адаптивна ширина карток та opt-in scrolling для Security start зі збереженням orb clearance. Потрібна повторна перевірка PNG на новому commit. Наступний run додає 132 базові кадри та окремі uk/ru test-host language runs для model strings; environment locale сама по собі не є повною перевіркою перекладу.
+
+## Ворота приймання продукту
+
+| Напрям | Доказ у цій роботі | Що ще потрібне для release |
+|---|---|---|
+| Безпека | Fail-closed previews, exact Installers confirmation, recovery/rollback regressions | Atomic backend allowlist, bounded protection probe, signed Mac/FDA acceptance |
+| Функціональність | Native MoleKit та app tests; source coverage усіх 12 модулів і допоміжних маршрутів | Контрольовані end-to-end дії з установленим Mole на окремому тестовому Mac |
+| Швидкість/ефективність | Тривалість synthetic tests є в Actions logs | Повторювані benchmark datasets, scan latency/peak RAM/CPU/disk delta; порівняння з CleanMyMac не проводилось |
+| UX/доступність | Native PNGs, min-size/localization probes, контрастні tests, labels/disabled states | VoiceOver, keyboard focus, реальний NSPanel/scroll/hit-testing, довгі production lists |
+| Надійність | Cancellation, stale-write, partial-outcome, recovery й malformed-output tests | Soak tests, abrupt quit/power-loss, реальні PTY/permissions/network edge cases |
+| Підтримка | Pinned safe CI, compiler localization gate, синтетичні fixtures, coverage matrix | Сумісність із версіями Mole, runtime regression ownership і release checklist |
+
+Це вимірювані критерії, а не твердження про перевагу над конкурентом чи відсутність усіх майбутніх помилок. Остаточний статус exact SHA визначає відповідний GitHub Actions run; жоден queued/running статус не означає PASS.

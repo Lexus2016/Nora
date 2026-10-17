@@ -9,6 +9,15 @@ struct SettingsView: View {
     /// Debug builds take `-NoraSettingsTab security` for screenshots.
     @State private var tab = Self.initialTab
 
+    init() {}
+
+    #if DEBUG
+    /// Selects a synthetic snapshot tab without mutating persisted preferences.
+    init(snapshotTab: String) {
+        _tab = State(initialValue: snapshotTab)
+    }
+    #endif
+
     private static var initialTab: String {
         #if DEBUG
         UserDefaults.standard.string(forKey: "NoraSettingsTab") ?? "general"
@@ -179,7 +188,7 @@ private struct MoleSettings: View {
             }
             Section("Logs") {
                 Toggle("Do not write Mole's operations log (MO_NO_OPLOG)", isOn: $noOpLog)
-                Text("The History screen reads the operations log, so it stays empty while this is on.").font(.system(size: 12)).foregroundStyle(.secondary)
+                Text("New operations are not added to History while this is on. Earlier history remains available.").font(.system(size: 12)).foregroundStyle(.secondary)
             }
             Section("Credits") {
                 Text("Nora is a window for Mole by tw93 (github.com/tw93/Mole, GPL-3.0). Nora is not affiliated with Mole.")

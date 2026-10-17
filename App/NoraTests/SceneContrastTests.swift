@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import XCTest
 @testable import Nora
@@ -25,6 +26,9 @@ final class SceneContrastTests: XCTestCase {
     /// on its dark chip, and notices on their glass chip.
     func testTextOnSceneContrast() throws {
         let size = CGSize(width: 1180, height: 780)
+        let criticalColor = try XCTUnwrap(NSColor(Palette.crit).usingColorSpace(.sRGB))
+        let critical = Contrast.RGB(r: Double(criticalColor.redComponent), g: Double(criticalColor.greenComponent),
+                                   b: Double(criticalColor.blueComponent))
         for module in Module.allCases {
             let palette = module.palette
             let header = ZStack(alignment: .top) {
@@ -42,10 +46,12 @@ final class SceneContrastTests: XCTestCase {
             let command = Contrast.ratio(Contrast.blend(.white, alpha: 0.82, over: chip), over: chip)
             XCTAssertGreaterThanOrEqual(command, 4.5, "\(module) command line")
 
-            let card = try brightestCardPixel(palette)
-            let warn = Contrast.ratio(Contrast.RGB(r: 1, g: 0.827, b: 0.431), over: card)
-            XCTAssertGreaterThanOrEqual(warn, 4.5, "\(module) notice on its chip")
-            print(String(format: "TEXT %@: subtitle %.2f command %.2f notice %.2f", "\(module)", subtitle, command, warn))
+            let noticeBackground = try brightestCardPixel(palette, additionalScrim: Notice.additionalScrimOpacity)
+            let warn = Contrast.ratio(Contrast.RGB(r: 1, g: 0.827, b: 0.431), over: noticeBackground)
+            let error = Contrast.ratio(critical, over: noticeBackground)
+            XCTAssertGreaterThanOrEqual(warn, 4.5, "\(module) warning notice on its chip")
+            XCTAssertGreaterThanOrEqual(error, 4.5, "\(module) critical notice on its chip")
+            print(String(format: "TEXT %@: subtitle %.2f command %.2f notice %.2f error %.2f", "\(module)", subtitle, command, warn, error))
         }
     }
 
@@ -65,11 +71,12 @@ final class SceneContrastTests: XCTestCase {
 
     /// Renders the scene with a card fill over the content area and returns the brightest pixel
     /// in the region where cards sit (right of the rail, below the title).
-    private func brightestCardPixel(_ palette: ScenePalette) throws -> Contrast.RGB {
+    private func brightestCardPixel(_ palette: ScenePalette, additionalScrim: Double = 0) throws -> Contrast.RGB {
         let size = CGSize(width: 1100, height: 760)
         let view = ZStack {
             SceneBackground(palette: palette)
             VolumeFill(radius: 0).environment(\.scenePalette, palette)
+                .overlay(Color.black.opacity(additionalScrim))
         }
         .frame(width: size.width, height: size.height)
         let renderer = ImageRenderer(content: view)

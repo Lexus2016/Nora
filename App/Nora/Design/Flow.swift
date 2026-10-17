@@ -118,34 +118,52 @@ struct ModuleStart<Extra: View>: View {
     let features: [Feature]
     let command: String
     var scanTitle: String = "Scan"
+    var scrollable = false
     let action: () -> Void
     @ViewBuilder var extra: Extra
 
     var body: some View {
         ModuleScene(module: module, orb: OrbAction(title: scanTitle, action: action)) {
-            HStack(spacing: 56) {
-                Glass3D(name: module.glass, size: 340, glow: module.palette.glow, amplitude: 9, period: 7)
-                VStack(alignment: .leading, spacing: 18) {
-                    Text(module.title)
-                        .font(.system(size: 60, weight: .light))
-                    Text(subtitle).font(.system(size: 18)).foregroundStyle(Palette.fg2).lineSpacing(3)
-                    VStack(alignment: .leading, spacing: 14) {
-                        ForEach(features) { feature in
-                            HStack(spacing: 14) {
-                                FeatureDisc(symbol: feature.symbol, tint: module.palette.glow)
-                                Text(feature.text).font(.system(size: 17, weight: .semibold))
-                            }
+            if scrollable {
+                // Setup-heavy modules must keep their text and controls above the orb even
+                // at the minimum window height. The scene still owns the orb clearance.
+                GeometryReader { geometry in
+                    ScrollView {
+                        startContent.frame(minHeight: geometry.size.height)
+                    }
+                    .scrollIndicators(.never)
+                }
+            } else {
+                startContent.frame(maxHeight: .infinity)
+            }
+        }
+    }
+
+    private var startContent: some View {
+        HStack(spacing: 56) {
+            Glass3D(name: module.glass, size: 340, glow: module.palette.glow, amplitude: 9, period: 7)
+            VStack(alignment: .leading, spacing: 18) {
+                Text(module.title)
+                    .font(.system(size: 60, weight: .light))
+                Text(subtitle).font(.system(size: 18)).foregroundStyle(Palette.fg2).lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: scrollable)
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(features) { feature in
+                        HStack(spacing: 14) {
+                            FeatureDisc(symbol: feature.symbol, tint: module.palette.glow)
+                            Text(feature.text).font(.system(size: 17, weight: .semibold))
                         }
                     }
-                    .padding(.top, 6)
-                    extra
-                    CommandPreview(command: command).frame(maxWidth: 420).padding(.top, 4)
                 }
-                .frame(maxWidth: 470, alignment: .leading)
+                .padding(.top, 6)
+                extra
+                CommandPreview(command: command).frame(maxWidth: 420).padding(.top, 4)
             }
-            .padding(.horizontal, 40)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: 470, alignment: .leading)
         }
+        .padding(.horizontal, 40)
+        .padding(.vertical, scrollable ? 16 : 0)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -224,6 +242,8 @@ struct CategoryCard: View {
     var actionTitle: LocalizedStringKey?
     let review: () -> Void
     var action: (() -> Void)?
+    var actionEnabled = true
+    var actionDisabledReason: String?
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -245,6 +265,9 @@ struct CategoryCard: View {
                     .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.black.opacity(glass == nil ? 0 : 0.5)))
                 if let actionTitle, let action {
                     Button(actionTitle, action: action).buttonStyle(PrimaryButtonStyle(glow: tint)).fixedSize()
+                        .disabled(!actionEnabled)
+                        .opacity(actionEnabled ? 1 : 0.55)
+                        .help(actionEnabled ? "" : actionDisabledReason ?? "")
                 }
             }
         }
@@ -406,6 +429,9 @@ struct CheckRow: View {
 
 /// Small notice line used for skipped sections and warnings.
 struct Notice: View {
+    /// Error pink needs a darker chip than ordinary white card text.
+    static let additionalScrimOpacity = 0.5
+
     let text: String
     var symbol = "exclamationmark.circle"
     var color = Palette.warn
@@ -415,7 +441,11 @@ struct Notice: View {
             .font(.system(size: 12))
             .foregroundStyle(color)
             .padding(.horizontal, 10).padding(.vertical, 6)
-            .background(VolumeFill(radius: 9))
+            .background {
+                VolumeFill(radius: 9)
+                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(.black.opacity(Self.additionalScrimOpacity)))
+            }
     }
 }
 

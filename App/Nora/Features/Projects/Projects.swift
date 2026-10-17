@@ -160,7 +160,7 @@ struct ProjectsView: View {
             WorkingView(module: module, title: "Removing build folders…", detail: WorkingView.currentItem(app.console.output(of: module)), onStop: { model.stop() })
         case .done:
             VStack(spacing: 0) {
-                if app.overlay.needsRecovery {
+                if app.isVisualSnapshot ? model.recoveryRequired : app.overlay.needsRecovery {
                     Button("Retry protection recovery") {
                         do {
                             try app.recoverProtection()

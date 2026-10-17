@@ -921,5 +921,8 @@
   "Refresh": "Оновити",
   "Reading activity history…": "Читання історії дій…",
   "No activity history yet.": "Історія дій поки порожня.",
-  "Activity history could not be loaded. Check the console and retry.": "Не вдалося завантажити історію дій. Перевірте консоль і повторіть спробу."
+  "Activity history could not be loaded. Check the console and retry.": "Не вдалося завантажити історію дій. Перевірте консоль і повторіть спробу.",
+  "Could not check the latest Mole release. Try again.": "Не вдалося перевірити останній випуск Mole. Спробуйте ще раз.",
+  "New operations are not added to History while this is on. Earlier history remains available.": "Коли цей параметр увімкнено, нові операції не додаються до історії. Попередня історія залишається доступною.",
+  "Retry": "Повторити"
 }

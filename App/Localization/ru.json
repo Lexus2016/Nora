@@ -921,5 +921,8 @@
   "Refresh": "Обновить",
   "Reading activity history…": "Чтение истории действий…",
   "No activity history yet.": "История действий пока пуста.",
-  "Activity history could not be loaded. Check the console and retry.": "Не удалось загрузить историю действий. Проверьте консоль и повторите попытку."
+  "Activity history could not be loaded. Check the console and retry.": "Не удалось загрузить историю действий. Проверьте консоль и повторите попытку.",
+  "Could not check the latest Mole release. Try again.": "Не удалось проверить последний выпуск Mole. Попробуйте ещё раз.",
+  "New operations are not added to History while this is on. Earlier history remains available.": "Когда этот параметр включён, новые операции не добавляются в историю. Прежняя история остаётся доступной.",
+  "Retry": "Повторить"
 }

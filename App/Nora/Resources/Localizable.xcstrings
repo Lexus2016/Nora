@@ -209,22 +209,6 @@
         }
       }
     },
-    "%@ moved to the Trash": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ перемещено в Корзину"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ переміщено в Кошик"
-          }
-        }
-      }
-    },
     "%@ of %@": {
       "localizations": {
         "ru": {
@@ -433,22 +417,6 @@
         }
       }
     },
-    "%@: skipped until Nora has Full Disk Access.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@: пропущено, пока у Nora не будет полного доступа к диску."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@: пропущено, доки Nora не матиме повного доступу до диска."
-          }
-        }
-      }
-    },
     "%@:%lld": {
       "localizations": {
         "ru": {
@@ -556,88 +524,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld датчика CPU"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld Homebrew apps have a newer version": {
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Homebrew app has a newer version"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Homebrew apps have a newer version"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld программы Homebrew имеют более новую версию"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld программ Homebrew имеют более новую версию"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld программа Homebrew имеет более новую версию"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld программы Homebrew имеют более новую версию"
-                }
-              }
-            }
-          }
-        },
-        "uk": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld програми Homebrew мають новішу версію"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld програм Homebrew мають новішу версію"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld програма Homebrew має новішу версію"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld програми Homebrew мають новішу версію"
                 }
               }
             }
@@ -802,88 +688,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld програми мають новішу версію"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld apps moved to the Trash": {
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld app moved to the Trash"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld apps moved to the Trash"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В Корзину перемещены %lld программы"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В Корзину перемещено %lld программ"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В Корзину перемещена %lld программа"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В Корзину перемещено %lld программы"
-                }
-              }
-            }
-          }
-        },
-        "uk": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Переміщено в Кошик %lld програми"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Переміщено в Кошик %lld програм"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Переміщено в Кошик %lld програму"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Переміщено в Кошик %lld програми"
                 }
               }
             }
@@ -2339,22 +2143,6 @@
         }
       }
     },
-    "Another cleaning task is still running. Nothing was removed. Try again when it finishes.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ещё идёт другая очистка. Ничего не удалено. Попробуйте снова, когда она завершится."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ще триває інше очищення. Нічого не видалено. Спробуйте знову, коли воно завершиться."
-          }
-        }
-      }
-    },
     "App and system caches": {
       "localizations": {
         "ru": {
@@ -2835,22 +2623,6 @@
         }
       }
     },
-    "CPU temperature": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Температура CPU"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Температура CPU"
-          }
-        }
-      }
-    },
     "CPU temperature unavailable right now": {
       "localizations": {
         "ru": {
@@ -3151,22 +2923,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевірте Кошик і консоль, щоб побачити, що вже переміщено."
-          }
-        }
-      }
-    },
-    "Checking Homebrew updates": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проверяю обновления Homebrew"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перевіряю оновлення Homebrew"
           }
         }
       }
@@ -3987,6 +3743,28 @@
         }
       }
     },
+    "Could not check the latest Mole release. Try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not check the latest Mole release. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить последний выпуск Mole. Попробуйте ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити останній випуск Mole. Спробуйте ще раз."
+          }
+        }
+      }
+    },
     "Could not check the result": {
       "localizations": {
         "ru": {
@@ -4255,22 +4033,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зняти вибір"
-          }
-        }
-      }
-    },
-    "Detailed Mole logs (--debug)": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Подробные журналы Mole (--debug)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Докладні журнали Mole (--debug)"
           }
         }
       }
@@ -4559,22 +4321,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Цей Mac не повідомляє режим енергоспоживання."
-          }
-        }
-      }
-    },
-    "Every Homebrew app is up to date.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Все программы Homebrew актуальны."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Усі програми Homebrew актуальні."
           }
         }
       }
@@ -5123,22 +4869,6 @@
         }
       }
     },
-    "GPU temperature": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Температура GPU"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Температура GPU"
-          }
-        }
-      }
-    },
     "Gatekeeper is busy checking app signatures.": {
       "localizations": {
         "ru": {
@@ -5315,22 +5045,6 @@
         }
       }
     },
-    "Homebrew apps with a newer version. Apps outside Homebrew are not checked.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Программы Homebrew с более новой версией. Программы вне Homebrew не проверяются."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Програми Homebrew з новішою версією. Програми поза Homebrew не перевіряються."
-          }
-        }
-      }
-    },
     "Homebrew cache": {
       "localizations": {
         "ru": {
@@ -5443,22 +5157,6 @@
         }
       }
     },
-    "Homebrew is not installed. Only Homebrew apps can be updated here.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Homebrew не установлен. Здесь можно обновлять только программы Homebrew."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Homebrew не встановлено. Тут можна оновлювати лише програми Homebrew."
-          }
-        }
-      }
-    },
     "Homebrew is not installed. Open an app to let it install its update.": {
       "localizations": {
         "ru": {
@@ -5487,22 +5185,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Homebrew тепер описує цю програму інакше, ніж під час сканування. Проскануйте знову."
-          }
-        }
-      }
-    },
-    "Homebrew not found": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Homebrew не найден"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Homebrew не знайдено"
           }
         }
       }
@@ -7109,22 +6791,6 @@
         }
       }
     },
-    "Mole is up to date.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mole актуален."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mole актуальний."
-          }
-        }
-      }
-    },
     "Mole lists %@ twice, so Nora cannot tell which file you chose.": {
       "localizations": {
         "ru": {
@@ -7683,6 +7349,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Neural Engine"
+          }
+        }
+      }
+    },
+    "New operations are not added to History while this is on. Earlier history remains available.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New operations are not added to History while this is on. Earlier history remains available."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Когда этот параметр включён, новые операции не добавляются в историю. Прежняя история остаётся доступной."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Коли цей параметр увімкнено, нові операції не додаються до історії. Попередня історія залишається доступною."
           }
         }
       }
@@ -8633,22 +8321,6 @@
         }
       }
     },
-    "Only apps installed with Homebrew are listed. Nothing else is updated.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Показаны только программы, установленные через Homebrew. Ничего другого не обновляется."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Показано лише програми, встановлені через Homebrew. Нічого іншого не оновлюється."
-          }
-        }
-      }
-    },
     "Only the selected apps are updated. An app from a download goes to the Trash first and comes back if Homebrew fails.": {
       "localizations": {
         "ru": {
@@ -9593,22 +9265,6 @@
         }
       }
     },
-    "Reinstall": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Переустановить"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перевстановити"
-          }
-        }
-      }
-    },
     "Removal did not finish": {
       "localizations": {
         "ru": {
@@ -9673,38 +9329,6 @@
         }
       }
     },
-    "Remove Mole": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удалить Mole"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видалити Mole"
-          }
-        }
-      }
-    },
-    "Remove an app with its helpers, caches and settings, update Homebrew apps, and find the ones you no longer open.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удалите программу вместе с вспомогательными файлами, кэшами и настройками, обновите программы Homebrew и найдите те, которые вы больше не открываете."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видаліть програму разом із допоміжними файлами, кешами й налаштуваннями, оновіть програми Homebrew і знайдіть ті, які ви більше не відкриваєте."
-          }
-        }
-      }
-    },
     "Remove an app with its helpers, caches and settings, update your apps, and find the ones you no longer open.": {
       "localizations": {
         "ru": {
@@ -9749,22 +9373,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видаліть кеші, журнали та залишки, щоб звільнити місце. Кожну позицію видно до того, як щось буде видалено."
-          }
-        }
-      }
-    },
-    "Removed: %lld of %lld": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удалено: %lld из %lld"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видалено: %lld з %lld"
           }
         }
       }
@@ -10005,6 +9613,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Відновлення не запускає LaunchAgent повторно. Він запуститься під час наступного входу або тоді, коли ви завантажите його самі."
+          }
+        }
+      }
+    },
+    "Retry": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторити"
           }
         }
       }
@@ -11643,22 +11267,6 @@
         }
       }
     },
-    "System power": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Системное питание"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Системне живлення"
-          }
-        }
-      }
-    },
     "System power (Mole)": {
       "localizations": {
         "ru": {
@@ -11815,22 +11423,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Стеженню за Завантаженнями потрібні ClamAV і його вірусна база. Спершу встановіть ClamAV і оновіть базу."
-          }
-        }
-      }
-    },
-    "The History screen reads the operations log, so it stays empty while this is on.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Экран «История» читает журнал операций, поэтому, пока эта опция включена, он пуст."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Екран «Історія» читає журнал операцій, тож поки цей пункт увімкнено, він порожній."
           }
         }
       }
@@ -12475,22 +12067,6 @@
         }
       }
     },
-    "Tick findings to quarantine them": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Отметьте находки, чтобы поместить их в карантин"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Позначте знахідки, щоб помістити їх у карантин"
-          }
-        }
-      }
-    },
     "Tiles in the quick menu (one to four)": {
       "localizations": {
         "ru": {
@@ -12503,22 +12079,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Плитки в швидкому меню (від однієї до чотирьох)"
-          }
-        }
-      }
-    },
-    "Tiles in the quick menu (pick four)": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Плитки в быстром меню (выберите четыре)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Плитки в швидкому меню (оберіть чотири)"
           }
         }
       }
@@ -12939,22 +12499,6 @@
         }
       }
     },
-    "Updates (Homebrew)": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обновления (Homebrew)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оновлення (Homebrew)"
-          }
-        }
-      }
-    },
     "Updates available": {
       "localizations": {
         "ru": {
@@ -13309,22 +12853,6 @@
         }
       }
     },
-    "What removing Mole would delete. Nora needs Mole, so the removal itself runs in Terminal.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Что будет удалено вместе с Mole. Nora нужен Mole, поэтому само удаление выполняется в Терминале."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Що буде видалено разом із Mole. Nora потребує Mole, тож саме видалення виконується в Терміналі."
-          }
-        }
-      }
-    },
     "What removing Mole would delete. This card only previews; it does not remove Mole.": {
       "localizations": {
         "ru": {
@@ -13581,22 +13109,6 @@
         }
       }
     },
-    "Your Mac is refreshed": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваш Mac обновлён"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваш Mac оновлено"
-          }
-        }
-      }
-    },
     "Your Mac was already clean.": {
       "localizations": {
         "ru": {
@@ -13785,22 +13297,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "очищено кешу: %@"
-          }
-        }
-      }
-    },
-    "can be cleaned": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "можно очистить"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "можна очистити"
           }
         }
       }

@@ -145,6 +145,7 @@ struct Rail: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(module.title))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityHint(Text(LocalizedStringKey(module.summary)))
         .onHover { inside in
             hoverTask?.cancel()
@@ -230,7 +231,11 @@ struct TopBar: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
                     .keyboardShortcut(.cancelAction)
-                    .background(Button("", action: leading.action).keyboardShortcut("[", modifiers: .command).hidden())
+                    .background {
+                        if leading.bindsBackShortcut {
+                            Button("", action: leading.action).keyboardShortcut("[", modifiers: .command).hidden()
+                        }
+                    }
                 }
                 Spacer()
                 Button { app.showConsole.toggle() } label: {
@@ -251,10 +256,11 @@ struct TopBarAction {
     let kind: Kind
     let label: LocalizedStringKey
     let symbol: String
+    var bindsBackShortcut = true
     let action: () -> Void
 
-    static func startOver(_ action: @escaping () -> Void) -> TopBarAction {
-        TopBarAction(kind: .startOver, label: "Start over", symbol: "arrow.counterclockwise", action: action)
+    static func startOver(bindBackShortcut: Bool = true, _ action: @escaping () -> Void) -> TopBarAction {
+        TopBarAction(kind: .startOver, label: "Start over", symbol: "arrow.counterclockwise", bindsBackShortcut: bindBackShortcut, action: action)
     }
 
     static func back(_ action: @escaping () -> Void) -> TopBarAction {
@@ -273,6 +279,16 @@ struct ConsoleView: View {
     @State private var selectedEntry: UUID?
     @State private var showHistory = false
     @State private var followTail = true
+
+    init() {}
+
+    #if DEBUG
+    /// In-memory presentation only; never starts or repeats a command.
+    init(snapshotHistory: Bool, snapshotFollowTail: Bool) {
+        _showHistory = State(initialValue: snapshotHistory)
+        _followTail = State(initialValue: snapshotFollowTail)
+    }
+    #endif
 
     private var entries: [ConsoleLog.Entry] {
         if let selectedEntry { return app.console.entries.filter { $0.id == selectedEntry } }

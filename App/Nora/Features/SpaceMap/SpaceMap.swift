@@ -236,7 +236,7 @@ private struct SpaceLens: View {
     private let module = Module.spaceMap
 
     var body: some View {
-        ModuleScene(module: module, leading: .startOver { model.reset() },
+        ModuleScene(module: module, leading: .startOver(bindBackShortcut: false) { model.reset() },
                     orb: model.selectedEntries.isEmpty || model.loading ? nil : OrbAction(title: "Remove", destructive: true, action: { model.trashSelected() })) {
             VStack(spacing: 14) {
                 breadcrumb
@@ -326,6 +326,8 @@ private struct SpaceLens: View {
             Toggle("", isOn: Binding(get: { model.selected.contains(entry.path) },
                                      set: { if $0 { model.selected.insert(entry.path) } else { model.selected.remove(entry.path) } }))
                 .toggleStyle(.checkbox).labelsHidden()
+                .accessibilityLabel(Text(entry.name))
+                .accessibilityHint(Text(entry.path))
             Image(nsImage: NSWorkspace.shared.icon(forFile: entry.path)).resizable().frame(width: 26, height: 26)
             Text(entry.name).font(.system(size: 14, weight: .medium)).lineLimit(1).truncationMode(.middle)
             Spacer(minLength: 6)

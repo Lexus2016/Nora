@@ -166,7 +166,8 @@ private struct PerformanceReview: View {
                                      caption: String(localized: "of recommended maintenance"),
                                      detail: String(localized: "Mole refreshes caches and services it found worth refreshing. Nothing personal is touched."),
                                      symbol: module.symbol, tint: module.palette.glow, large: true, glass: module.glass,
-                                     actionTitle: "Run", review: { showAll = true }, action: { model.run(app) })
+                                     actionTitle: "Run", review: { showAll = true }, action: { model.run(app) },
+                                     actionEnabled: model.canRun, actionDisabledReason: String(localized: "No maintenance tasks are ready to run"))
                             .frame(width: (geo.size.width - 36) / 3)
                         VStack(spacing: 18) {
                             diagnosisCard(report?.diagnosis ?? [])

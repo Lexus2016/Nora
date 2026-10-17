@@ -28,10 +28,12 @@ struct Glass3D: View {
     var depth: CGFloat = 0.06
 
     @Environment(\.controlActiveState) private var activeState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var windowVisible = true
 
     var body: some View {
-        if amplitude == 0 || !windowVisible {
+        if amplitude == 0 || reduceMotion || !windowVisible {
+            // Reduce Motion keeps the glass visible without scheduling decorative frames.
             frame(angle: 0, tilt: 0, lift: 0)
                 .background(VisibilityProbe(visible: $windowVisible))
         } else {

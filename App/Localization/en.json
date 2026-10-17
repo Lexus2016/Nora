@@ -86,5 +86,7 @@
   "%lld failed": {
     "one": "%lld failed",
     "other": "%lld failed"
-  }
+  },
+  "Could not check the latest Mole release. Try again.": "Could not check the latest Mole release. Try again.",
+  "New operations are not added to History while this is on. Earlier history remains available.": "New operations are not added to History while this is on. Earlier history remains available."
 }
