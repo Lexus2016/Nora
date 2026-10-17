@@ -86,4 +86,6 @@ schemes:
         Nora: all
         NoraTests: [test]
     test:
+      environmentVariables:
+        NORA_UNIT_TESTING: "1"
       targets: [NoraTests]

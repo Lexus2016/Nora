@@ -132,6 +132,15 @@ final class StatusStore {
         isStreaming = false
     }
 
+    #if DEBUG
+    /// In-memory fixture only: no stream, timers, or process launch.
+    func seedVisualSnapshot(_ sample: StatusSnapshot?, error: String? = nil) {
+        precondition(task == nil && demand == 0)
+        if let sample { ingest(sample); publish() }
+        lastError = error
+    }
+    #endif
+
     func ingest(_ s: StatusSnapshot) {
         latest = s
         latestAt = Date()

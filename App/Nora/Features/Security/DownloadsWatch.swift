@@ -159,6 +159,7 @@ final class ClamdSession {
 
     /// Starts clamd in the foreground and waits until its socket appears (the database is loaded by then).
     func start() async throws {
+        try Task.checkCancellation()
         let process = Process()
         process.executableURL = clamd
         process.arguments = ["--foreground", "--config-file", layout.clamdConfig.path]
@@ -173,7 +174,7 @@ final class ClamdSession {
         // A socket left by an earlier clamd would look like readiness of this one.
         try? FileManager.default.removeItem(at: layout.socket)
         ChildProcesses.register(process)
-        do { try process.run() } catch {
+        do { try Task.checkCancellation(); try process.run() } catch {
             ChildProcesses.unregister(process)
             throw error
         }
@@ -196,8 +197,8 @@ final class ClamdSession {
     func stop() {
         if let process {
             if process.isRunning { process.terminate() }
-            ChildProcesses.unregister(process)
+            // Keep the process registered and retained until its termination handler runs.
+            // A stop request is not evidence that the engine is no longer in use.
         }
-        process = nil
     }
 }

@@ -209,22 +209,6 @@
         }
       }
     },
-    "%@ moved to the Trash": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ перемещено в Корзину"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ переміщено в Кошик"
-          }
-        }
-      }
-    },
     "%@ of %@": {
       "localizations": {
         "ru": {
@@ -417,18 +401,18 @@
         }
       }
     },
-    "%@: skipped until Nora has Full Disk Access.": {
+    "%@: removal could not be verified for %@.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@: пропущено, пока у Nora не будет полного доступа к диску."
+            "value": "%@: не удалось подтвердить удаление %@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@: пропущено, доки Nora не матиме повного доступу до диска."
+            "value": "%@: не вдалося підтвердити видалення %@."
           }
         }
       }
@@ -540,88 +524,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld датчика CPU"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld Homebrew apps have a newer version": {
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Homebrew app has a newer version"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld Homebrew apps have a newer version"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld программы Homebrew имеют более новую версию"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld программ Homebrew имеют более новую версию"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld программа Homebrew имеет более новую версию"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld программы Homebrew имеют более новую версию"
-                }
-              }
-            }
-          }
-        },
-        "uk": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld програми Homebrew мають новішу версію"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld програм Homebrew мають новішу версію"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld програма Homebrew має новішу версію"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld програми Homebrew мають новішу версію"
                 }
               }
             }
@@ -793,88 +695,6 @@
         }
       }
     },
-    "%lld apps moved to the Trash": {
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld app moved to the Trash"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld apps moved to the Trash"
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В Корзину перемещены %lld программы"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В Корзину перемещено %lld программ"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В Корзину перемещена %lld программа"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "В Корзину перемещено %lld программы"
-                }
-              }
-            }
-          }
-        },
-        "uk": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Переміщено в Кошик %lld програми"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Переміщено в Кошик %lld програм"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Переміщено в Кошик %lld програму"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Переміщено в Кошик %lld програми"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld apps removed": {
       "localizations": {
         "en": {
@@ -896,63 +716,15 @@
           }
         },
         "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Удалены %lld программы"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Удалено %lld программ"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Удалена %lld программа"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Удалено %lld программы"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалено приложений: %lld"
           }
         },
         "uk": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Видалено %lld програми"
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Видалено %lld програм"
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Видалено %lld програму"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Видалено %lld програми"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалено програм: %lld"
           }
         }
       }
@@ -1032,6 +804,88 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Оновлено %lld програми"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld entries removed. Disk space reclaimed may differ from logical size.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld entry removed. Disk space reclaimed may differ from logical size."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld entries removed. Disk space reclaimed may differ from logical size."
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Удалено записей: %lld. Освободившееся место может отличаться от логического размера."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Удалено записей: %lld. Освободившееся место может отличаться от логического размера."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Удалено записей: %lld. Освободившееся место может отличаться от логического размера."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Удалено записей: %lld. Освободившееся место может отличаться от логического размера."
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Видалено записів: %lld. Звільнений простір може відрізнятися від логічного обсягу."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Видалено записів: %lld. Звільнений простір може відрізнятися від логічного обсягу."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Видалено записів: %lld. Звільнений простір може відрізнятися від логічного обсягу."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Видалено записів: %lld. Звільнений простір може відрізнятися від логічного обсягу."
                 }
               }
             }
@@ -1493,6 +1347,88 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ядра продуктивності: %lld, ефективності: %lld"
+          }
+        }
+      }
+    },
+    "%lld reviewed items will be permanently deleted. This cannot be undone.": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld reviewed item will be permanently deleted. This cannot be undone."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld reviewed items will be permanently deleted. This cannot be undone."
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
+                }
+              },
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
+                }
+              }
+            }
           }
         }
       }
@@ -2003,6 +1939,28 @@
         }
       }
     },
+    "A Trash operation or recovery check is in progress. Try again when it finishes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Trash operation or recovery check is in progress. Try again when it finishes."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполняется операция с корзиной или проверка восстановления. Повторите попытку после завершения."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Триває операція з кошиком або перевірка відновлення. Повторіть спробу після завершення."
+          }
+        }
+      }
+    },
     "A cleaning task is running. Change this list when it finishes.": {
       "localizations": {
         "ru": {
@@ -2179,6 +2137,22 @@
         }
       }
     },
+    "Activity history could not be loaded. Check the console and retry.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить историю действий. Проверьте консоль и повторите попытку."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося завантажити історію дій. Перевірте консоль і повторіть спробу."
+          }
+        }
+      }
+    },
     "Adapter": {
       "localizations": {
         "ru": {
@@ -2223,6 +2197,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Додати теку…"
+          }
+        }
+      }
+    },
+    "Age is read from Nora's on-disk database. A successful freshclam check may leave unchanged definitions; it does not upgrade the engine.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Возраст определяется по базе Nora на диске. Успешная проверка freshclam может оставить сигнатуры без изменений; она не обновляет движок."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вік визначається за базою Nora на диску. Успішна перевірка freshclam може залишити сигнатури без змін; вона не оновлює рушій."
+          }
+        }
+      }
+    },
+    "All commands": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все команды"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Усі команди"
           }
         }
       }
@@ -2339,18 +2345,84 @@
         }
       }
     },
-    "Another cleaning task is still running. Nothing was removed. Try again when it finishes.": {
+    "An app update needs recovery before the Trash can be emptied.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An app update needs recovery before the Trash can be emptied."
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ещё идёт другая очистка. Ничего не удалено. Попробуйте снова, когда она завершится."
+            "value": "Перед очисткой корзины нужно восстановить прерванное обновление приложения."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ще триває інше очищення. Нічого не видалено. Спробуйте знову, коли воно завершиться."
+            "value": "Перед очищенням кошика потрібно відновити перерване оновлення програми."
+          }
+        }
+      }
+    },
+    "Another Nora operation is running. Try again when it finishes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another Nora operation is running. Try again when it finishes."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполняется другая операция Nora. Повторите попытку после её завершения."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Триває інша операція Nora. Повторіть спробу після її завершення."
+          }
+        }
+      }
+    },
+    "Another operation is using Trash. Wait until it finishes, then review again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another operation is using Trash. Wait until it finishes, then review again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Другая операция использует корзину. Дождитесь её завершения и проверьте снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Інша операція використовує кошик. Дочекайтеся її завершення та перевірте знову."
+          }
+        }
+      }
+    },
+    "Another security task is running. Wait for it to finish.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполняется другая задача безопасности. Дождитесь её завершения."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виконується інше завдання безпеки. Зачекайте, доки воно завершиться."
           }
         }
       }
@@ -2495,6 +2567,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Автоматично"
+          }
+        }
+      }
+    },
+    "Availability uses Homebrew's current catalog, which may need refreshing. Engine updates do not update virus definitions.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступность определяется по текущему каталогу Homebrew, которому может требоваться обновление. Обновление движка не обновляет вирусные сигнатуры."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступність визначається за поточним каталогом Homebrew, який може потребувати оновлення. Оновлення рушія не оновлює вірусні сигнатури."
           }
         }
       }
@@ -2835,22 +2923,6 @@
         }
       }
     },
-    "CPU temperature": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Температура CPU"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Температура CPU"
-          }
-        }
-      }
-    },
     "CPU temperature unavailable right now": {
       "localizations": {
         "ru": {
@@ -2997,6 +3069,12 @@
     },
     "Cancel": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3007,6 +3085,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Скасувати"
+          }
+        }
+      }
+    },
+    "Catalog checked": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каталог проверен"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каталог перевірено"
           }
         }
       }
@@ -3061,6 +3155,12 @@
     },
     "Check again": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check again"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -3071,6 +3171,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевірити ще раз"
+          }
+        }
+      }
+    },
+    "Check engine updates": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить обновления движка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірити оновлення рушія"
           }
         }
       }
@@ -3103,6 +3219,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевірити оновлення…"
+          }
+        }
+      }
+    },
+    "Check for an engine update and turn off Watch Downloads before upgrading.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед обновлением проверьте наличие новой версии движка и отключите наблюдение за Загрузками."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед оновленням перевірте наявність нової версії рушія та вимкніть стеження за Завантаженнями."
           }
         }
       }
@@ -3155,18 +3287,18 @@
         }
       }
     },
-    "Checking Homebrew updates": {
+    "Checking ClamAV…": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверяю обновления Homebrew"
+            "value": "Проверка ClamAV…"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перевіряю оновлення Homebrew"
+            "value": "Перевірка ClamAV…"
           }
         }
       }
@@ -3183,6 +3315,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевіряю оновлення"
+          }
+        }
+      }
+    },
+    "Checking home Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking home Trash…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка домашней корзины…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка домашнього кошика…"
+          }
+        }
+      }
+    },
+    "Checking or restoring preserved Trash items…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking or restoring preserved Trash items…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка или восстановление сохранённых объектов корзины…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка або відновлення збережених об’єктів кошика…"
           }
         }
       }
@@ -3205,16 +3381,22 @@
     },
     "Checking…": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking…"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверяю…"
+            "value": "Проверка…"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перевіряю…"
+            "value": "Перевірка…"
           }
         }
       }
@@ -3247,6 +3429,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевіряє файлову систему."
+          }
+        }
+      }
+    },
+    "Choose History in the main window's console (⌘J) to review previous commands, output and stopped actions.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите «История» в консоли главного окна (⌘J), чтобы просмотреть предыдущие команды, вывод и остановленные действия."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть «Історія» в консолі головного вікна (⌘J), щоб переглянути попередні команди, вивід і зупинені дії."
           }
         }
       }
@@ -3347,6 +3545,38 @@
         }
       }
     },
+    "ClamAV action stopped.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Действие ClamAV остановлено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дію ClamAV зупинено."
+          }
+        }
+      }
+    },
+    "ClamAV action stopped. A partial installation may need retrying.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Действие ClamAV остановлено. Частичная установка может потребовать повторной попытки."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дію ClamAV зупинено. Часткове встановлення може потребувати повторної спроби."
+          }
+        }
+      }
+    },
     "ClamAV antivirus scan": {
       "localizations": {
         "ru": {
@@ -3379,18 +3609,50 @@
         }
       }
     },
-    "ClamAV database": {
+    "ClamAV command failed (exit %d). Check network access and folder permissions. The console has details. %@": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "База ClamAV"
+            "value": "Команда ClamAV завершилась ошибкой (код %d). Проверьте доступ к сети и права на папки. Подробности в консоли. %@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "База ClamAV"
+            "value": "Команда ClamAV завершилася помилкою (код %d). Перевірте доступ до мережі та дозволи папок. Подробиці в консолі. %@"
+          }
+        }
+      }
+    },
+    "ClamAV engine": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Движок ClamAV"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рушій ClamAV"
+          }
+        }
+      }
+    },
+    "ClamAV installation could not be verified. Check the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось подтвердить установку ClamAV. Посмотрите консоль."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося підтвердити встановлення ClamAV. Перегляньте консоль."
           }
         }
       }
@@ -3427,6 +3689,22 @@
         }
       }
     },
+    "ClamAV is still stopping. Wait before restarting the watch or updating the engine.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV ещё останавливается. Подождите, прежде чем перезапускать наблюдение или обновлять движок."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV ще зупиняється. Зачекайте, перш ніж перезапускати стеження або оновлювати рушій."
+          }
+        }
+      }
+    },
     "ClamAV kept stopping, so the Downloads watch is off. Turn it on again to retry.": {
       "localizations": {
         "ru": {
@@ -3455,6 +3733,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "ClamAV знайшов збіг із сигнатурою %@."
+          }
+        }
+      }
+    },
+    "ClamAV returned an unreadable version. Check the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV вернул нераспознанные данные версии. Посмотрите консоль."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ClamAV повернув нерозпізнані дані версії. Перегляньте консоль."
           }
         }
       }
@@ -3491,6 +3785,22 @@
         }
       }
     },
+    "ClamAV status could not be checked. The check timed out or its helper failed. Retry and check the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить состояние ClamAV. Время ожидания истекло или вспомогательный процесс завершился ошибкой. Повторите попытку и посмотрите консоль."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити стан ClamAV. Час очікування вичерпано або допоміжний процес завершився помилкою. Повторіть спробу та перегляньте консоль."
+          }
+        }
+      }
+    },
     "ClamAV stopped with an error or could not read some files, so this scan may be incomplete. The console shows the details.": {
       "localizations": {
         "ru": {
@@ -3507,18 +3817,34 @@
         }
       }
     },
-    "ClamAV stopped. Nora restarted the Downloads watch.": {
+    "ClamAV stopped. Nora is restarting the Downloads watch.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "ClamAV остановился. Nora перезапустила слежение за Загрузками."
+            "value": "ClamAV остановился. Nora перезапускает наблюдение за Загрузками."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "ClamAV зупинився. Nora перезапустила стеження за Завантаженнями."
+            "value": "ClamAV зупинився. Nora перезапускає стеження за Завантаженнями."
+          }
+        }
+      }
+    },
+    "ClamAV virus definitions": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вирусные сигнатуры ClamAV"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вірусні сигнатури ClamAV"
           }
         }
       }
@@ -3621,16 +3947,22 @@
     },
     "Cleaning…": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleaning…"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Очищаю…"
+            "value": "Очистка…"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Очищаю…"
+            "value": "Очищення…"
           }
         }
       }
@@ -3647,6 +3979,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Очищення"
+          }
+        }
+      }
+    },
+    "Cleanup command completed": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команда очистки завершена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команду очищення завершено"
           }
         }
       }
@@ -3679,6 +4027,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Очищення завершено"
+          }
+        }
+      }
+    },
+    "Cleanup is working": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистка выполняется"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очищення виконується"
+          }
+        }
+      }
+    },
+    "Cleanup result is unverified": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Результат очистки не подтверждён"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Результат очищення не підтверджено"
           }
         }
       }
@@ -3747,6 +4127,44 @@
         }
       }
     },
+    "Close Trash reminder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Trash reminder"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть напоминание о корзине"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрити нагадування про кошик"
+          }
+        }
+      }
+    },
+    "Close log": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрыть журнал"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закрити журнал"
+          }
+        }
+      }
+    },
     "Cloud-synced folders skipped: %@. Mole removes those only after a confirmation in Terminal.": {
       "localizations": {
         "ru": {
@@ -3759,6 +4177,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пропущено тек, що синхронізуються з хмарою: %@. Mole видаляє їх лише після підтвердження в Терміналі."
+          }
+        }
+      }
+    },
+    "Command": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команда"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команда"
+          }
+        }
+      }
+    },
+    "Command finished; reclaimed space was not reported": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команда завершена; объём освобождённого места не сообщён"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команду завершено; обсяг звільненого місця не повідомлено"
+          }
+        }
+      }
+    },
+    "Command history": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "История команд"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Історія команд"
           }
         }
       }
@@ -3875,6 +4341,28 @@
         }
       }
     },
+    "Could not check the latest Mole release. Try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not check the latest Mole release. Try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить последний выпуск Mole. Попробуйте ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити останній випуск Mole. Спробуйте ще раз."
+          }
+        }
+      }
+    },
     "Could not check the result": {
       "localizations": {
         "ru": {
@@ -3887,6 +4375,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не вдалося перевірити результат"
+          }
+        }
+      }
+    },
+    "Could not verify the launch agent status. The file was not moved.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить состояние агента запуска. Файл не перемещён."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити стан агента запуску. Файл не переміщено."
           }
         }
       }
@@ -4019,6 +4523,70 @@
         }
       }
     },
+    "Definitions are at least 48 hours old. Update recommended.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатурам не менее 48 часов. Рекомендуется обновление."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатурам щонайменше 48 годин. Рекомендовано оновлення."
+          }
+        }
+      }
+    },
+    "Definitions are less than 48 hours old": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатурам менее 48 часов"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатурам менш ніж 48 годин"
+          }
+        }
+      }
+    },
+    "Definitions built": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатуры созданы"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сигнатури створено"
+          }
+        }
+      }
+    },
+    "Definitions version": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия сигнатур"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версія сигнатур"
+          }
+        }
+      }
+    },
     "Delete": {
       "localizations": {
         "ru": {
@@ -4037,16 +4605,22 @@
     },
     "Delete permanently": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete permanently"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Удалить окончательно"
+            "value": "Удалить навсегда"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Видалити остаточно"
+            "value": "Видалити назавжди"
           }
         }
       }
@@ -4079,6 +4653,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видалити ці програми остаточно?"
+          }
+        }
+      }
+    },
+    "Delete these items permanently?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete these items permanently?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить эти объекты навсегда?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалити ці об’єкти назавжди?"
           }
         }
       }
@@ -4127,22 +4723,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зняти вибір"
-          }
-        }
-      }
-    },
-    "Detailed Mole logs (--debug)": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Подробные журналы Mole (--debug)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Докладні журнали Mole (--debug)"
           }
         }
       }
@@ -4355,6 +4935,22 @@
         }
       }
     },
+    "Downloaded; freshness unknown": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загружено; актуальность неизвестна"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завантажено; актуальність невідома"
+          }
+        }
+      }
+    },
     "Downloading the virus database…": {
       "localizations": {
         "ru": {
@@ -4383,6 +4979,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "Завантаження і Робочий стіл"
+          }
+        }
+      }
+    },
+    "Earlier output is truncated. Showing the latest 400 lines.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предыдущий вывод обрезан. Показаны последние 400 строк."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попередній вивід обрізано. Показано останні 400 рядків."
+          }
+        }
+      }
+    },
+    "Empty Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty Trash…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистить корзину…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистити кошик…"
+          }
+        }
+      }
+    },
+    "Emptying reviewed Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emptying reviewed Trash…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаление проверенных объектов…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалення перевірених об’єктів…"
           }
         }
       }
@@ -4419,18 +5075,66 @@
         }
       }
     },
-    "Every Homebrew app is up to date.": {
+    "Engine installation verified. Virus definitions are updated separately.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Все программы Homebrew актуальны."
+            "value": "Установка движка подтверждена. Вирусные сигнатуры обновляются отдельно."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Усі програми Homebrew актуальні."
+            "value": "Встановлення рушія підтверджено. Вірусні сигнатури оновлюються окремо."
+          }
+        }
+      }
+    },
+    "Engine package update available": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступно обновление пакета движка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доступне оновлення пакета рушія"
+          }
+        }
+      }
+    },
+    "Engine update availability has not been checked.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наличие обновлений движка ещё не проверено."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наявність оновлень рушія ще не перевірено."
+          }
+        }
+      }
+    },
+    "Engine updates need a Homebrew-managed ClamAV installation.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для обновления движка ClamAV должен быть установлен через Homebrew."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для оновлення рушія ClamAV має бути встановлений через Homebrew."
           }
         }
       }
@@ -4627,6 +5331,28 @@
         }
       }
     },
+    "Files will be permanently deleted. This cannot be undone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files will be permanently deleted. This cannot be undone."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файлы будут удалены навсегда. Отменить это действие невозможно."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файли буде видалено назавжди. Скасувати цю дію неможливо."
+          }
+        }
+      }
+    },
     "Find again": {
       "localizations": {
         "ru": {
@@ -4703,6 +5429,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Шукаю всі файли…"
+          }
+        }
+      }
+    },
+    "Finish the pending recovery in Nora before emptying Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish the pending recovery in Nora before emptying Trash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершите восстановление в Nora перед очисткой корзины."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершіть відновлення в Nora перед очищенням кошика."
           }
         }
       }
@@ -4979,22 +5727,6 @@
         }
       }
     },
-    "GPU temperature": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Температура GPU"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Температура GPU"
-          }
-        }
-      }
-    },
     "Gatekeeper is busy checking app signatures.": {
       "localizations": {
         "ru": {
@@ -5055,6 +5787,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Надайте Nora повний доступ до диска, щоб Mole міг очищати також Кошик і контейнери програм."
+          }
+        }
+      }
+    },
+    "Go back": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назад"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назад"
           }
         }
       }
@@ -5155,6 +5909,28 @@
         }
       }
     },
+    "Home Trash is empty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home Trash is empty"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Домашняя корзина пуста"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Домашній кошик порожній"
+          }
+        }
+      }
+    },
     "Home folder": {
       "localizations": {
         "ru": {
@@ -5167,22 +5943,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Домашня тека"
-          }
-        }
-      }
-    },
-    "Homebrew apps with a newer version. Apps outside Homebrew are not checked.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Программы Homebrew с более новой версией. Программы вне Homebrew не проверяются."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Програми Homebrew з новішою версією. Програми поза Homebrew не перевіряються."
           }
         }
       }
@@ -5215,6 +5975,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Homebrew не може встановити цю програму."
+          }
+        }
+      }
+    },
+    "Homebrew catalog version": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия в каталоге Homebrew"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версія в каталозі Homebrew"
           }
         }
       }
@@ -5299,18 +6075,34 @@
         }
       }
     },
-    "Homebrew is not installed. Only Homebrew apps can be updated here.": {
+    "Homebrew finished, but the installed engine could not be verified as the catalog version. Check the console.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Homebrew не установлен. Здесь можно обновлять только программы Homebrew."
+            "value": "Homebrew завершил работу, но не удалось подтвердить, что установленный движок соответствует версии в каталоге. Посмотрите консоль."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Homebrew не встановлено. Тут можна оновлювати лише програми Homebrew."
+            "value": "Homebrew завершив роботу, але не вдалося підтвердити, що встановлений рушій відповідає версії в каталозі. Перегляньте консоль."
+          }
+        }
+      }
+    },
+    "Homebrew has pinned ClamAV. Unpin it before updating.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия ClamAV закреплена в Homebrew. Снимите закрепление перед обновлением."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версію ClamAV закріплено в Homebrew. Зніміть закріплення перед оновленням."
           }
         }
       }
@@ -5347,18 +6139,18 @@
         }
       }
     },
-    "Homebrew not found": {
+    "Homebrew returned unreadable ClamAV metadata. Update availability is unknown.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Homebrew не найден"
+            "value": "Homebrew вернул нераспознанные данные ClamAV. Наличие обновлений неизвестно."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Homebrew не знайдено"
+            "value": "Homebrew повернув нерозпізнані дані ClamAV. Наявність оновлень невідома."
           }
         }
       }
@@ -5491,6 +6283,22 @@
         }
       }
     },
+    "Incomplete installation": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неполная установка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неповне встановлення"
+          }
+        }
+      }
+    },
     "Install ClamAV with Homebrew": {
       "localizations": {
         "ru": {
@@ -5535,6 +6343,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Встановити через Homebrew"
+          }
+        }
+      }
+    },
+    "Installation": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановлення"
           }
         }
       }
@@ -5587,6 +6411,22 @@
         }
       }
     },
+    "Installed engine": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установленный движок"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановлений рушій"
+          }
+        }
+      }
+    },
     "Installed with": {
       "localizations": {
         "ru": {
@@ -5599,6 +6439,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Встановлено через"
+          }
+        }
+      }
+    },
+    "Installer command finished; check the Trash for moved files": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команда для установщиков завершена; проверьте перемещённые файлы в Корзине"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команду для інсталяторів завершено; перевірте переміщені файли в Смітнику"
           }
         }
       }
@@ -5731,6 +6587,22 @@
         }
       }
     },
+    "Installs the engine and then downloads Nora's virus definitions.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Устанавливает движок, а затем загружает вирусные сигнатуры для Nora."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встановлює рушій, а потім завантажує вірусні сигнатури для Nora."
+          }
+        }
+      }
+    },
     "It changed since the scan. Scan again.": {
       "localizations": {
         "ru": {
@@ -5795,6 +6667,22 @@
         }
       }
     },
+    "Jump to latest output": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перейти к последнему выводу"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перейти до останнього виводу"
+          }
+        }
+      }
+    },
     "Junk: caches, logs and leftovers": {
       "localizations": {
         "ru": {
@@ -5855,6 +6743,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Дата останнього відкриття невідома"
+          }
+        }
+      }
+    },
+    "Last successful definitions check": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последняя успешная проверка сигнатур"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остання успішна перевірка сигнатур"
+          }
+        }
+      }
+    },
+    "Last verified engine install": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последняя подтверждённая установка движка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останнє підтверджене встановлення рушія"
+          }
+        }
+      }
+    },
+    "Latest command for this module": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последняя команда этого раздела"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остання команда цього розділу"
           }
         }
       }
@@ -6323,6 +7259,22 @@
         }
       }
     },
+    "Maintenance command finished; review its results": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команда обслуживания завершена; просмотрите результаты"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Команду обслуговування завершено; перегляньте результати"
+          }
+        }
+      }
+    },
     "Maintenance finished": {
       "localizations": {
         "ru": {
@@ -6746,13 +7698,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mole не удалось запустить."
+            "value": "Не удалось запустить Mole."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mole не вдалося запустити."
+            "value": "Не вдалося запустити Mole."
           }
         }
       }
@@ -6769,6 +7721,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Типово в Mole"
+          }
+        }
+      }
+    },
+    "Mole did not report a cleanup result. Scan again to see what is left.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не сообщил результат очистки. Выполните сканирование снова, чтобы увидеть остаток."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole не повідомив результат очищення. Проскануйте знову, щоб побачити залишок."
           }
         }
       }
@@ -6794,13 +7762,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mole завершилась с кодом %d."
+            "value": "Mole завершился со статусом %d."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mole завершилася з кодом %d."
+            "value": "Mole завершився зі статусом %d."
           }
         }
       }
@@ -6885,22 +7853,6 @@
         }
       }
     },
-    "Mole is up to date.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mole актуален."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mole актуальний."
-          }
-        }
-      }
-    },
     "Mole lists %@ twice, so Nora cannot tell which file you chose.": {
       "localizations": {
         "ru": {
@@ -6961,6 +7913,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mole оновлює кеші та служби, які варто оновити. Особисті дані не чіпаються."
+          }
+        }
+      }
+    },
+    "Mole reports %@ freed": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole сообщает об освобождении %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole повідомляє про звільнення %@"
+          }
+        }
+      }
+    },
+    "Mole returned an unknown Touch ID status. Check the console and retry.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole вернул неизвестное состояние Touch ID. Проверьте консоль и повторите попытку."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mole повернув невідомий стан Touch ID. Перевірте консоль і повторіть спробу."
           }
         }
       }
@@ -7073,6 +8057,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ще"
+          }
+        }
+      }
+    },
+    "More scan notes": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Другие примечания сканирования"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Інші примітки сканування"
           }
         }
       }
@@ -7415,6 +8415,50 @@
         }
       }
     },
+    "New files in your Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New files in your Trash"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В корзине появились новые файлы"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У кошику з’явилися нові файли"
+          }
+        }
+      }
+    },
+    "New operations are not added to History while this is on. Earlier history remains available.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New operations are not added to History while this is on. Earlier history remains available."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Когда этот параметр включён, новые операции не добавляются в историю. Прежняя история остаётся доступной."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Коли цей параметр увімкнено, нові операції не додаються до історії. Попередня історія залишається доступною."
+          }
+        }
+      }
+    },
     "No .DS_Store on drives": {
       "localizations": {
         "ru": {
@@ -7427,6 +8471,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Без .DS_Store на дисках"
+          }
+        }
+      }
+    },
+    "No activity history yet.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "История действий пока пуста."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Історія дій поки порожня."
           }
         }
       }
@@ -7495,6 +8555,22 @@
         }
       }
     },
+    "No command output for this module yet.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для этого раздела ещё нет вывода команд."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для цього розділу ще немає виводу команд."
+          }
+        }
+      }
+    },
     "No database": {
       "localizations": {
         "ru": {
@@ -7507,6 +8583,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Немає бази"
+          }
+        }
+      }
+    },
+    "No engine update in this catalog": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В этом каталоге нет обновлений движка"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У цьому каталозі немає оновлень рушія"
           }
         }
       }
@@ -7543,6 +8635,28 @@
         }
       }
     },
+    "No items were found in your home Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No items were found in your home Trash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В домашней корзине объекты не найдены."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У домашньому кошику об’єктів не знайдено."
+          }
+        }
+      }
+    },
     "No listening TCP ports.": {
       "localizations": {
         "ru": {
@@ -7555,6 +8669,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Відкритих TCP-портів немає."
+          }
+        }
+      }
+    },
+    "No maintenance tasks are ready to run": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет задач обслуживания, готовых к запуску"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Немає завдань обслуговування, готових до запуску"
           }
         }
       }
@@ -7607,6 +8737,22 @@
         }
       }
     },
+    "No successful definitions update recorded.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Успешных обновлений сигнатур ещё не зафиксировано."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Успішних оновлень сигнатур ще не зафіксовано."
+          }
+        }
+      }
+    },
     "Nora": {
       "localizations": {
         "ru": {
@@ -7619,6 +8765,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nora"
+          }
+        }
+      }
+    },
+    "Nora Trash review": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora Trash review"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка корзины в Nora"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка кошика в Nora"
           }
         }
       }
@@ -7799,6 +8967,28 @@
         }
       }
     },
+    "Nora · Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora · Trash"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora · Корзина"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora · Кошик"
+          }
+        }
+      }
+    },
     "Nora: system status and quick actions": {
       "localizations": {
         "ru": {
@@ -7847,6 +9037,22 @@
         }
       }
     },
+    "Not checked": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не проверено"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не перевірено"
+          }
+        }
+      }
+    },
     "Not downloaded yet": {
       "localizations": {
         "ru": {
@@ -7875,6 +9081,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не встановлено"
+          }
+        }
+      }
+    },
+    "Not now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не сейчас"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не зараз"
           }
         }
       }
@@ -8313,18 +9541,24 @@
         }
       }
     },
-    "Only apps installed with Homebrew are listed. Nothing else is updated.": {
+    "Only reviewed items are eligible. Stopping may leave some items already deleted.": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only reviewed items are eligible. Stopping may leave some items already deleted."
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показаны только программы, установленные через Homebrew. Ничего другого не обновляется."
+            "value": "Удаляются только проверенные объекты. До остановки некоторые из них уже могут быть удалены."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показано лише програми, встановлені через Homebrew. Нічого іншого не оновлюється."
+            "value": "Видаляються лише перевірені об’єкти. До зупинки деякі з них уже можуть бути видалені."
           }
         }
       }
@@ -8357,6 +9591,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Підключено лише системні образи симуляторів. Від’єднувати нічого не треба."
+          }
+        }
+      }
+    },
+    "Only ~/.Trash. External disks are excluded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only ~/.Trash. External disks are excluded."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Только ~/.Trash. Внешние диски исключены."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лише ~/.Trash. Зовнішні диски не включено."
           }
         }
       }
@@ -8553,6 +9809,22 @@
         }
       }
     },
+    "Pause following": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приостановить слежение"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Призупинити стеження"
+          }
+        }
+      }
+    },
     "Performance": {
       "localizations": {
         "ru": {
@@ -8581,6 +9853,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Планове обслуговування"
+          }
+        }
+      }
+    },
+    "Permanently delete only the reviewed items from home Trash. This cannot be undone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanently delete only the reviewed items from home Trash. This cannot be undone."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Навсегда удалить только проверенные объекты из домашней корзины. Это действие невозможно отменить."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назавжди видалити лише перевірені об’єкти з домашнього кошика. Цю дію неможливо скасувати."
           }
         }
       }
@@ -8633,6 +9927,28 @@
         }
       }
     },
+    "Preserved items need review. Permanent deletion is blocked.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preserved items need review. Permanent deletion is blocked."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нужно проверить сохранённые объекты. Удаление навсегда заблокировано."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потрібно перевірити збережені об’єкти. Видалення назавжди заблоковано."
+          }
+        }
+      }
+    },
     "Pressure": {
       "localizations": {
         "ru": {
@@ -8661,6 +9977,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перегляд"
+          }
+        }
+      }
+    },
+    "Preview Mole removal": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предварительный просмотр удаления Mole"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попередній перегляд видалення Mole"
           }
         }
       }
@@ -8729,6 +10061,70 @@
         }
       }
     },
+    "Protection could not load Mole's defaults. Editing is disabled; retry loading. %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить стандартные правила защиты Mole. Редактирование отключено; повторите загрузку. %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося завантажити стандартні правила захисту Mole. Редагування вимкнено; повторіть завантаження. %@"
+          }
+        }
+      }
+    },
+    "Protection recovery failed: %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось восстановить защиту: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося відновити захист: %@"
+          }
+        }
+      }
+    },
+    "Protection recovery is required before another cleanup. Retry recovery and scan again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед следующей очисткой нужно восстановить защиту. Повторите восстановление и сканирование."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед наступним очищенням потрібно відновити захист. Повторіть відновлення й сканування."
+          }
+        }
+      }
+    },
+    "Protection recovery required": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Требуется восстановление защиты"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потрібне відновлення захисту"
+          }
+        }
+      }
+    },
     "Proxy": {
       "localizations": {
         "ru": {
@@ -8757,6 +10153,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Карантин"
+          }
+        }
+      }
+    },
+    "Quarantine failed after unloading %@. The file was not moved; the launch agent remains unloaded. It was not restarted automatically. %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карантин не удался после выгрузки %@. Файл не перемещён; агент запуска остаётся выгруженным. Он не перезапущен автоматически. %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карантин не вдався після вивантаження %@. Файл не переміщено; агент запуску залишається вивантаженим. Його не перезапущено автоматично. %@"
           }
         }
       }
@@ -8921,6 +10333,44 @@
         }
       }
     },
+    "Reading a bounded snapshot. Nothing is deleted.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading a bounded snapshot. Nothing is deleted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Идёт ограниченная проверка содержимого. Ничего не удаляется."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Триває обмежена перевірка вмісту. Нічого не видаляється."
+          }
+        }
+      }
+    },
+    "Reading activity history…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтение истории действий…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Читання історії дій…"
+          }
+        }
+      }
+    },
     "Reading launch items": {
       "localizations": {
         "ru": {
@@ -8949,22 +10399,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Читаю дані з вашого Mac…"
-          }
-        }
-      }
-    },
-    "Ready": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готово"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готово"
           }
         }
       }
@@ -9017,6 +10451,38 @@
         }
       }
     },
+    "Recovery required": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Требуется восстановление"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потрібне відновлення"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновити"
+          }
+        }
+      }
+    },
     "Refresh caches and services that slow your Mac down, and repair safe maintenance issues.": {
       "localizations": {
         "ru": {
@@ -9045,6 +10511,44 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновіть кеші та служби й дізнайтеся, що сповільнює Mac."
+          }
+        }
+      }
+    },
+    "Refresh installed version": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить установленную версию"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірити встановлену версію"
+          }
+        }
+      }
+    },
+    "Refresh the contents before a separate permanent-deletion confirmation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh the contents before a separate permanent-deletion confirmation."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновить содержимое перед отдельным подтверждением удаления навсегда."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновити вміст перед окремим підтвердженням видалення назавжди."
           }
         }
       }
@@ -9113,18 +10617,68 @@
         }
       }
     },
-    "Reinstall": {
+    "Remind me about Trash": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind me about Trash"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Переустановить"
+            "value": "Напоминать о корзине"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перевстановити"
+            "value": "Нагадувати про кошик"
+          }
+        }
+      }
+    },
+    "Reminders work while Nora is running. Only home Trash (~/.Trash) is checked; external disks are excluded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders work while Nora is running. Only home Trash (~/.Trash) is checked; external disks are excluded."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напоминания работают, пока запущена Nora. Проверяется только домашняя корзина (~/.Trash), без внешних дисков."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нагадування працюють, поки запущено Nora. Перевіряється лише домашній кошик (~/.Trash), без зовнішніх дисків."
+          }
+        }
+      }
+    },
+    "Reminders work while Nora is running. You can always review Trash manually.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders work while Nora is running. You can always review Trash manually."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напоминания работают, пока запущена Nora. Корзину всегда можно проверить вручную."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нагадування працюють, поки запущено Nora. Кошик завжди можна перевірити вручну."
           }
         }
       }
@@ -9141,6 +10695,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видалення не завершилося"
+          }
+        }
+      }
+    },
+    "Removal needs attention": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаление требует внимания"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалення потребує уваги"
           }
         }
       }
@@ -9173,38 +10743,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Прибрати"
-          }
-        }
-      }
-    },
-    "Remove Mole": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удалить Mole"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видалити Mole"
-          }
-        }
-      }
-    },
-    "Remove an app with its helpers, caches and settings, update Homebrew apps, and find the ones you no longer open.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удалите программу вместе с вспомогательными файлами, кэшами и настройками, обновите программы Homebrew и найдите те, которые вы больше не открываете."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видаліть програму разом із допоміжними файлами, кешами й налаштуваннями, оновіть програми Homebrew і знайдіть ті, які ви більше не відкриваєте."
           }
         }
       }
@@ -9253,22 +10791,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видаліть кеші, журнали та залишки, щоб звільнити місце. Кожну позицію видно до того, як щось буде видалено."
-          }
-        }
-      }
-    },
-    "Removed: %lld of %lld": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удалено: %lld из %lld"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видалено: %lld з %lld"
           }
         }
       }
@@ -9497,6 +11019,28 @@
         }
       }
     },
+    "Restore preserved Trash items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore preserved Trash items"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстановить сохранённые объекты корзины"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відновити збережені об’єкти кошика"
+          }
+        }
+      }
+    },
     "Restoring does not load a launch agent again. It starts at the next login or when you load it yourself.": {
       "localizations": {
         "ru": {
@@ -9513,6 +11057,38 @@
         }
       }
     },
+    "Retry": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторити"
+          }
+        }
+      }
+    },
+    "Retry protection recovery": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторить восстановление защиты"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повторити відновлення захисту"
+          }
+        }
+      }
+    },
     "Review": {
       "localizations": {
         "ru": {
@@ -9525,6 +11101,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Переглянути"
+          }
+        }
+      }
+    },
+    "Review again": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить снова"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірити знову"
           }
         }
       }
@@ -9593,6 +11191,44 @@
         }
       }
     },
+    "Review cleanup": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотреть очистку"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переглянути очищення"
+          }
+        }
+      }
+    },
+    "Review home Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review home Trash…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверить домашнюю корзину…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірити домашній кошик…"
+          }
+        }
+      }
+    },
     "Review installers": {
       "localizations": {
         "ru": {
@@ -9609,6 +11245,28 @@
         }
       }
     },
+    "Review recovery in Nora": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review recovery in Nora"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстановление в Nora"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відновлення в Nora"
+          }
+        }
+      }
+    },
     "Review removal": {
       "localizations": {
         "ru": {
@@ -9621,6 +11279,60 @@
           "stringUnit": {
             "state": "translated",
             "value": "Переглянути видалення"
+          }
+        }
+      }
+    },
+    "Review result": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотреть результат"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переглянути результат"
+          }
+        }
+      }
+    },
+    "Review the last result before scanning again": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотрите последний результат перед повторным сканированием"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перегляньте останній результат перед повторним скануванням"
+          }
+        }
+      }
+    },
+    "Reviewed items removed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reviewed items removed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверенные объекты удалены"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірені об’єкти видалено"
           }
         }
       }
@@ -9801,6 +11513,22 @@
         }
       }
     },
+    "Scan again: the preview is incomplete": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выполните сканирование снова: предварительный список неполон"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проскануйте знову: попередній список неповний"
+          }
+        }
+      }
+    },
     "Scan stopped. Results are partial.": {
       "localizations": {
         "ru": {
@@ -9945,6 +11673,22 @@
         }
       }
     },
+    "Select a ready task, or review and rescan a module": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите готовую задачу или просмотрите и повторно просканируйте раздел"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть готове завдання або перегляньте й повторно проскануйте розділ"
+          }
+        }
+      }
+    },
     "Select all": {
       "localizations": {
         "ru": {
@@ -9973,6 +11717,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оберіть програми, щоб побачити команду."
+          }
+        }
+      }
+    },
+    "Select folders to remove": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите папки для удаления"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть папки для видалення"
+          }
+        }
+      }
+    },
+    "Select installers to remove": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите установщики для удаления"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть інсталятори для видалення"
+          }
+        }
+      }
+    },
+    "Select items from a complete scan to clean.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите элементы для очистки из полного сканирования."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть елементи для очищення з повного сканування."
           }
         }
       }
@@ -10073,6 +11865,22 @@
         }
       }
     },
+    "Show ClamAV console": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать консоль ClamAV"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показати консоль ClamAV"
+          }
+        }
+      }
+    },
     "Show Nora in the menu bar": {
       "localizations": {
         "ru": {
@@ -10133,6 +11941,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Показати журнал"
+          }
+        }
+      }
+    },
+    "Show progress": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать ход выполнения"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показати перебіг"
           }
         }
       }
@@ -10217,8 +12041,36 @@
         }
       }
     },
+    "Size is unknown. Unreadable items are never treated as an empty Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size is unknown. Unreadable items are never treated as an empty Trash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Размер неизвестен. Недоступные объекты не означают, что корзина пуста."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обсяг невідомий. Недоступні об’єкти не означають, що кошик порожній."
+          }
+        }
+      }
+    },
     "Size unknown": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size unknown"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
@@ -10228,7 +12080,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Розмір невідомий"
+            "value": "Обсяг невідомий"
           }
         }
       }
@@ -10471,6 +12323,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Розумний догляд завершено"
+          }
+        }
+      }
+    },
+    "Smart Care stopped": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smart Care остановлен"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smart Care зупинено"
           }
         }
       }
@@ -10875,6 +12743,50 @@
         }
       }
     },
+    "Stopping safely…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopping safely…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Безопасная остановка…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Безпечна зупинка…"
+          }
+        }
+      }
+    },
+    "Stopping…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopping…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остановка…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зупинка…"
+          }
+        }
+      }
+    },
     "Stops Finder from writing .DS_Store files on network and USB drives.": {
       "localizations": {
         "ru": {
@@ -10967,22 +12879,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Системні кеші не включено. Для них потрібен пароль."
-          }
-        }
-      }
-    },
-    "System power": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Системное питание"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Системне живлення"
           }
         }
       }
@@ -11147,18 +13043,50 @@
         }
       }
     },
-    "The History screen reads the operations log, so it stays empty while this is on.": {
+    "The Mole update command finished. Check the installed version below.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Экран «История» читает журнал операций, поэтому, пока эта опция включена, он пуст."
+            "value": "Команда обновления Mole завершена. Проверьте установленную версию ниже."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Екран «Історія» читає журнал операцій, тож поки цей пункт увімкнено, він порожній."
+            "value": "Команду оновлення Mole завершено. Перевірте встановлену версію нижче."
+          }
+        }
+      }
+    },
+    "The Touch ID change did not finish. Check the console and retry.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Изменение Touch ID не завершено. Проверьте консоль и повторите попытку."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зміну Touch ID не завершено. Перевірте консоль і повторіть спробу."
+          }
+        }
+      }
+    },
+    "The active Downloads watch may still use its previously loaded definitions until ClamAV reloads them or you restart the watch.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активное наблюдение за Загрузками может использовать прежние сигнатуры, пока ClamAV не перезагрузит их или вы не перезапустите наблюдение."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активне стеження за Завантаженнями може використовувати попередні сигнатури, доки ClamAV не перезавантажить їх або ви не перезапустите стеження."
           }
         }
       }
@@ -11307,6 +13235,38 @@
         }
       }
     },
+    "The cleanup preview is incomplete or unreadable. Scan again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предварительный список очистки неполон или недоступен для чтения. Выполните сканирование снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попередній список очищення неповний або недоступний для читання. Проскануйте знову."
+          }
+        }
+      }
+    },
+    "The cleanup preview is incomplete, stale or unreadable. Scan again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предварительный список очистки неполон, устарел или недоступен для чтения. Выполните сканирование снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попередній список очищення неповний, застарілий або недоступний для читання. Проскануйте знову."
+          }
+        }
+      }
+    },
     "The code signature could not be read.": {
       "localizations": {
         "ru": {
@@ -11335,38 +13295,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Підпис коду недійсний."
-          }
-        }
-      }
-    },
-    "The database update failed.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось обновить базу."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося оновити базу."
-          }
-        }
-      }
-    },
-    "The database update was stopped.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обновление вирусной базы остановлено."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оновлення вірусної бази зупинено."
           }
         }
       }
@@ -11563,6 +13491,38 @@
         }
       }
     },
+    "The protection file at %@ changed outside Nora. The edited file and recovery copy are preserved. Resolve the file conflict before retrying recovery.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файл защиты %@ изменён вне Nora. Изменённый файл и копия для восстановления сохранены. Устраните конфликт файлов перед повторным восстановлением."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файл захисту %@ змінено поза Nora. Змінений файл і копію для відновлення збережено. Усуньте конфлікт файлів перед повторним відновленням."
+          }
+        }
+      }
+    },
+    "The selected items are no longer in the cleanup preview. Nothing was removed. Scan again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбранных элементов больше нет в списке очистки. Ничего не удалено. Выполните сканирование снова."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибраних елементів більше немає у списку очищення. Нічого не видалено. Проскануйте знову."
+          }
+        }
+      }
+    },
     "The system is busy drawing windows. If something else is higher, this is more likely a symptom than the cause.": {
       "localizations": {
         "ru": {
@@ -11575,6 +13535,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Система активно малює вікна. Якщо щось інше навантажує більше, це скоріше наслідок, ніж причина."
+          }
+        }
+      }
+    },
+    "The task could not start": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Задачу не удалось запустить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завдання не вдалося запустити"
           }
         }
       }
@@ -11611,18 +13587,34 @@
         }
       }
     },
-    "The virus database could not be updated, so this scan used the copy from %@.": {
+    "The virus database could not be updated. This scan used the local copy, last successfully checked on %@.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вирусную базу не удалось обновить, поэтому сканирование прошло с копией от %@."
+            "value": "Не удалось обновить вирусную базу. Для сканирования использована локальная копия, которая последний раз успешно проверена %@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вірусну базу не вдалося оновити, тому сканування пройшло з копією від %@."
+            "value": "Не вдалося оновити вірусну базу. Для сканування використано локальну копію, яку востаннє успішно перевірено %@."
+          }
+        }
+      }
+    },
+    "These are Mole's reported results, not a measurement of newly available disk space.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это результаты из отчёта Mole, а не измерение фактически освобождённого места на диске."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Це результати зі звіту Mole, а не вимірювання фактично звільненого місця на диску."
           }
         }
       }
@@ -11675,22 +13667,6 @@
         }
       }
     },
-    "Tick findings to quarantine them": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Отметьте находки, чтобы поместить их в карантин"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Позначте знахідки, щоб помістити їх у карантин"
-          }
-        }
-      }
-    },
     "Tiles in the quick menu (one to four)": {
       "localizations": {
         "ru": {
@@ -11703,22 +13679,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Плитки в швидкому меню (від однієї до чотирьох)"
-          }
-        }
-      }
-    },
-    "Tiles in the quick menu (pick four)": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Плитки в быстром меню (выберите четыре)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Плитки в швидкому меню (оберіть чотири)"
           }
         }
       }
@@ -11803,6 +13763,22 @@
         }
       }
     },
+    "Touch ID does not match the requested setting. Check the console and retry.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Состояние Touch ID не соответствует запрошенной настройке. Проверьте консоль и повторите попытку."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стан Touch ID не відповідає запитаному налаштуванню. Перевірте консоль і повторіть спробу."
+          }
+        }
+      }
+    },
     "Touch ID for sudo": {
       "localizations": {
         "ru": {
@@ -11851,6 +13827,248 @@
         }
       }
     },
+    "Trash changed during cleanup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash changed during cleanup"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корзина изменилась во время очистки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кошик змінився під час очищення"
+          }
+        }
+      }
+    },
+    "Trash changed. Review the updated items before confirming.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash changed. Review the updated items before confirming."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Содержимое корзины изменилось. Проверьте обновлённые объекты перед подтверждением."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вміст кошика змінився. Перевірте оновлені об’єкти перед підтвердженням."
+          }
+        }
+      }
+    },
+    "Trash check was cancelled. Review again before deleting.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash check was cancelled. Review again before deleting."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка корзины отменена. Перед удалением проверьте ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірку кошика скасовано. Перед видаленням перевірте ще раз."
+          }
+        }
+      }
+    },
+    "Trash cleanup needs attention": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash cleanup needs attention"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверьте результат очистки"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірте результат очищення"
+          }
+        }
+      }
+    },
+    "Trash cleanup stopped": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash cleanup stopped"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очистка корзины остановлена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очищення кошика зупинено"
+          }
+        }
+      }
+    },
+    "Trash could not be checked": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash could not be checked"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось проверить корзину"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перевірити кошик"
+          }
+        }
+      }
+    },
+    "Trash logical size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash logical size"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Логический размер корзины"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Логічний обсяг кошика"
+          }
+        }
+      }
+    },
+    "Trash recovery finished. Review the remaining items again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash recovery finished. Review the remaining items again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Восстановление корзины завершено. Проверьте оставшиеся объекты ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відновлення кошика завершено. Перевірте решту об’єктів ще раз."
+          }
+        }
+      }
+    },
+    "Trash recovery needs attention": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash recovery needs attention"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корзина требует восстановления"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кошик потребує відновлення"
+          }
+        }
+      }
+    },
+    "Trash reminders": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash reminders"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Напоминания о корзине"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нагадування про кошик"
+          }
+        }
+      }
+    },
+    "Trash size is unavailable. Check access and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trash size is unavailable. Check access and try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Размер корзины недоступен. Проверьте доступ и повторите попытку."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обсяг кошика недоступний. Перевірте доступ і повторіть спробу."
+          }
+        }
+      }
+    },
     "Turn off": {
       "localizations": {
         "ru": {
@@ -11863,6 +14081,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вимкнути"
+          }
+        }
+      }
+    },
+    "Turn off Watch Downloads before updating the engine. Turn it back on afterwards to load the installed engine.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отключите наблюдение за Загрузками перед обновлением движка. После обновления включите его снова, чтобы загрузить установленный движок."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вимкніть стеження за Завантаженнями перед оновленням рушія. Після оновлення ввімкніть його знову, щоб завантажити встановлений рушій."
           }
         }
       }
@@ -11963,6 +14197,22 @@
         }
       }
     },
+    "Unknown": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неизвестно"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Невідомо"
+          }
+        }
+      }
+    },
     "Unused apps": {
       "localizations": {
         "ru": {
@@ -11991,6 +14241,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновити"
+          }
+        }
+      }
+    },
+    "Update ClamAV engine": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновить движок ClamAV"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновити рушій ClamAV"
           }
         }
       }
@@ -12027,22 +14293,6 @@
         }
       }
     },
-    "Update now": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обновить сейчас"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оновити зараз"
-          }
-        }
-      }
-    },
     "Update virus database": {
       "localizations": {
         "ru": {
@@ -12059,18 +14309,18 @@
         }
       }
     },
-    "Updated %@": {
+    "Update virus definitions": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Обновлено %@"
+            "value": "Обновить вирусные сигнатуры"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оновлено %@"
+            "value": "Оновити вірусні сигнатури"
           }
         }
       }
@@ -12107,22 +14357,6 @@
         }
       }
     },
-    "Updates (Homebrew)": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обновления (Homebrew)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оновлення (Homebrew)"
-          }
-        }
-      }
-    },
     "Updates available": {
       "localizations": {
         "ru": {
@@ -12151,6 +14385,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оновлення надходять із GitHub Releases і перевіряються підписом Nora EdDSA."
+          }
+        }
+      }
+    },
+    "Updating ClamAV engine…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновление движка ClamAV…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлення рушія ClamAV…"
           }
         }
       }
@@ -12267,6 +14517,22 @@
         }
       }
     },
+    "Virus definitions checked successfully. The engine was not upgraded.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вирусные сигнатуры успешно проверены. Движок не обновлялся."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вірусні сигнатури успішно перевірено. Рушій не оновлювався."
+          }
+        }
+      }
+    },
     "Visual map of your storage": {
       "localizations": {
         "ru": {
@@ -12279,6 +14545,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Візуальна карта сховища"
+          }
+        }
+      }
+    },
+    "Wait for the ClamAV installation to finish before starting Watch Downloads.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дождитесь завершения установки ClamAV, прежде чем включать наблюдение за Загрузками."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дочекайтеся завершення встановлення ClamAV, перш ніж увімкнути стеження за Завантаженнями."
           }
         }
       }
@@ -12477,18 +14759,18 @@
         }
       }
     },
-    "What removing Mole would delete. Nora needs Mole, so the removal itself runs in Terminal.": {
+    "What removing Mole would delete. This card only previews; it does not remove Mole.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Что будет удалено вместе с Mole. Nora нужен Mole, поэтому само удаление выполняется в Терминале."
+            "value": "Что будет удалено вместе с Mole. Эта карточка только показывает предварительный просмотр и не удаляет Mole."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Що буде видалено разом із Mole. Nora потребує Mole, тож саме видалення виконується в Терміналі."
+            "value": "Що буде видалено разом із Mole. Ця картка лише показує попередній перегляд і не видаляє Mole."
           }
         }
       }
@@ -12733,22 +15015,6 @@
         }
       }
     },
-    "Your Mac is refreshed": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваш Mac обновлён"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваш Mac оновлено"
-          }
-        }
-      }
-    },
     "Your Mac was already clean.": {
       "localizations": {
         "ru": {
@@ -12861,38 +15127,6 @@
         }
       }
     },
-    "brew install %@ did not finish. The console shows the output.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "brew install %@ не завершился. Вывод есть в консоли."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "brew install %@ не завершився. Вивід є в консолі."
-          }
-        }
-      }
-    },
-    "brew install %@ was stopped. Install again when you are ready.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "brew install %@ остановлен. Установите снова, когда будете готовы."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "brew install %@ зупинено. Встановіть знову, коли будете готові."
-          }
-        }
-      }
-    },
     "brew.sh": {
       "localizations": {
         "ru": {
@@ -12937,22 +15171,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "очищено кешу: %@"
-          }
-        }
-      }
-    },
-    "can be cleaned": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "можно очистить"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "можна очистити"
           }
         }
       }
@@ -13069,6 +15287,38 @@
         }
       }
     },
+    "found in the last scan": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "найдено при последнем сканировании"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "знайдено під час останнього сканування"
+          }
+        }
+      }
+    },
+    "freshclam finished, but Nora's virus database is still missing. Check the console.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "freshclam завершил работу, но вирусной базы Nora по-прежнему нет. Посмотрите консоль."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "freshclam завершив роботу, але вірусної бази Nora досі немає. Перегляньте консоль."
+          }
+        }
+      }
+    },
     "iCloud, Mail and Telegram": {
       "localizations": {
         "ru": {
@@ -13161,6 +15411,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "залишки видалених програм"
+          }
+        }
+      }
+    },
+    "logical size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "logical size"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "логический размер"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "логічний обсяг"
           }
         }
       }

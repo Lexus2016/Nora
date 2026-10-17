@@ -99,10 +99,10 @@ enum Homebrew {
             && !token.unicodeScalars.contains { $0.value < 0x20 || $0.value == 0x7F }
     }
 
-    // MARK: - JSON (brew v2 shapes, lenient about missing or null fields)
+    // MARK: - JSON (required v2 envelopes; optional display metadata may be absent)
 
     private struct OutdatedRoot: Decodable {
-        let casks: [OutdatedCask]?
+        let casks: [OutdatedCask]
     }
 
     /// `name` is the cask token here, not the display name.
@@ -117,7 +117,7 @@ enum Homebrew {
     }
 
     private struct InfoRoot: Decodable {
-        let casks: [InfoCask]?
+        let casks: [InfoCask]
     }
 
     private struct InfoCask: Decodable {
@@ -143,7 +143,11 @@ enum Homebrew {
 
     static func parseOutdated(_ data: Data) throws -> [Outdated] {
         let root = try JSONDecoder().decode(OutdatedRoot.self, from: data)
-        return (root.casks ?? []).map {
+        guard Set(root.casks.map(\.name)).count == root.casks.count,
+              root.casks.allSatisfy({ isValidToken($0.name) }) else {
+            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Invalid or duplicate cask token"))
+        }
+        return root.casks.map {
             Outdated(token: $0.name,
                      installed: ($0.installedVersions ?? []).joined(separator: ", "),
                      latest: $0.currentVersion ?? "?")
@@ -153,7 +157,7 @@ enum Homebrew {
     static func parseInfo(_ data: Data) throws -> [String: CaskInfo] {
         let root = try JSONDecoder().decode(InfoRoot.self, from: data)
         var out: [String: CaskInfo] = [:]
-        for cask in root.casks ?? [] {
+        for cask in root.casks {
             out[cask.token] = CaskInfo(name: cask.name?.first, autoUpdates: cask.autoUpdates ?? false, apps: cask.apps)
         }
         return out

@@ -37,6 +37,35 @@ public enum InstallerDriverError: Error, Equatable {
     case reviewMismatch(expected: [String], onScreen: [String])
 }
 
+// Technical details stay in the local console. The app presents its own localized refusal.
+// Reflect names so embedded newlines/control characters cannot forge extra log lines.
+extension InstallerDriverError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .targetNotListed(let name):
+            return "Installer target is no longer listed: \(String(reflecting: name))"
+        case .targetListedTwice(let name):
+            return "Installer target is ambiguous: \(String(reflecting: name))"
+        case .sourceNotAllowed(let name, let source):
+            return "Installer target \(String(reflecting: name)) has an unapproved source: \(String(reflecting: source))"
+        case .targetChanged(let name):
+            return "Installer target changed since preview: \(String(reflecting: name))"
+        case .preselected(let names):
+            return "Installer menu already had selected files: \(String(reflecting: names))"
+        case .paginated:
+            return "Installer menu has off-screen rows; confirmation refused"
+        case .selectionMismatch(let expected, let onScreen):
+            return Self.mismatch("selection", expected: expected, onScreen: onScreen)
+        case .reviewMismatch(let expected, let onScreen):
+            return Self.mismatch("review", expected: expected, onScreen: onScreen)
+        }
+    }
+
+    private static func mismatch(_ phase: String, expected: [String], onScreen: [String]) -> String {
+        "Installer \(phase) mismatch: expected \(expected.count) \(String(reflecting: expected)); observed \(onScreen.count) \(String(reflecting: onScreen))"
+    }
+}
+
 /// Drives `mo installer` (Mole 1.59) to delete exactly the named files and nothing else.
 ///
 /// Every keystroke is followed by a check of the redrawn screen. Before the final
@@ -57,14 +86,29 @@ public struct InstallerDriver {
             if lines.contains(where: { $0.hasPrefix(Self.menuTitle) }), lines.contains(where: { $0.contains("Space Select") }) {
                 Thread.sleep(forTimeInterval: 0.3)
                 let rows = Self.parseRows(session.lines)
+                guard !rows.isEmpty else { throw PTYError(description: "The installer menu could not be read") }
                 session.send(.character("q"))
                 return rows
             }
-            if session.exitStatus != nil { return [] }
+            if let status = session.exitStatus {
+                // A process dying before the menu is not an empty scan. Only an explicit
+                // successful no-results message can authorize that outcome.
+                let output = TerminalText.render(session.transcriptBytes)
+                guard Self.isEmptyScan(status: status, output: output) else {
+                    throw PTYError(description: "Installer scan ended before a verified list: \(output.suffix(1000))")
+                }
+                return []
+            }
             Thread.sleep(forTimeInterval: 0.1)
         }
         session.send(.character("q"))
         throw PTYError(description: "timed out waiting for the installer list")
+    }
+
+    public static func isEmptyScan(status: ExitStatus, output: String) -> Bool {
+        guard status == .exited(0) else { return false }
+        let text = ANSIText.strip(output).lowercased()
+        return text.contains("no installer files found") || text.contains("no installers found")
     }
 
     /// - Parameters:
@@ -103,10 +147,11 @@ public struct InstallerDriver {
                 }
             }
 
-            let onScreen = Self.parseRows(session.lines)
+            let selectionScreen = session.lines
+            let onScreen = Self.parseRows(selectionScreen)
             let selected = Set(onScreen.indices.filter { onScreen[$0].isSelected })
             guard selected == chosen,
-                  session.lines.contains(where: { $0.hasPrefix(Self.menuTitle) && $0.contains("\(names.count) selected") })
+                  selectionScreen.contains(where: { $0.hasPrefix(Self.menuTitle) && $0.hasSuffix(", \(names.count) selected") })
             else {
                 throw InstallerDriverError.selectionMismatch(
                     expected: names.sorted(), onScreen: selected.sorted().map { onScreen[$0].name })
@@ -118,7 +163,7 @@ public struct InstallerDriver {
 
         session.send(.enter)
         let review = try wait(session, "review list") { lines in
-            lines.contains("Files to be removed:") && lines.contains { $0.contains("Delete \(names.count) installer") }
+            lines.contains("Files to be removed:") && Self.hasCompleteReviewPrompt(lines, count: names.count)
         }
         let listed = Self.parseReview(review)
         guard Self.review(listed, matches: targets) else {
@@ -126,6 +171,13 @@ public struct InstallerDriver {
             throw InstallerDriverError.reviewMismatch(expected: names.sorted(), onScreen: listed.sorted())
         }
         session.send(.enter)
+    }
+
+    /// A quiet PTY is not necessarily a complete write. Do not confirm a fragmented prompt
+    /// after only "Delete N installer" has arrived; wait for its final cancel instruction.
+    static func hasCompleteReviewPrompt(_ lines: [String], count: Int) -> Bool {
+        let pattern = "^➤ Delete \(count) installers?, .+  Enter confirm, ESC cancel:$"
+        return lines.contains { $0.range(of: pattern, options: .regularExpression) != nil }
     }
 
     /// The review prints full names; every target (menu name, maybe cut) must account for exactly
@@ -202,12 +254,17 @@ public struct InstallerDriver {
             guard let bar = body.range(of: " | ", options: .backwards) else { return nil }
             let left = body[..<bar.lowerBound]
             let source = body[bar.upperBound...].trimmingCharacters(in: .whitespaces)
-            // The name is padded to a column; a run of two spaces separates it from the size.
-            guard let gap = left.range(of: "  ") else { return nil }
+            // Read the size column from the right: filenames themselves can contain two
+            // spaces. Splitting at the first gap silently shortened legitimate names and
+            // made their full review names fail the final confirmation check.
+            guard let gap = left.range(of: "  ", options: .backwards) else { return nil }
+            var name = String(left[..<gap.lowerBound])
+            while name.last == " " { name.removeLast() }
+            guard !name.isEmpty else { return nil }
             return InstallerRow(
                 isCursor: isCursor,
                 isSelected: mark == "●",
-                name: String(left[..<gap.lowerBound]),
+                name: name,
                 size: left[gap.upperBound...].trimmingCharacters(in: .whitespaces),
                 source: source
             )

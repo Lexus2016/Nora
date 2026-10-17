@@ -38,11 +38,24 @@ struct NoraApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let app = AppModel()
+    /// Unit-test hosts must not start schedulers, update checks, recovery, or real scanners.
+    private var isUnitTestHost: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.environment["NORA_UNIT_TESTING"] == "1"
+            || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        #else
+        false
+        #endif
+    }
     private var menuBar: MenuBarController?
+    private var trashPrompt: TrashPromptController?
+    private var waitingForTrashTermination = false
     private var scheduler: Timer?
+    private var startupTask: Task<Void, Never>?
     private var terminationSignal: DispatchSourceSignal?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        guard !isUnitTestHost else { return }
         // Launching Nora always shows its window. With the system's "keep windows when quitting"
         // on, a window closed before quitting would otherwise stay closed and leave only the menu
         // bar item. Set in Nora's own domain, so other apps keep the system setting.
@@ -50,6 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        guard !isUnitTestHost else { return }
         // SIGTERM (Activity Monitor's Quit, logout, pkill) goes through the normal quit, so
         // applicationWillTerminate stops Nora's child processes instead of orphaning them.
         signal(SIGTERM, SIG_IGN)
@@ -58,10 +72,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         term.resume()
         terminationSignal = term
         app.prepare()
+        trashPrompt = TrashPromptController(model: app.trash, openNora: { [weak self] in self?.app.showSettings() })
         _ = Updater.shared
-        Task {
+        startupTask = Task {
+            await app.trash.checkRecovery()
+            guard !Task.isCancelled else { return }
+            app.trash.start()
             await app.security.reapOrphanedScanners()
+            guard !Task.isCancelled else { return }
             await app.locate()
+            guard !Task.isCancelled else { return }
             menuBar = MenuBarController(app: app)
             app.security.resumeWatchIfEnabled(app)
             #if DEBUG
@@ -84,9 +104,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { note in
-            let identifier = (note.object as? NSWindow)?.identifier?.rawValue
+            let windowID = (note.object as? NSWindow).map(ObjectIdentifier.init)
             MainActor.assumeIsolated {
-                guard identifier == "main" else { return }
+                guard let windowID,
+                      NSApp.windows.first(where: { ObjectIdentifier($0) == windowID })?.identifier?.rawValue == "main" else { return }
                 // With the menu bar item on, Nora keeps running there without a Dock icon.
                 if UserDefaults.standard.object(forKey: "showMenuBar") as? Bool ?? true { NSApp.setActivationPolicy(.accessory) }
             }
@@ -102,12 +123,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !isUnitTestHost else { return .terminateNow }
+        guard !waitingForTrashTermination else { return .terminateLater }
+        startupTask?.cancel()
+        let needsSettlement = app.trash.isWorking
+        app.trash.shutdown()
+        guard needsSettlement else { return .terminateNow }
+        waitingForTrashTermination = true
+        Task { @MainActor in
+            await app.trash.waitUntilSettled()
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
+        guard !isUnitTestHost else { return }
+        startupTask?.cancel()
+        app.trash.shutdown()
+        trashPrompt?.shutdown()
         app.security.shutdown()
         // Children first, and only once they are gone: Mole must not read the whitelist while
         // it is being put back. If one survives, the overlay stays until the next launch.
         if ChildProcesses.terminateAllAndWait() {
-            try? app.overlay.recoverIfNeeded()
+            // No registered child does not prove a detached protection worker has finished:
+            // it may be between loading defaults and applying its overlay. Preserve the
+            // journal during an exclusive operation. This in-memory barrier does not prove
+            // settlement of a surviving helper across a later application launch.
+            if !app.exclusiveRunActive { try? app.recoverProtection() }
             app.handover.recover()
         }
     }

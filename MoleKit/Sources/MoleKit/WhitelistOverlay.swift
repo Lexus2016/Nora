@@ -4,6 +4,7 @@ public enum WhitelistOverlayError: Error, Equatable {
     /// A previous run left a journal behind; call `recoverIfNeeded()` first.
     case pendingRecovery
     case io(String)
+    case conflictingChanges(String)
 }
 
 /// Temporarily protects extra paths from `mo clean` by appending a marked block to
@@ -27,6 +28,8 @@ public struct WhitelistOverlay: Sendable {
         let whitelistPath: String
         let originalContents: Data?
         let createdAt: Date
+        /// Exact bytes this journal permits recovery to replace; absent in older journals.
+        var appliedContents: Data? = nil
     }
 
     public init(home: URL, journalURL: URL) {
@@ -51,9 +54,6 @@ public struct WhitelistOverlay: Sendable {
             ? try read(target)
             : nil
 
-        let journal = Journal(runID: runID, whitelistPath: target.path, originalContents: original, createdAt: Date())
-        try Self.writeDurably(try JSONEncoder().encode(journal), to: journalURL)
-
         var text: String
         if let original {
             text = String(decoding: original, as: UTF8.self)
@@ -65,7 +65,11 @@ public struct WhitelistOverlay: Sendable {
         text += "# >>> nora-overlay \(runID)\n"
         text += patterns.map { $0 + "\n" }.joined()
         text += "# <<< nora-overlay \(runID)\n"
-        try Self.writeDurably(Data(text.utf8), to: target)
+        let applied = Data(text.utf8)
+        let journal = Journal(runID: runID, whitelistPath: target.path, originalContents: original,
+                              createdAt: Date(), appliedContents: applied)
+        try Self.writeDurably(try JSONEncoder().encode(journal), to: journalURL)
+        try Self.writeDurably(applied, to: target)
     }
 
     /// Ends one operation's overlay: restores only when the journal belongs to `runID`, so an
@@ -86,6 +90,14 @@ public struct WhitelistOverlay: Sendable {
 
     private func restore(_ journal: Journal) throws {
         let target = URL(fileURLWithPath: journal.whitelistPath)
+        if let applied = journal.appliedContents {
+            let current = FileManager.default.fileExists(atPath: target.path) ? try read(target) : nil
+            // Also permit the original state: a crash can occur after journaling but before
+            // applying, or after restoring but before the journal is removed.
+            guard current == applied || current == journal.originalContents else {
+                throw WhitelistOverlayError.conflictingChanges(target.path)
+            }
+        }
 
         if let original = journal.originalContents {
             try Self.writeDurably(original, to: target)
@@ -156,5 +168,16 @@ public struct WhitelistOverlay: Sendable {
         guard fd >= 0 else { return }
         fsync(fd)
         close(fd)
+    }
+}
+
+extension WhitelistOverlayError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .pendingRecovery: return "Protection recovery is required before another cleanup."
+        case .io(let detail): return "Protection recovery failed: \(detail)"
+        case .conflictingChanges(let path):
+            return "The protection file changed outside Nora: \(path). The edited file and recovery journal were preserved. Resolve the conflict before cleaning again."
+        }
     }
 }

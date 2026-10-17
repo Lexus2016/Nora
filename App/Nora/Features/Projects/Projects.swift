@@ -13,7 +13,9 @@ final class ProjectsModel {
     var resultHeadline = ""
     var resultLines: [String] = []
     var failed = false
+    var recoveryRequired = false
     @ObservationIgnored private var task: Task<Void, Never>?
+    private var scanGeneration = UUID()
 
     var selectedSize: Int64 { preview?.items.reduce(0) { selected.contains($1.path) ? $0 + $1.size : $0 } ?? 0 }
 
@@ -25,6 +27,9 @@ final class ProjectsModel {
     }
 
     func scan(_ app: AppModel) {
+        guard stage != .scanning, stage != .running else { return }
+        let generation = UUID()
+        scanGeneration = generation
         // Under another run's temporary whitelist the preview would miss what that run protects.
         guard !app.exclusiveRunActive else { error = AppModel.busyScanMessage; return }
         error = nil
@@ -32,6 +37,8 @@ final class ProjectsModel {
         task = Task(.projects) {
             do {
                 let result = try await app.run(["purge", "--dry-run"])
+                guard generation == scanGeneration else { return }
+                try Task.checkCancellation()
                 let parsed = PurgePreview.parse(result.stdout, home: app.home)
                 // Exit 1 means "incomplete" (a slow root was skipped); the listed items are still valid.
                 if parsed.items.isEmpty && !result.succeeded && parsed.warnings.isEmpty {
@@ -41,8 +48,10 @@ final class ProjectsModel {
                 selected = Set(parsed.items.map(\.path))
                 stage = .review
             } catch is CancellationError {
+                guard generation == scanGeneration else { return }
                 stage = .start
             } catch {
+                guard generation == scanGeneration else { return }
                 self.error = error.localizedDescription
                 stage = .start
             }
@@ -54,14 +63,16 @@ final class ProjectsModel {
     /// tick, including folders that appeared after the review. An incomplete preview means Mole
     /// may reach folders nobody saw, so nothing runs.
     func purge(_ app: AppModel) {
-        guard preview != nil, !selected.isEmpty, let mole = app.mole else { return }
+        guard stage == .review else { return }
+        guard preview?.isComplete == true, !selected.isEmpty, let mole = app.mole else { return }
         let chosen = selected
         let runID = "purge-\(UUID().uuidString)"
         // Taken before the fresh preview: under another run's overlay that preview would miss
         // the folders that run protects, and they would lose protection when it ends.
         guard app.beginExclusiveRun(runID) else {
             failed = true
-            resultHeadline = CleanupModel.describe(WhitelistOverlayError.pendingRecovery)
+            recoveryRequired = app.overlay.needsRecovery
+            resultHeadline = app.overlay.needsRecovery ? CleanupModel.describe(WhitelistOverlayError.pendingRecovery) : AppModel.busyScanMessage
             resultLines = []
             stage = .done
             return
@@ -69,7 +80,14 @@ final class ProjectsModel {
         stage = .running
         task = Task(.projects) {
             defer {
-                try? app.overlay.recover(runID: runID)
+                do { try app.recoverProtection(runID: runID) }
+                catch {
+                    failed = true
+                    resultHeadline = String(localized: "Removal needs attention")
+                    resultLines.append(CleanupModel.describe(error))
+                    recoveryRequired = true
+                    app.cleanup.recoveryRequired = true
+                }
                 app.endExclusiveRun(runID)
             }
             do {
@@ -91,7 +109,7 @@ final class ProjectsModel {
                     .components(separatedBy: ":").last?.components(separatedBy: "|").first?.trimmingCharacters(in: .whitespaces)
                 failed = !result.succeeded
                 resultHeadline = failed ? (freed.map { String(localized: "Partly done: \($0) freed") } ?? String(localized: "Removal did not finish"))
-                                        : (freed ?? Format.bytes(selectedSize))
+                                        : (freed.map { String(localized: "Mole reports \($0) freed") } ?? String(localized: "Command finished; reclaimed space was not reported"))
                 resultLines = summary
             } catch is CancellationError {
                 failed = true
@@ -106,8 +124,14 @@ final class ProjectsModel {
         }
     }
 
-    func stop() { task?.cancel() }
-    func reset() { stage = .start; preview = nil; selected = [] }
+    func stop() {
+        task?.cancel()
+        // Keep busy until the cancelled task exits; a replacement must not overlap it.
+    }
+    func reset() {
+        guard stage != .running, stage != .scanning, !recoveryRequired else { return }
+        scanGeneration = UUID(); task?.cancel(); error = nil
+        stage = .start; preview = nil; selected = [] }
 }
 
 struct ProjectsView: View {
@@ -135,7 +159,21 @@ struct ProjectsView: View {
         case .running:
             WorkingView(module: module, title: "Removing build folders…", detail: WorkingView.currentItem(app.console.output(of: module)), onStop: { model.stop() })
         case .done:
-            DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
+            VStack(spacing: 0) {
+                if app.isVisualSnapshot ? model.recoveryRequired : app.overlay.needsRecovery {
+                    Button("Retry protection recovery") {
+                        do {
+                            try app.recoverProtection()
+                            app.cleanup.recoveryRequired = false
+                            model.recoveryRequired = false
+                            model.reset()
+                        } catch {
+                            model.resultLines = [CleanupModel.describe(error)]
+                        }
+                    }.buttonStyle(GlassButtonStyle()).padding(.top, 12)
+                }
+                DoneView(module: module, headline: model.resultHeadline, lines: model.resultLines, failed: model.failed) { model.reset() }
+            }
         }
     }
 }
@@ -148,7 +186,7 @@ private struct ProjectsReview: View {
 
     var body: some View {
         ModuleScene(module: module, leading: .startOver { model.reset() },
-                    orb: model.selected.isEmpty || model.preview?.isComplete == false ? nil : OrbAction(title: "Remove", destructive: true, action: { model.purge(app) })) {
+                    orb: OrbAction(title: "Remove", destructive: true, enabled: !model.selected.isEmpty && model.preview?.isComplete == true, disabledReason: model.preview?.isComplete != true ? String(localized: "Scan again: the preview is incomplete") : String(localized: "Select folders to remove"), action: { model.purge(app) })) {
         VStack(alignment: .leading, spacing: 14) {
             StepHeader(module: module, title: "Review build folders",
                        subtitle: String(localized: "\(Format.bytes(model.selectedSize)) selected")) {

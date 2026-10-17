@@ -43,8 +43,10 @@ public struct MoleInstallation: Sendable {
     }
 
     /// `mo --version` → "1.59.1".
-    public func version(environment: [String: String]) throws -> String {
-        let output = try Self.run(executable.path, ["--version"], environment: environment)
+    public func version(environment: [String: String], timeout: TimeInterval = 15,
+                        cancellation: MoleProbeCancellation = MoleProbeCancellation()) throws -> String {
+        let output = try Self.run(executable.path, ["--version"], environment: environment,
+                                  timeout: timeout, cancellation: cancellation)
         guard let line = output.split(separator: "\n").first(where: { $0.hasPrefix("Mole version ") }) else {
             throw PTYError(description: "unexpected `mo --version` output: \(output)")
         }
@@ -53,28 +55,38 @@ public struct MoleInstallation: Sendable {
 
     /// Mole's optional clean-whitelist defaults, expanded for `home`, read from the
     /// installed version rather than copied, so they never drift from what Mole would apply.
-    public func cleanWhitelistDefaults(home: URL) throws -> [String] {
+    public func cleanWhitelistDefaults(home: URL, timeout: TimeInterval = 120,
+                                       cancellation: MoleProbeCancellation = MoleProbeCancellation()) throws -> [String] {
         let script = """
         source "$1/lib/core/base.sh" >/dev/null 2>&1 || exit 3
-        printf '%s\\n' "${DEFAULT_WHITELIST_PATTERNS[@]}"
+        declare -p DEFAULT_WHITELIST_PATTERNS >/dev/null 2>&1 || exit 4
+        [ ${#DEFAULT_WHITELIST_PATTERNS[@]} -eq 0 ] || printf '%s\\0' "${DEFAULT_WHITELIST_PATTERNS[@]}"
+        printf '\\0'
         """
-        let output = try Self.run("/bin/bash", ["-c", script, "bash", root.path], environment: Self.probeEnvironment(home))
-        return output.split(separator: "\n").map(String.init)
+        let output = try Self.run("/bin/bash", ["-c", script, "bash", root.path], environment: Self.probeEnvironment(home),
+                                  timeout: timeout, cancellation: cancellation)
+        return try Self.completeRecords(Data(output.utf8))
     }
 
     /// Maintenance tasks `mo optimize` can skip, as Mole lists them for its own whitelist editor
     /// (`get_optimize_whitelist_items`): display name and the id written to `whitelist_optimize`.
-    public func optimizeTasks(home: URL) throws -> [(name: String, id: String)] {
+    public func optimizeTasks(home: URL, timeout: TimeInterval = 120,
+                              cancellation: MoleProbeCancellation = MoleProbeCancellation()) throws -> [(name: String, id: String)] {
         let script = """
         source "$1/lib/core/common.sh" >/dev/null 2>&1 || exit 3
         source "$1/lib/manage/whitelist.sh" >/dev/null 2>&1 || exit 3
         source "$1/lib/optimize/catalog.sh" >/dev/null 2>&1 || exit 3
-        get_optimize_whitelist_items
+        items=$(get_optimize_whitelist_items) || exit 4
+        [ -z "$items" ] || printf '%s\\0' "$items"
+        printf '\\0'
         """
-        let output = try Self.run("/bin/bash", ["-c", script, "bash", root.path], environment: Self.probeEnvironment(home))
-        return output.split(separator: "\n").compactMap { line in
+        let output = try Self.run("/bin/bash", ["-c", script, "bash", root.path], environment: Self.probeEnvironment(home),
+                                  timeout: timeout, cancellation: cancellation)
+        return try Self.completeRecords(Data(output.utf8)).flatMap { $0.split(separator: "\n") }.map { line in
             let parts = line.split(separator: "|", omittingEmptySubsequences: false)
-            guard parts.count >= 2 else { return nil }
+            guard parts.count >= 2, !parts[0].isEmpty, !parts[1].isEmpty else {
+                throw MoleProbeError.invalidResponse("invalid maintenance task")
+            }
             return (String(parts[0]), String(parts[1]))
         }
     }
@@ -93,51 +105,84 @@ public struct MoleInstallation: Sendable {
     /// over `is_path_whitelisted`, so one shell loads the whitelist once and prints the loaded
     /// patterns. A path equal to one of them, normalized as Mole does, is protected by
     /// `is_path_whitelisted`'s exact-match branch; only the rest are sent back to the same shell
-    /// for the full check. Everything travels NUL-separated, so any byte in a name survives.
-    public func unprotected(_ paths: [String], home: URL) throws -> [String] {
+    /// for the full check. NUL-separated UTF-8 preserves spaces and newlines in names;
+    /// malformed encoding, embedded NUL, incomplete records and unread paths fail closed.
+    public func unprotected(_ paths: [String], home: URL, timeout: TimeInterval = 120,
+                            cancellation: MoleProbeCancellation = MoleProbeCancellation()) throws -> [String] {
+        try cancellation.checkCancellation()
         guard !paths.isEmpty else { return [] }
+        guard paths.allSatisfy({ !$0.isEmpty && !$0.utf8.contains(0) }) else {
+            throw MoleProbeError.invalidResponse("an input path was empty or contained NUL")
+        }
         let script = """
         source "$1/lib/core/common.sh" >/dev/null 2>&1 || exit 3
-        load_mole_whitelist >/dev/null 2>&1
+        load_mole_whitelist >/dev/null 2>&1 || exit 4
+        declare -p WHITELIST_PATTERNS >/dev/null 2>&1 || exit 4
         [ ${#WHITELIST_PATTERNS[@]} -eq 0 ] || printf '%s\\0' "${WHITELIST_PATTERNS[@]}"
         printf '\\0'
+        processed=0
         while IFS= read -r -d '' p; do
-            is_path_whitelisted "$p" || printf '%s\\0' "$p"
+            if is_path_whitelisted "$p"; then
+                :
+            else
+                [ "$?" -eq 1 ] || exit 5
+                printf '%s\\0' "$p"
+            fi
+            processed=$((processed + 1))
         done
+        printf 'NORA_PROBE_COMPLETE:%s\\0\\0' "$processed"
         """
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        process.arguments = ["-c", script, "bash", root.path]
-        process.environment = Self.probeEnvironment(home)
-        let input = Pipe(), output = Pipe()
-        process.standardInput = input
-        process.standardOutput = output
-        process.standardError = FileHandle.nullDevice
-        try process.run()
-        defer { if process.isRunning { process.terminate() } }
-
-        // The pattern list ends with an empty record: a lone NUL, or two in a row.
-        var data = Data()
-        while !(data == Data([0]) || data.suffix(2) == Data([0, 0])) {
-            let chunk = output.fileHandleForReading.availableData
-            guard !chunk.isEmpty else { throw PTYError(description: "Mole's whitelist could not be read") }
-            data.append(chunk)
+        var headerLength: Int?
+        var rest: [String] = []
+        var expectedCount = 0
+        let result = try ManagedProbe.run("/bin/bash", ["-c", script, "bash", root.path],
+                                         environment: Self.probeEnvironment(home), timeout: timeout,
+                                         cancellation: cancellation, initialInput: nil) { data in
+            guard let frame = try Self.recordPrefix(data) else { return nil }
+            headerLength = frame.length
+            let exact = Set(frame.records.map(Self.normalized))
+            rest = paths.filter { !exact.contains(Self.normalized($0)) }
+            var sent: Set<String> = []
+            let unique = rest.filter { sent.insert($0).inserted }
+            expectedCount = unique.count
+            return Data(unique.map { $0 + "\0" }.joined().utf8)
         }
-        let exact = Set(String(decoding: data, as: UTF8.self).split(separator: "\0").map { Self.normalized(String($0)) })
-        let rest = paths.filter { !exact.contains(Self.normalized($0)) }
-        // Written from another thread, so a long answer cannot block the shell while we write.
-        let writer = input.fileHandleForWriting
-        DispatchQueue.global(qos: .userInitiated).async {
-            try? writer.write(contentsOf: Data(rest.map { $0 + "\0" }.joined().utf8))
-            try? writer.close()
+        guard result.succeeded else { throw MoleProbeError.io("helper exited with status \(result.status)") }
+        let data = Data(result.stdout.utf8)
+        guard let headerLength else { throw MoleProbeError.invalidResponse("missing pattern-list completion") }
+        var records = try Self.completeRecords(Data(data.dropFirst(headerLength)))
+        guard records.last == "NORA_PROBE_COMPLETE:\(expectedCount)" else {
+            throw MoleProbeError.invalidResponse("missing completion count or unread input paths")
         }
-        let answer = output.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else {
-            throw PTYError(description: "the protection check exited \(process.terminationStatus)")
+        records.removeLast()
+        let open = Set(records)
+        guard open.count == records.count, open.isSubset(of: Set(rest)) else {
+            throw MoleProbeError.invalidResponse("unknown or repeated unprotected path")
         }
-        let open = Set(String(decoding: answer, as: UTF8.self).split(separator: "\0").map(String.init))
         return rest.filter(open.contains)
+    }
+
+    /// A completed list is NUL-separated and ends with an empty record. EOF alone proves
+    /// nothing: even a successful early exit must not turn a truncated answer into protection.
+    private static func recordPrefix(_ data: Data) throws -> (records: [String], length: Int)? {
+        var records: [String] = []
+        var start = data.startIndex
+        for index in data.indices where data[index] == 0 {
+            if index == start { return (records, index + 1 - data.startIndex) }
+            guard let value = String(data: data[start..<index], encoding: .utf8) else {
+                throw MoleProbeError.invalidResponse("non-UTF-8 record")
+            }
+            records.append(value)
+            start = index + 1
+        }
+        return nil
+    }
+
+    private static func completeRecords(_ data: Data) throws -> [String] {
+        guard let frame = try recordPrefix(data), frame.length == data.count else {
+            throw MoleProbeError.invalidResponse("missing completion record or trailing data")
+        }
+        return frame.records
     }
 
     /// As `is_path_whitelisted` compares: one trailing slash dropped, runs of slashes collapsed.
@@ -151,21 +196,14 @@ public struct MoleInstallation: Sendable {
         ["HOME": home.path, "PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "en_US.UTF-8"]
     }
 
-    static func run(_ executable: String, _ arguments: [String], environment: [String: String]) throws -> String {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = arguments
-        process.environment = environment
-        let stdout = Pipe()
-        process.standardOutput = stdout
-        process.standardError = FileHandle.nullDevice
-        process.standardInput = FileHandle.nullDevice
-        try process.run()
-        let data = stdout.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else {
-            throw PTYError(description: "\(executable) \(arguments.prefix(2)) exited \(process.terminationStatus)")
+    static func run(_ executable: String, _ arguments: [String], environment: [String: String],
+                    timeout: TimeInterval = 120,
+                    cancellation: MoleProbeCancellation = MoleProbeCancellation()) throws -> String {
+        let result = try ManagedProbe.run(executable, arguments, environment: environment,
+                                          timeout: timeout, cancellation: cancellation)
+        guard result.succeeded else {
+            throw MoleProbeError.io("\(executable) \(arguments.prefix(2)) exited \(result.status)")
         }
-        return String(decoding: data, as: UTF8.self)
+        return result.stdout
     }
 }

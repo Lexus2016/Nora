@@ -1,0 +1,92 @@
+name: Native safety regressions
+
+on:
+  push:
+    branches: [main, 'fix/nora-audit-*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-tests:
+    # Standard public-preview runner, not a billable large/xlarge runner.
+    # Xcode 27 is the SDK required by docs/BUILD.md.
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.app/Contents/Developer
+      NORA_MOLE_E2E: '0'
+      NORA_MOLE_SUDO: '0'
+      NORA_UNIT_TESTING: '1'
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          command -v xcodegen || brew install xcodegen
+      - name: MoleKit synthetic tests
+        id: mole_tests
+        working-directory: MoleKit
+        run: swift test --no-parallel
+      - name: App build and synthetic tests (ad-hoc signed)
+        id: app_tests
+        if: ${{ !cancelled() && steps.mole_tests.outcome == 'success' }}
+        run: |
+          cd App
+          xcodegen generate
+          xcodebuild -project Nora.xcodeproj -scheme Nora -configuration Debug \
+            -destination 'platform=macOS' -derivedDataPath ../build/DerivedData \
+            -resultBundlePath ../build/NoraTests.xcresult \
+            CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= \
+            OTHER_CODE_SIGN_FLAGS= test
+      - name: Localized model-copy snapshots
+        if: ${{ !cancelled() && steps.app_tests.outcome == 'success' }}
+        run: |
+          for language in uk ru; do
+            xcodebuild -project App/Nora.xcodeproj -scheme Nora -configuration Debug \
+              -destination 'platform=macOS' -derivedDataPath build/DerivedData \
+              -resultBundlePath "build/NoraVisual-$language.xcresult" \
+              -only-testing:NoraTests/MenuVisualSmokeTests/testRepresentativeLocalizedAndInnerScreens \
+              -only-testing:NoraTests/ClamAVSettingsVisualTests/testEngineDefinitionAndFailurePresentations \
+              -only-testing:NoraTests/TrashPromptVisualTests/testApprovedPanelStatesInAllSupportedLanguages \
+              -only-testing:NoraTests/TrashPromptVisualTests/testStoppingAndRecoveryInProgressPresentations \
+              -testLanguage "$language" CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY=- \
+              DEVELOPMENT_TEAM= OTHER_CODE_SIGN_FLAGS= test-without-building
+          done
+      - name: Verify extracted localization keys
+        if: ${{ !cancelled() && steps.app_tests.outcome == 'success' }}
+        run: |
+          python3 scripts/l10n.py extract
+          python3 scripts/l10n.py check
+          git diff --exit-code -- App/Localization/keys.json
+      - name: Export visual snapshot attachments
+        if: ${{ !cancelled() && steps.app_tests.outcome == 'success' }}
+        run: |
+          mkdir -p build/test-summaries
+          for result in build/*.xcresult; do
+            name="$(basename "$result" .xcresult)"
+            xcrun xcresulttool export attachments --path "$result" --output-path "build/visual-smoke/$name"
+            xcrun xcresulttool get test-results summary --path "$result" > "build/test-summaries/$name.json"
+          done
+      - name: Retain native test result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-test-results
+          path: |
+            build/visual-smoke
+            build/test-summaries
+            App/Localization/keys.json
+            App/Localization/missing-*.json
+          if-no-files-found: ignore
+          retention-days: 7

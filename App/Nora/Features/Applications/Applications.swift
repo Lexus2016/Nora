@@ -95,7 +95,12 @@ final class AppsModel {
             parts.append(Homebrew.command(path, Homebrew.outdatedArguments()).description)
             parts.append(Homebrew.command(path, Homebrew.infoArguments()).description)
         }
-        if let cache = try? OutsideApps.cacheURL() { parts.append(OutsideApps.catalogCommand(cache: cache).description) }
+        // A command preview must not create a cache directory merely by rendering the view.
+        if let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            let cache = folder.appendingPathComponent(Bundle.main.bundleIdentifier ?? "Nora", isDirectory: true)
+                .appendingPathComponent("cask.json")
+            parts.append(OutsideApps.catalogCommand(cache: cache).description)
+        }
         parts.append("curl -fsSL --max-time 20 <SUFeedURL>")
         return parts.joined(separator: "; ")
     }
@@ -301,6 +306,7 @@ final class AppsModel {
     /// decides the result, because the upgrade's exit status does not say which cask failed.
     /// Selected apps from a download follow, one at a time (see `replace`).
     func upgrade(_ app: AppModel) {
+        guard !app.trash.blocksOtherMutations else { updatesNote = AppModel.trashBusyMessage; askingToQuit = false; return }
         guard let path = Homebrew.executable() else { return }
         let tokens = selectedTokens
         let commands = tokens.compactMap { Homebrew.upgradeCommand(tokens: [$0], executable: path) }
@@ -317,11 +323,13 @@ final class AppsModel {
             var skipped: [String] = []
             var blocked: [String: QuitBlock] = [:]
             var reopen: [String] = []
+            var attempted: Set<String> = []
             for (token, command) in zip(tokens, commands) {
                 if stopRequested { skipped.append(token); continue }
                 let (quit, block) = await quitBeforeUpdate(brewBundles[token] ?? [], approved: approved)
                 reopen += quit
                 if let block { blocked[token] = block; continue }
+                attempted.insert(token)
                 // A failed upgrade is in the console with its status; the check below reports it.
                 try? await app.stream(command, environment: Homebrew.processEnvironment)
             }
@@ -330,11 +338,11 @@ final class AppsModel {
             var checked = true
             if !tokens.isEmpty {
                 if let remaining = try? Set(Homebrew.parseOutdated(try await brew(app, path, Homebrew.outdatedArguments())).map(\.token)) {
-                    done = tokens.filter { !remaining.contains($0) }
+                    done = tokens.filter { attempted.contains($0) && !remaining.contains($0) }
                     lines = done.map { "✓ \($0)" }
                         + tokens.compactMap { token in blocked[token].map { Self.skipped(token, $0) } }
                         + tokens.filter { remaining.contains($0) && !skipped.contains($0) && blocked[$0] == nil }.map { "✕ " + String(localized: "\($0) is still outdated") }
-                        + skipped.filter { remaining.contains($0) }.map { "– " + String(localized: "\($0): not started, you pressed Stop") }
+                        + skipped.map { "– " + String(localized: "\($0): not started, you pressed Stop") }
                     updates.removeAll { done.contains($0.token) }
                 } else {
                     checked = false
@@ -392,7 +400,7 @@ final class AppsModel {
         }
         // Many apps install a downloaded update as they quit (Sparkle, Squirrel's ShipIt): the
         // quit before this one may already have brought the new version.
-        if OutsideApps.updatedItself(item, now: current) { return .updated(current.version) }
+        if OutsideApps.updatedItself(item, now: current), OutsideApps.hasExecutable(at: item.path) { return .updated(current.version) }
         guard current.version == item.installed else {
             return .failed(String(localized: "It changed since the scan. Scan again."))
         }
@@ -401,7 +409,8 @@ final class AppsModel {
               OutsideApps.match(current, in: OutsideApps.index([cask]))?.token == token, cask.installsOnlyApp else {
             return .failed(String(localized: "Homebrew no longer describes this app the way the scan saw it. Scan again."))
         }
-        guard OutsideApps.isNewer(cask.version, than: current.version) else {
+        guard OutsideApps.isNewer(cask.version, than: current.version),
+              OutsideApps.meetsTarget(String(cask.version.split(separator: ",", maxSplits: 1).first ?? ""), target: item.latest) else {
             return .failed(String(localized: "Homebrew's app list has no newer version yet. Run brew update and try again."))
         }
         // Checked after the last wait: an app reopened meanwhile (by the user or a login item) stays.
@@ -410,7 +419,7 @@ final class AppsModel {
         }
         let record = Homebrew.caskRecord(token: token, executable: path)
         let recorded = record.map { FileManager.default.fileExists(atPath: $0.path) } ?? true
-        switch await OutsideApps.Handover(journal: app.handover).run(current, install: {
+        switch await OutsideApps.Handover(journal: app.handover).run(current, targetVersion: cask.version, install: {
             try? await app.stream(install, environment: Homebrew.processEnvironment)
         }) {
         case .updated(let version):
@@ -473,7 +482,32 @@ final class AppsModel {
         .joined(separator: "; ")
     }
 
+    /// Absence must be observed, not inferred from exit 0 or an unreadable parent folder.
+    /// Reading attributes also sees dangling symlinks, unlike `fileExists`.
+    nonisolated static func removalPathIsAbsent(_ path: String) -> Bool {
+        removalPathIsAbsent(path, attributes: { try FileManager.default.attributesOfItem(atPath: $0) })
+    }
+
+    nonisolated static func removalPathIsAbsent(_ path: String,
+                                                attributes: (String) throws -> [FileAttributeKey: Any]) -> Bool {
+        guard path.hasPrefix("/") else { return false }
+        do {
+            _ = try attributes(path)
+            return false
+        } catch {
+            let error = error as NSError
+            return error.domain == NSCocoaErrorDomain && [CocoaError.fileReadNoSuchFile.rawValue, CocoaError.fileNoSuchFile.rawValue].contains(error.code)
+        }
+    }
+
+    nonisolated static func remainingRemovalPaths(appPath: String, entries: [String],
+                                      isAbsent: (String) -> Bool = AppsModel.removalPathIsAbsent) -> [String] {
+        let paths = Set(([appPath] + entries).map { ($0 as NSString).expandingTildeInPath })
+        return paths.filter { !isAbsent($0) }.sorted()
+    }
+
     func uninstall(_ app: AppModel) {
+        guard stage == .review, screen == .plans, !plans.isEmpty else { return }
         let ready = plans.filter { $0.error == nil && !$0.entries.isEmpty }
         runningUpdates = false
         stopRequested = false
@@ -489,13 +523,18 @@ final class AppsModel {
                     let (_, result) = try await app.drive(args, sudo: needsAdmin) { session in
                         try UninstallDriver().uninstall(app: plan.app.name, expectedEntries: expected, in: session)
                     }
-                    if result.succeeded {
+                    let remaining = Self.remainingRemovalPaths(appPath: plan.app.path, entries: plan.entries)
+                    // Keep the app list truthful even if the bundle went but some helpers remain.
+                    if Self.removalPathIsAbsent(plan.app.path) { removedPaths.insert(plan.app.path) }
+                    if result.succeeded && remaining.isEmpty {
                         removed.append(plan.app.name)
-                        removedPaths.insert(plan.app.path)
+                    } else if !remaining.isEmpty {
+                        problems.append(String(localized: "\(plan.app.name): removal could not be verified for \(remaining.joined(separator: ", "))."))
                     } else {
                         problems.append(plan.app.name)
                     }
                 } catch {
+                    if Self.removalPathIsAbsent(plan.app.path) { removedPaths.insert(plan.app.path) }
                     problems.append("\(plan.app.name): \(Self.describe(error))")
                 }
             }
@@ -506,10 +545,9 @@ final class AppsModel {
             apps.removeAll { removedPaths.contains($0.path) }
             unusedPaths.subtract(removedPaths)
             failed = !problems.isEmpty || !skipped.isEmpty
-            let total = removed.count + problems.count + skipped.count
-            resultHeadline = removed.isEmpty ? String(localized: "No app was removed")
-                : failed ? String(localized: "Removed: \(removed.count) of \(total)")
-                : permanent ? String(localized: "\(removed.count) apps removed") : String(localized: "\(removed.count) apps moved to the Trash")
+            resultHeadline = failed ? String(localized: "Removal needs attention")
+                : removed.isEmpty ? String(localized: "No app was removed")
+                : String(localized: "\(removed.count) apps removed")
             resultLines = removed.map { "✓ \($0)" } + problems.map { "✕ \($0)" }
                 + skipped.map { "– " + String(localized: "\($0): not started, you pressed Stop") }
             selected = []

@@ -13,6 +13,7 @@ public enum PrivilegeBroker {
 
     /// The line `gated` prints between its two commands, with the first one's exit status.
     public static let gateMarker = "__NORA_CHECKED__"
+    public static let runMarker = "__NORA_RUN_STARTED__"
 
     /// Two Mole commands under one authentication in one PTY: `check` runs, the gate line goes
     /// out, then `run` starts only when the caller writes `go` and a newline. Anything else, or
@@ -25,6 +26,7 @@ public enum PrivilegeBroker {
             + "printf '\\n%s %d\\n' \(gateMarker) $?; IFS= read -r go; [ \"$go\" = go ] || exit 3; "
             // The check may outlast sudo's ticket; renewing it here is silent while it is valid.
             + (authenticate ? "sudo -A -v || exit 1; " : "")
+            + "printf '\\n%s\\n' \(runMarker); "
             + "exec \"$0\" \(run.map(quote).joined(separator: " "))"
         return ("/bin/bash", ["-c", script, executable])
     }

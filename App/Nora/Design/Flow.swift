@@ -33,12 +33,21 @@ struct ModuleScene<Content: View>: View {
         VStack(spacing: 0) {
             TopBar(title: module.title, leading: topLeading)
             content.frame(maxWidth: .infinity, maxHeight: .infinity)
+            if let reason = orb?.disabledReason, orb?.enabled == false {
+                Text(reason).font(.system(size: 12)).foregroundStyle(Palette.fg2)
+            }
             Color.clear.frame(height: orb == nil ? 16 : app.orb.bottomClearance)
         }
         .background(alignment: .top) { HeaderShade(palette: module.palette) }
-        .onAppear { app.orb.publish(orb, palette: module.palette, owner: owner) }
-        .onChange(of: orb?.signature) { app.orb.publish(orb, palette: module.palette, owner: owner) }
+        .onAppear { publish() }
+        .onChange(of: orb?.signature) { publish() }
+        .onChange(of: app.selection) { if app.selection == module { publish() } }
         .onDisappear { app.orb.withdraw(owner: owner) }
+    }
+
+    private func publish() {
+        guard app.selection == module else { return }
+        app.orb.publish(orb, palette: module.palette, owner: owner)
     }
 }
 
@@ -46,13 +55,17 @@ struct OrbAction {
     let title: String
     var busy = false
     var destructive = false
+    var enabled = true
+    var disabledReason: String?
     let action: () -> Void
 
-    var signature: String { "\(title)|\(busy)|\(destructive)" }
+    var signature: String { "\(title)|\(busy)|\(destructive)|\(enabled)|\(disabledReason ?? "")" }
 }
 
 /// The big round action button with a specular highlight; busy shows a spinning ring.
 struct BottomOrb: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     let action: OrbAction
     let palette: ScenePalette
     @State private var hovering = false
@@ -62,8 +75,10 @@ struct BottomOrb: View {
             ZStack {
                 Circle()
                     .fill(RadialGradient(colors: [tint.blend(with: .white, by: 0.35), tint, tint.blend(with: palette.depth, by: 0.45)],
-                                         center: UnitPoint(x: 0.5, y: 0.25), startRadius: 2, endRadius: 64))
-                Circle().strokeBorder(.white.opacity(0.85), lineWidth: 2.5)
+                                         center: UnitPoint(x: 0.38, y: 0.2), startRadius: 2, endRadius: 72))
+                Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.88), tint.blend(with: .white, by: 0.25), .black.opacity(0.38)],
+                                                     startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 3)
+                Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1).padding(4)
                 Ellipse()
                     .fill(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0)], startPoint: .top, endPoint: .bottom))
                     .frame(width: 64, height: 27).offset(y: -30).blur(radius: 1.5)
@@ -84,11 +99,15 @@ struct BottomOrb: View {
                     Circle().stroke(.white.opacity(0.18), lineWidth: 5).padding(-9)
                 }
             }
-            .shadow(color: tint.opacity(hovering ? 0.95 : 0.7), radius: hovering ? 46 : 34)
-            .scaleEffect(hovering ? 1.03 : 1)
-            .animation(.easeOut(duration: 0.18), value: hovering)
+            .shadow(color: .black.opacity(0.3), radius: 4, y: 4)
+            .shadow(color: tint.opacity(hovering ? 0.65 : 0.48), radius: hovering ? 32 : 26)
+            .scaleEffect(hovering && DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? 1.02 : 1)
+            .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.18) : nil, value: hovering)
         }
         .buttonStyle(.plain)
+        .disabled(!action.enabled)
+        .opacity(action.enabled ? 1 : 0.55)
+        .help(action.disabledReason ?? "")
         .onHover { hovering = $0 }
         .keyboardShortcut(.defaultAction)
         .accessibilityLabel(Text(LocalizedStringKey(action.title)))
@@ -104,34 +123,52 @@ struct ModuleStart<Extra: View>: View {
     let features: [Feature]
     let command: String
     var scanTitle: String = "Scan"
+    var scrollable = false
     let action: () -> Void
     @ViewBuilder var extra: Extra
 
     var body: some View {
         ModuleScene(module: module, orb: OrbAction(title: scanTitle, action: action)) {
-            HStack(spacing: 56) {
-                Glass3D(name: module.glass, size: 340, glow: module.palette.glow, amplitude: 9, period: 7)
-                VStack(alignment: .leading, spacing: 18) {
-                    Text(module.title)
-                        .font(.system(size: 60, weight: .light))
-                    Text(subtitle).font(.system(size: 18)).foregroundStyle(Palette.fg2).lineSpacing(3)
-                    VStack(alignment: .leading, spacing: 14) {
-                        ForEach(features) { feature in
-                            HStack(spacing: 14) {
-                                FeatureDisc(symbol: feature.symbol, tint: module.palette.glow)
-                                Text(feature.text).font(.system(size: 17, weight: .semibold))
-                            }
+            if scrollable {
+                // Setup-heavy modules must keep their text and controls above the orb even
+                // at the minimum window height. The scene still owns the orb clearance.
+                GeometryReader { geometry in
+                    ScrollView {
+                        startContent.frame(minHeight: geometry.size.height)
+                    }
+                    .scrollIndicators(.never)
+                }
+            } else {
+                startContent.frame(maxHeight: .infinity)
+            }
+        }
+    }
+
+    private var startContent: some View {
+        HStack(spacing: 56) {
+            Glass3D(name: module.glass, size: 340, glow: module.palette.glow, amplitude: 9, period: 7)
+            VStack(alignment: .leading, spacing: 18) {
+                Text(module.title)
+                    .font(.system(size: 60, weight: .light))
+                Text(subtitle).font(.system(size: 18)).foregroundStyle(Palette.fg2).lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: scrollable)
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(features) { feature in
+                        HStack(spacing: 14) {
+                            FeatureDisc(symbol: feature.symbol, tint: module.palette.glow)
+                            Text(feature.text).font(.system(size: 17, weight: .semibold))
                         }
                     }
-                    .padding(.top, 6)
-                    extra
-                    CommandPreview(command: command).frame(maxWidth: 420).padding(.top, 4)
                 }
-                .frame(maxWidth: 470, alignment: .leading)
+                .padding(.top, 6)
+                extra
+                CommandPreview(command: command).frame(maxWidth: 420).padding(.top, 4)
             }
-            .padding(.horizontal, 40)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: 470, alignment: .leading)
         }
+        .padding(.horizontal, 40)
+        .padding(.vertical, scrollable ? 16 : 0)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -143,7 +180,7 @@ extension ModuleStart where Extra == EmptyView {
     }
 }
 
-/// Small glossy disc with a white symbol (the bullets on start screens and card icons).
+/// Small solid glass disc: a rounded bevel, restrained top-left light and a crisp white symbol.
 struct FeatureDisc: View {
     let symbol: String
     let tint: Color
@@ -151,14 +188,19 @@ struct FeatureDisc: View {
 
     var body: some View {
         ZStack {
-            Circle().fill(RadialGradient(colors: [tint.blend(with: .white, by: 0.35), tint, tint.blend(with: .black, by: 0.35)],
-                                         center: UnitPoint(x: 0.5, y: 0.25), startRadius: 1, endRadius: size * 0.7))
-            Circle().strokeBorder(.white.opacity(0.4), lineWidth: 0.7)
+            Circle().fill(tint.blend(with: .black, by: 0.48)).offset(y: size * 0.045)
+            Circle().fill(RadialGradient(colors: [tint.blend(with: .white, by: 0.27), tint.blend(with: .black, by: 0.12), tint.blend(with: .black, by: 0.44)],
+                                         center: UnitPoint(x: 0.32, y: 0.2), startRadius: 1, endRadius: size * 0.8))
+            Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.72), .white.opacity(0.14), .black.opacity(0.25)],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: max(1, size * 0.035))
+            Circle().strokeBorder(.white.opacity(0.12), lineWidth: 0.5).padding(size * 0.08)
             Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold)).foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
+                .shadow(color: .black.opacity(0.35), radius: 0.5, y: 0.8)
         }
         .frame(width: size, height: size)
-        .shadow(color: tint.opacity(0.45), radius: 6)
+        .shadow(color: .black.opacity(0.22), radius: 2, y: 2)
+        .shadow(color: tint.opacity(0.22), radius: 4)
+        .accessibilityHidden(true)
     }
 }
 
@@ -210,6 +252,8 @@ struct CategoryCard: View {
     var actionTitle: LocalizedStringKey?
     let review: () -> Void
     var action: (() -> Void)?
+    var actionEnabled = true
+    var actionDisabledReason: String?
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -231,6 +275,9 @@ struct CategoryCard: View {
                     .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.black.opacity(glass == nil ? 0 : 0.5)))
                 if let actionTitle, let action {
                     Button(actionTitle, action: action).buttonStyle(PrimaryButtonStyle(glow: tint)).fixedSize()
+                        .disabled(!actionEnabled)
+                        .opacity(actionEnabled ? 1 : 0.55)
+                        .help(actionEnabled ? "" : actionDisabledReason ?? "")
                 }
             }
         }
@@ -265,6 +312,9 @@ struct ResultHeadline: View {
 
 /// Result screen: the headline number, Mole's own summary lines and Done.
 struct DoneView: View {
+    /// The failure marker and wording carry meaning; white stays readable on every scene.
+    static let failureTextColor = Color.white
+
     static func problemsFirst(_ lines: [String]) -> [String] {
         lines.filter { $0.hasPrefix("✕") } + lines.filter { !$0.hasPrefix("✕") }
     }
@@ -277,7 +327,9 @@ struct DoneView: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
-        ModuleScene(module: module, leading: .startOver(onDone), orb: OrbAction(title: "Done", action: onDone)) {
+        ModuleScene(module: module, leading: .startOver(onDone), orb: OrbAction(title: "Done", action: {
+            if app.reviewOrigin == module { app.selection = .smartCare } else { onDone() }
+        })) {
             VStack(spacing: 18) {
                 Spacer(minLength: 0)
                 GlassImage(name: module.glass, size: 230, glow: failed ? Palette.crit : module.palette.glow)
@@ -291,7 +343,7 @@ struct DoneView: View {
                             ForEach(Array(Self.problemsFirst(lines).enumerated()), id: \.offset) { _, line in
                                 // Mole's summary lines arrive in English; Nora's own pass through.
                                 Text(MoleSummaryText.localize(line)).font(.system(size: 13))
-                                    .foregroundStyle(line.hasPrefix("✕") ? Palette.crit : Palette.fg2)
+                                    .foregroundStyle(line.hasPrefix("✕") ? Self.failureTextColor : Palette.fg2)
                                     .textSelection(.enabled)
                             }
                         }
@@ -390,6 +442,9 @@ struct CheckRow: View {
 
 /// Small notice line used for skipped sections and warnings.
 struct Notice: View {
+    /// Error pink needs a darker chip than ordinary white card text.
+    static let additionalScrimOpacity = 0.5
+
     let text: String
     var symbol = "exclamationmark.circle"
     var color = Palette.warn
@@ -399,7 +454,11 @@ struct Notice: View {
             .font(.system(size: 12))
             .foregroundStyle(color)
             .padding(.horizontal, 10).padding(.vertical, 6)
-            .background(VolumeFill(radius: 9))
+            .background {
+                VolumeFill(radius: 9)
+                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(.black.opacity(Self.additionalScrimOpacity)))
+            }
     }
 }
 

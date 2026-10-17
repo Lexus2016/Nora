@@ -12,24 +12,41 @@ final class HistoryModel {
     var error: String?
     @ObservationIgnored private var task: Task<Void, Never>?
 
-    /// Each load replaces the previous one, so a slow older read never overwrites a newer list.
-    func load(_ app: AppModel) {
+    private(set) var loading = false
+    private var loadGeneration = UUID()
+
+    /// The optional reader is a synthetic-test seam; production always uses the logged Mole command.
+    func load(_ app: AppModel, read: (@MainActor () async throws -> CommandResult)? = nil) {
         error = nil
         task?.cancel()
-        task = Task {
+        let generation = UUID()
+        loadGeneration = generation
+        loading = true
+        task = Task(.history) {
+            defer { if loadGeneration == generation { loading = false } }
             do {
-                let result = try await app.run(["history", "--json", "--limit", "200"])
-                guard !Task.isCancelled, let data = result.stdout.data(using: .utf8) else { return }
-                sessions = try JSONDecoder().decode(MoleHistory.self, from: data).sessions
+                let result: CommandResult
+                if let read { result = try await read() }
+                else { result = try await app.run(["history", "--json", "--limit", "200"]) }
+                guard !Task.isCancelled, loadGeneration == generation else { return }
+                sessions = try Self.decode(result)
                 loaded = true
             } catch is CancellationError {
                 return
             } catch {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, loadGeneration == generation else { return }
                 self.error = error.localizedDescription
-                loaded = true
             }
         }
+    }
+
+    static func decode(_ result: CommandResult) throws -> [MoleHistory.Session] {
+        guard result.succeeded else {
+            let detail = ANSI.strip(result.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
+            throw NoraError.commandFailed(detail.isEmpty
+                ? String(localized: "Activity history could not be loaded. Check the console and retry.") : detail)
+        }
+        return try JSONDecoder().decode(MoleHistory.self, from: Data(result.stdout.utf8)).sessions
     }
 
     var totalFreed: Int64 { sessions.reduce(0) { $0 + $1.size } }
@@ -76,15 +93,28 @@ struct HistoryView: View {
                             Text("Since \(first.formatted(date: .abbreviated, time: .omitted))").font(.system(size: 14)).foregroundStyle(Palette.fg2)
                         }
                     }
-                    Grid(horizontalSpacing: 18, verticalSpacing: 18) {
-                        GridRow {
-                            healthCard.gridCellColumns(1)
-                            freedCard
-                            actionsCard
+                    HStack {
+                        if model.loading {
+                            ProgressView().controlSize(.small)
+                            Text("Reading activity history…").foregroundStyle(Palette.fg2)
                         }
-                        GridRow {
-                            chartCard.gridCellColumns(2)
-                            recentCard
+                        Spacer()
+                        Button(model.error == nil ? "Refresh" : "Retry") { model.load(app) }
+                            .buttonStyle(GlassButtonStyle()).disabled(model.loading)
+                    }
+                    if let error = model.error { Notice(text: error, color: Palette.crit) }
+                    if model.loaded {
+                        if model.sessions.isEmpty { Text("No activity history yet.").foregroundStyle(Palette.fg2) }
+                        Grid(horizontalSpacing: 18, verticalSpacing: 18) {
+                            GridRow {
+                                healthCard.gridCellColumns(1)
+                                freedCard
+                                actionsCard
+                            }
+                            GridRow {
+                                chartCard.gridCellColumns(2)
+                                recentCard
+                            }
                         }
                     }
                     CommandPreview(command: "mo history --json --limit 200").frame(maxWidth: 420)
@@ -94,7 +124,7 @@ struct HistoryView: View {
             .scrollIndicators(.never)
         }
         // Read again every time the screen opens, so runs made meanwhile show up.
-        .task { model.load(app) }
+        .task { if !app.isVisualSnapshot { model.load(app) } }
         .showsLiveStatus(app.status)
     }
 
@@ -202,7 +232,6 @@ struct HistoryView: View {
                     Text(Format.bytes(session.size)).font(.system(size: 12, design: .rounded)).frame(width: 70, alignment: .trailing)
                 }
             }
-            if let error = model.error { Notice(text: error, color: Palette.crit) }
         }
     }
 

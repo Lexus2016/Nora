@@ -6,7 +6,8 @@ public enum MoleSize {
         let s = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "+", with: "")
         let units: [(String, Double)] = [("TB", 1e12), ("GB", 1e9), ("MB", 1e6), ("KB", 1e3), ("B", 1)]
         for (unit, factor) in units where s.uppercased().hasSuffix(unit) {
-            guard let value = Double(s.dropLast(unit.count).trimmingCharacters(in: .whitespaces)) else { return nil }
+            guard let value = Double(s.dropLast(unit.count).trimmingCharacters(in: .whitespaces)),
+                  value.isFinite, value >= 0, value * factor < Double(Int64.max) else { return nil }
             return Int64(value * factor)
         }
         return nil
@@ -43,6 +44,34 @@ public struct CleanPreview: Sendable {
     public var notes: [Note]
     public var potentialSize: Int64?
     public var needsSudoForSystem: Bool
+    /// Aggregate file count from Mole, NOT the number of path rows (folders can contain files).
+    public var reportedItemCount: Int? = nil
+    public var unparsedRows: [String] = []
+    public var isComplete = false
+
+    /// One validation contract for initial review and the last pre-execution check.
+    /// A missing list is empty only when Mole explicitly reports no reclaimable work.
+    public static func validated(stdout: String, list: String?, listModified: Date?, since started: Date) -> CleanPreview? {
+        let text = ANSIText.strip(stdout)
+        guard text.contains("Dry run complete"), !text.contains("Dry run incomplete") else { return nil }
+        if !text.contains("Detailed file list:") {
+            let parsed = parse(cleanList: "", stdout: stdout)
+            guard parsed.reportedItemCount == nil || parsed.reportedItemCount == 0,
+                  parsed.potentialSize == nil || parsed.potentialSize == 0,
+                  text.contains("No significant reclaimable space detected, system already clean.")
+                    || (parsed.reportedItemCount == 0 && parsed.potentialSize == 0) else { return nil }
+            var empty = parsed
+            empty.isComplete = true
+            return empty
+        }
+        guard let list, let listModified, listModified >= started else { return nil }
+        var parsed = parse(cleanList: list, stdout: stdout)
+        guard parsed.unparsedRows.isEmpty, !parsed.items.isEmpty,
+              Set(parsed.items.map(\.path)).count == parsed.items.count,
+              let reported = parsed.reportedItemCount, reported > 0 else { return nil }
+        parsed.isComplete = true
+        return parsed
+    }
 
     public var sections: [String] {
         var seen = Set<String>()
@@ -52,28 +81,40 @@ public struct CleanPreview: Sendable {
     public static func parse(cleanList: String, stdout: String) -> CleanPreview {
         var items: [Item] = []
         var section = ""
+        var unparsed: [String] = []
         for raw in cleanList.split(separator: "\n", omittingEmptySubsequences: true) {
             let line = String(raw)
-            if line.hasPrefix("#") { continue }
+            if line.trimmingCharacters(in: .whitespaces).isEmpty || line.hasPrefix("#") { continue }
             if line.hasPrefix("=== "), line.hasSuffix(" ===") {
                 section = String(line.dropFirst(4).dropLast(4))
                 continue
             }
             // "<path>  # 4.0MB" or "  # size unknown", then optional ", 3 items" and
             // ", counted under <path>". Either path may itself contain "  # ", so the separator is
-            // the first one followed by a size.
+            // accepted only if unambiguous and followed by a known annotation schema.
             var search = line.startIndex..<line.endIndex
             var found: (path: String, size: Int64?, note: String)?
+            var candidates = 0
             while let hash = line.range(of: "  # ", range: search) {
                 let note = String(line[hash.upperBound...])
                 let head = note.components(separatedBy: ", ")[0]
                 if head == "size unknown" || MoleSize.parse(head) != nil {
                     found = (String(line[..<hash.lowerBound]), MoleSize.parse(head), note)
-                    break
+                    candidates += 1
                 }
                 search = hash.upperBound..<line.endIndex
             }
-            guard let found, found.path.hasPrefix("/") else { continue }
+            guard candidates == 1, let found, found.path.hasPrefix("/"), !section.isEmpty,
+                  !found.path.contains("\r"), !found.path.contains("\0") else {
+                unparsed.append(line)
+                continue
+            }
+            let head = found.note.components(separatedBy: ", ")[0]
+            let suffix = String(found.note.dropFirst(head.count))
+            guard suffix.isEmpty || suffix.range(of: #"^(?:, [0-9]+ items)?(?:, counted under /[^\r\n\x00]+)?$"#, options: .regularExpression) != nil else {
+                unparsed.append(line)
+                continue
+            }
             let under = found.note.range(of: ", counted under ").map { String(found.note[$0.upperBound...]) }
             items.append(Item(section: section, path: found.path, size: found.size ?? 0, sizeKnown: found.size != nil, countedUnder: under))
         }
@@ -82,6 +123,7 @@ public struct CleanPreview: Sendable {
         var current = ""
         var potential: Int64?
         var needsSudo = false
+        var counted: Int?
         for raw in stdout.split(separator: "\n") {
             let line = ANSIText.strip(String(raw)).trimmingCharacters(in: .whitespaces)
             if line.hasPrefix("➤ ") { current = String(line.dropFirst(2)); continue }
@@ -90,11 +132,15 @@ public struct CleanPreview: Sendable {
                 if text.localizedCaseInsensitiveContains("need sudo") { needsSudo = true }
                 notes.append(Note(section: current, text: text))
             }
+            if let range = line.range(of: "Items: ") {
+                counted = Int(line[range.upperBound...].prefix(while: \.isNumber))
+            }
             if let range = line.range(of: "Potential space: ") {
                 potential = MoleSize.parse(String(line[range.upperBound...].prefix { $0 != " " && $0 != "|" }))
             }
         }
-        return CleanPreview(items: items, notes: notes, potentialSize: potential, needsSudoForSystem: needsSudo)
+        return CleanPreview(items: items, notes: notes, potentialSize: potential, needsSudoForSystem: needsSudo,
+                            reportedItemCount: counted, unparsedRows: unparsed)
     }
 }
 

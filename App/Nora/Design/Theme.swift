@@ -116,6 +116,8 @@ extension Font {
 
 /// Glossy white primary button (prototype `.btn.primary`).
 struct PrimaryButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     var glow: Color = Palette.pink
 
     func makeBody(configuration: Configuration) -> some View {
@@ -127,8 +129,8 @@ struct PrimaryButtonStyle: ButtonStyle {
             .frame(height: 38)
             .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(configuration.isPressed ? Color(hex: 0xE8E8E8) : .white))
             .shadow(color: .black.opacity(0.22), radius: 5, y: 2)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? 0.97 : 1)
+            .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.15) : nil, value: configuration.isPressed)
     }
 }
 
@@ -148,6 +150,8 @@ struct GlassButtonStyle: ButtonStyle {
 
 /// Glossy pink button for actions that delete.
 struct DestructiveButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 14, weight: .semibold))
@@ -158,7 +162,7 @@ struct DestructiveButtonStyle: ButtonStyle {
                                                       startPoint: .top, endPoint: .bottom)))
             .overlay(Capsule().strokeBorder(.white.opacity(0.45), lineWidth: 0.5))
             .shadow(color: Palette.pink.opacity(0.45), radius: 14, y: 8)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .scaleEffect(configuration.isPressed && DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? 0.97 : 1)
     }
 }
 
@@ -192,6 +196,8 @@ extension View {
 
 /// The round *Scan* button: a glass orb with a specular highlight (prototype `.orb`).
 struct OrbButton: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     let title: LocalizedStringKey
     let palette: ScenePalette
     var busy = false
@@ -222,8 +228,8 @@ struct OrbButton: View {
             .frame(width: 132, height: 132)
             .background(Circle().stroke(.white.opacity(0.07), lineWidth: 18))
             .shadow(color: palette.glow.opacity(hovering ? 0.95 : 0.75), radius: hovering ? 44 : 35)
-            .scaleEffect(hovering ? 1.03 : 1)
-            .animation(.easeOut(duration: 0.2), value: hovering)
+            .scaleEffect(hovering && DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? 1.03 : 1)
+            .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.2) : nil, value: hovering)
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }

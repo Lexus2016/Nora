@@ -49,7 +49,7 @@ final class OrbController {
         guard let panel else { return }
         let mouse = NSEvent.mouseLocation
         let distance = hypot(mouse.x - panel.frame.midX, mouse.y - panel.frame.midY)
-        panel.ignoresMouseEvents = action == nil || hidden || distance > Self.diameter / 2 + 6
+        panel.ignoresMouseEvents = action == nil || action?.enabled == false || hidden || distance > Self.diameter / 2 + 6
     }
 
     func attach(to window: NSWindow, app: AppModel) {
@@ -128,18 +128,20 @@ final class OrbController {
 
 /// The SwiftUI side of the orb panel.
 private struct OrbHost: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     @Environment(AppModel.self) private var app
 
     var body: some View {
         let orb = app.orb
         ZStack {
-            if let action = orb.action, !orb.hidden, !app.showConsole {
+            if let action = orb.action, !orb.hidden {
                 BottomOrb(action: action, palette: orb.palette)
                     .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
         }
         .frame(width: OrbController.panelSize, height: OrbController.panelSize)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: orb.action?.signature)
+        .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .spring(response: 0.35, dampingFraction: 0.75) : nil, value: orb.action?.signature)
         .preferredColorScheme(.dark)
     }
 }

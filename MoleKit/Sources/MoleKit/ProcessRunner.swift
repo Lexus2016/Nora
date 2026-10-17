@@ -49,6 +49,26 @@ public enum ChildProcesses {
     nonisolated(unsafe) private static var running: [ObjectIdentifier: Process] = [:]
     nonisolated(unsafe) private static var shuttingDown = false
     nonisolated(unsafe) private static var groups: Set<pid_t> = []
+    // Probe owners pin their unreaped leader and serialize signal vs reap. A sweep must keep
+    // the owner object, never copy just its PID and signal it after ownership has ended.
+    nonisolated(unsafe) private static var probes: [ObjectIdentifier: ManagedProbeChild] = [:]
+
+    /// Atomic with the shutdown sweep: no child may start after quit has proved settlement,
+    /// and an already-started child is visible before the sweep can take its snapshot.
+    static func launchProbe(_ launch: () throws -> ManagedProbeChild) throws -> ManagedProbeChild {
+        try lock.withLock {
+            guard !shuttingDown else { throw CancellationError() }
+            let child = try launch()
+            probes[ObjectIdentifier(child)] = child
+            return child
+        }
+    }
+
+    static var activeProbeCount: Int { lock.withLock { probes.count } }
+
+    static func unregisterProbe(_ child: ManagedProbeChild) {
+        lock.withLock { _ = probes.removeValue(forKey: ObjectIdentifier(child)) }
+    }
 
     public static func register(_ process: Process) {
         lock.withLock { running[ObjectIdentifier(process)] = process }
@@ -118,12 +138,13 @@ public enum ChildProcesses {
     /// Sends SIGTERM to every child that is still running. The list is taken under the lock and
     /// the signals are sent after it is released, because termination handlers take the same lock.
     public static func terminateAll() {
-        let (children, leaders) = lock.withLock { () -> ([Process], [pid_t]) in
+        let (children, leaders, ownedProbes) = lock.withLock { () -> ([Process], [pid_t], [ManagedProbeChild]) in
             shuttingDown = true
-            return (Array(running.values), Array(groups))
+            return (Array(running.values), Array(groups), Array(probes.values))
         }
         for child in children where child.isRunning { child.terminate() }
         for leader in leaders { kill(-leader, SIGTERM) }
+        for probe in ownedProbes { probe.signal(SIGTERM) }
     }
 
     /// The quit barrier: stops every child and its whole group, SIGKILL after `grace`. Returns
@@ -133,16 +154,18 @@ public enum ChildProcesses {
     public static func terminateAllAndWait(grace: TimeInterval = 3) -> Bool {
         terminateAll()
         if waitUntilGone(Date().addingTimeInterval(grace)) { return true }
-        let (children, leaders) = lock.withLock { (Array(running.values), Array(groups)) }
+        let (children, leaders, ownedProbes) = lock.withLock { (Array(running.values), Array(groups), Array(probes.values)) }
         for child in children where child.isRunning { kill(child.processIdentifier, SIGKILL) }
         for leader in leaders { kill(-leader, SIGKILL) }
+        for probe in ownedProbes { probe.signal(SIGKILL) }
         return waitUntilGone(Date().addingTimeInterval(1))
     }
 
     private static func waitUntilGone(_ deadline: Date) -> Bool {
         while true {
-            let (children, leaders) = lock.withLock { (Array(running.values), Array(groups)) }
-            if !children.contains(where: \.isRunning) && !leaders.contains(where: groupAlive) { return true }
+            let (children, leaders, ownedProbes) = lock.withLock { (Array(running.values), Array(groups), Array(probes.values)) }
+            if !children.contains(where: \.isRunning) && !leaders.contains(where: groupAlive)
+                && !ownedProbes.contains(where: { !$0.isSettled }) { return true }
             guard Date() < deadline else { return false }
             usleep(50_000)
         }
@@ -164,7 +187,8 @@ public enum ProcessRunner {
         _ arguments: [String],
         environment: [String: String],
         currentDirectory: URL? = nil,
-        qos: QualityOfService = .default
+        qos: QualityOfService = .default,
+        onOutput: (@Sendable (OutputLine) -> Void)? = nil
     ) async throws -> CommandResult {
         let process = makeProcess(executable, arguments, environment, currentDirectory)
         process.qualityOfService = qos
@@ -174,8 +198,16 @@ public enum ProcessRunner {
         process.standardInput = FileHandle.nullDevice
 
         let outBuffer = DataBuffer(), errBuffer = DataBuffer()
-        out.fileHandleForReading.readabilityHandler = { outBuffer.append($0.availableData) }
-        err.fileHandleForReading.readabilityHandler = { errBuffer.append($0.availableData) }
+        let outSplitter = LineSplitter { onOutput?(OutputLine(text: $0, isError: false)) }
+        let errSplitter = LineSplitter { onOutput?(OutputLine(text: $0, isError: true)) }
+        out.fileHandleForReading.readabilityHandler = {
+            let bytes = $0.availableData
+            outBuffer.append(bytes); outSplitter.feed(bytes)
+        }
+        err.fileHandleForReading.readabilityHandler = {
+            let bytes = $0.availableData
+            errBuffer.append(bytes); errSplitter.feed(bytes)
+        }
         let stopped = Flag()
 
         return try await withTaskCancellationHandler {
@@ -186,8 +218,11 @@ public enum ProcessRunner {
                     ChildProcesses.settleGroup(finished.processIdentifier, stopped: stopped.isSet)
                     out.fileHandleForReading.readabilityHandler = nil
                     err.fileHandleForReading.readabilityHandler = nil
-                    outBuffer.append(out.fileHandleForReading.readDataToEndOfFile())
-                    errBuffer.append(err.fileHandleForReading.readDataToEndOfFile())
+                    let remainingOut = out.fileHandleForReading.readDataToEndOfFile()
+                    let remainingErr = err.fileHandleForReading.readDataToEndOfFile()
+                    outBuffer.append(remainingOut); outSplitter.feed(remainingOut)
+                    errBuffer.append(remainingErr); errSplitter.feed(remainingErr)
+                    outSplitter.flush(); errSplitter.flush()
                     continuation.resume(returning: CommandResult(
                         status: ProcessFailure.status(of: finished),
                         stdout: outBuffer.string,
@@ -207,6 +242,7 @@ public enum ProcessRunner {
                     ChildProcesses.adoptGroup(process)
                     if Task.isCancelled { stopped.set() }
                     ChildProcesses.stopIfUnwanted(process, cancelled: Task.isCancelled)
+                    if stopped.isSet { Self.stopAndSettle(process) }
                 } catch {
                     ChildProcesses.unregister(process)
                     process.terminationHandler = nil
@@ -215,7 +251,19 @@ public enum ProcessRunner {
             }
         } onCancel: {
             stopped.set()
-            if process.isRunning { process.terminate() } else { ChildProcesses.signalGroup(process.processIdentifier) }
+            Self.stopAndSettle(process)
+        }
+    }
+
+    /// Escalation runs independently of the termination handler: a child ignoring SIGTERM
+    /// must not prevent that handler (and therefore the awaiting caller) from ever completing.
+    private static func stopAndSettle(_ process: Process) {
+        if process.isRunning { process.terminate() }
+        let pid = process.processIdentifier
+        guard pid > 0 else { return }
+        DispatchQueue.global(qos: .utility).async {
+            ChildProcesses.settleGroup(pid, stopped: true)
+            if process.isRunning { kill(pid, SIGKILL) }
         }
     }
 

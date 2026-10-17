@@ -151,6 +151,29 @@ enum OutsideApps {
         return b.lexicographicallyPrecedes(a)
     }
 
+    /// Positive evidence of a comparable version at or above the promised target. Negating
+    /// `isNewer` alone is unsafe: unrelated version schemes also return false.
+    static func meetsTarget(_ version: String, target: String) -> Bool {
+        let target = String(target.split(separator: ",", maxSplits: 1).first ?? "")
+        guard !numbers(version).isEmpty, !numbers(target).isEmpty, tag(version) == tag(target) else { return false }
+        return !isNewer(target, than: version)
+    }
+
+    /// Structural verification only: never launch a third-party app as a test. Require a
+    /// nonempty executable regular file inside this bundle, not merely a readable Info.plist.
+    static func hasExecutable(at path: String) -> Bool {
+        let root = URL(fileURLWithPath: path).resolvingSymlinksInPath()
+        guard let data = try? Data(contentsOf: root.appendingPathComponent("Contents/Info.plist")),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let name = plist["CFBundleExecutable"] as? String,
+              !name.isEmpty, name != ".", name != "..", !name.contains("/") else { return false }
+        let executable = root.appendingPathComponent("Contents/MacOS").appendingPathComponent(name).resolvingSymlinksInPath()
+        guard executable.path.hasPrefix(root.path + "/"),
+              let values = try? executable.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+              values.isRegularFile == true, (values.fileSize ?? 0) > 0 else { return false }
+        return FileManager.default.isExecutableFile(atPath: executable.path)
+    }
+
     // MARK: - Homebrew catalog
 
     /// Any JSON value. Kept only to collect a cask's strings.
@@ -267,7 +290,7 @@ enum OutsideApps {
     /// The app already has the update: it is now at least the version the review offered.
     static func updatedItself(_ item: Update, now current: Local) -> Bool {
         current.bundleID == item.bundleID && current.version != item.installed
-            && !isNewer(item.latest, than: current.version) && isNewer(current.version, than: item.installed)
+            && meetsTarget(current.version, target: item.latest) && isNewer(current.version, than: item.installed)
     }
 
     /// The app's own feed wins when it is ahead of the cask: Homebrew would install an older
@@ -364,20 +387,27 @@ extension OutsideApps {
             let staged: String
             /// The ID the new version must have; nil in entries from 1.1.0.
             var bundleID: String?
+            /// Persisted before staging; legacy journals lack these and must restore the old copy.
+            var installedVersion: String?
+            var targetVersion: String?
 
-            init(original: String, staged: String, bundleID: String?) {
+            init(original: String, staged: String, bundleID: String?, installedVersion: String? = nil, targetVersion: String? = nil) {
                 self.original = original
                 self.staged = staged
                 self.bundleID = bundleID
+                self.installedVersion = installedVersion
+                self.targetVersion = targetVersion
             }
 
-            enum CodingKeys: String, CodingKey { case original, staged, trashed, bundleID }
+            enum CodingKeys: String, CodingKey { case original, staged, trashed, bundleID, installedVersion, targetVersion }
 
             init(from decoder: Decoder) throws {
                 let c = try decoder.container(keyedBy: CodingKeys.self)
                 original = try c.decode(String.self, forKey: .original)
                 staged = try c.decodeIfPresent(String.self, forKey: .staged) ?? c.decode(String.self, forKey: .trashed)
                 bundleID = try c.decodeIfPresent(String.self, forKey: .bundleID)
+                installedVersion = try c.decodeIfPresent(String.self, forKey: .installedVersion)
+                targetVersion = try c.decodeIfPresent(String.self, forKey: .targetVersion)
             }
 
             func encode(to encoder: Encoder) throws {
@@ -385,6 +415,8 @@ extension OutsideApps {
                 try c.encode(original, forKey: .original)
                 try c.encode(staged, forKey: .staged)
                 try c.encodeIfPresent(bundleID, forKey: .bundleID)
+                try c.encodeIfPresent(installedVersion, forKey: .installedVersion)
+                try c.encodeIfPresent(targetVersion, forKey: .targetVersion)
             }
         }
 
@@ -440,11 +472,15 @@ extension OutsideApps {
             return .restored
         }
 
-        /// The app now in the entry's place, when it is a readable bundle with the expected ID.
+        /// Both normal completion and crash recovery use the same persisted postconditions.
         func verified(_ entry: Entry) -> Local? {
             let name = (entry.original as NSString).lastPathComponent
             guard let app = OutsideApps.local(path: entry.original, name: name, excluding: nil),
-                  entry.bundleID.map({ $0 == app.bundleID }) ?? true else { return nil }
+                  let bundleID = entry.bundleID, bundleID == app.bundleID,
+                  let installed = entry.installedVersion, let target = entry.targetVersion,
+                  OutsideApps.isNewer(app.version, than: installed),
+                  OutsideApps.meetsTarget(app.version, target: target),
+                  OutsideApps.hasExecutable(at: entry.original) else { return nil }
             return app
         }
 
@@ -505,13 +541,17 @@ extension OutsideApps {
         }
 
         /// `expected` is the app as read right before this call; the new bundle must have its ID
-        /// and must not be older.
-        @MainActor func run(_ expected: Local, install: () async -> Void) async -> Outcome {
+        /// and must be strictly newer, meet the target and contain an executable.
+        @MainActor func run(_ expected: Local, targetVersion: String, install: () async -> Void) async -> Outcome {
+            guard OutsideApps.isNewer(targetVersion, than: expected.version) else {
+                return .untouched(String(localized: "Homebrew cannot install this app."))
+            }
             let fm = FileManager.default
             let original = URL(fileURLWithPath: expected.path)
             let staged = journal.staging.appendingPathComponent(UUID().uuidString, isDirectory: true)
                 .appendingPathComponent(original.lastPathComponent)
-            let entry = Journal.Entry(original: original.path, staged: staged.path, bundleID: expected.bundleID)
+            let entry = Journal.Entry(original: original.path, staged: staged.path, bundleID: expected.bundleID,
+                                      installedVersion: expected.version, targetVersion: targetVersion)
             do {
                 try fm.createDirectory(at: staged.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try journal.add(entry)
@@ -526,7 +566,7 @@ extension OutsideApps {
                 return .untouched(Self.describeMove(error))
             }
             await install()
-            if let new = journal.verified(entry), !OutsideApps.isNewer(expected.version, than: new.version) {
+            if let new = journal.verified(entry) {
                 journal.discard(staged)
                 // A copy the Trash refused stays journaled; the next start retries.
                 if !fm.fileExists(atPath: staged.path) { try? journal.remove(entry) }

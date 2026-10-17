@@ -14,123 +14,146 @@ enum GlassLibrary {
     }
 }
 
-/// A glass object that turns in 3D: the flat render is rotated with perspective, a stack of
-/// darkened copies along the depth axis forms its side wall, a highlight slides across the glass
-/// with the angle, and the shadow shifts. `amplitude` 0 keeps it still.
+/// Shared decorative-motion gate. Functional labels and progress tracks remain visible.
+enum DecorativeMotion {
+    static func isAllowed(reduceMotion: Bool, activeState: ControlActiveState, visible: Bool = true) -> Bool {
+        !reduceMotion && activeState != .inactive && visible
+    }
+}
+
+/// Bounded geometry shared by live rendering and deterministic visual tests.
+enum GlassMotion {
+    static let maximumFramesPerSecond = 24.0
+    static let maximumSideLayers = 6
+    static let maximumAngle = 18.0
+    static let minimumPeriod = 4.8
+
+    struct Pose: Equatable {
+        let angle: Double
+        let tilt: Double
+        let lift: CGFloat
+        static let rest = Pose(angle: -4, tilt: 1, lift: 0)
+    }
+
+    static func sideLayers(amplitude: Double) -> Int { abs(amplitude) >= 15 ? maximumSideLayers : 0 }
+
+    static func pose(time: TimeInterval, amplitude: Double, period: Double) -> Pose {
+        let boundedAmplitude = min(abs(amplitude), maximumAngle)
+        let phase = time * 2 * .pi / max(period, minimumPeriod)
+        let weight = boundedAmplitude / maximumAngle
+        return Pose(angle: boundedAmplitude * sin(phase),
+                    tilt: 1.6 * weight * sin(phase + .pi / 3),
+                    lift: CGFloat(1.8 * weight * sin(phase)))
+    }
+}
+
+/// Keeps the original glass artwork, with a compact tinted bevel and a restrained light sweep.
+/// Only visible, active windows schedule decorative frames, at no more than 24 fps.
 struct Glass3D: View {
     let name: String
     var size: CGFloat = 300
     var glow: Color = .clear
-    /// Peak rotation in degrees, and seconds for a full left-right-left swing.
     var amplitude: Double = 26
-    var period: Double = 3.2
-    /// Thickness of the side wall as a share of the size.
+    var period: Double = 4.8
     var depth: CGFloat = 0.06
 
-    @Environment(\.controlActiveState) private var activeState
-    @State private var windowVisible = true
+    #if DEBUG
+    /// Fixed native screenshot pose, with no animation scheduler. Never a production preference.
+    var snapshotTime: TimeInterval?
+    #endif
 
-    var body: some View {
-        if amplitude == 0 || !windowVisible {
-            frame(angle: 0, tilt: 0, lift: 0)
-                .background(VisibilityProbe(visible: $windowVisible))
-        } else {
-            // The shadow and glow are drawn once under the animation: blurring them again on every
-            // frame was most of the cost. A slow idle swing runs at 24 fps, a busy one at 30.
-            ZStack {
-                shadows
-                TimelineView(.animation(minimumInterval: amplitude < 15 ? 1.0 / 24.0 : 1.0 / 30.0,
-                                        paused: activeState == .inactive && amplitude < 15)) { context in
-                    let t = context.date.timeIntervalSinceReferenceDate
-                    let phase = sin(t * 2 * .pi / period)
-                    frame(angle: amplitude * phase,
-                          tilt: 5 * sin(t * 2 * .pi / (period * 1.7)),
-                          lift: 6 * sin(t * 2 * .pi / (period * 1.3)),
-                          withShadows: false)
-                }
-            }
-            .background(VisibilityProbe(visible: $windowVisible))
-        }
+    @Environment(\.controlActiveState) private var activeState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var windowVisible = false
+
+    private var fixedTime: TimeInterval? {
+        #if DEBUG
+        snapshotTime
+        #else
+        nil
+        #endif
     }
 
-    /// The object's drop shadow and coloured glow as one static layer.
-    private var shadows: some View {
+    var body: some View {
+        let layers = GlassMotion.sideLayers(amplitude: amplitude)
+        // Resolve colour-space blends once per view update, not for each layer on every tick.
+        let sideColors = (0..<layers).map { i in
+            glow.blend(with: .black, by: 0.52 + 0.18 * Double(layers - i) / Double(layers))
+        }
         ZStack {
-            if let image = GlassLibrary.image(name) {
-                Image(nsImage: image).resizable().renderingMode(.template).aspectRatio(contentMode: .fit)
-                    .foregroundStyle(glow.opacity(0.4))
-                    .blur(radius: size * 0.12)
-                Image(nsImage: image).resizable().renderingMode(.template).aspectRatio(contentMode: .fit)
-                    .foregroundStyle(.black.opacity(0.45))
-                    .blur(radius: size * 0.07)
-                    .offset(y: size * 0.06)
+            // Blur is outside the timeline: only the crisp artwork/bevel changes each frame.
+            shadows
+            if let fixedTime {
+                frame(pose: GlassMotion.pose(time: fixedTime, amplitude: amplitude, period: period), sideColors: sideColors)
+            } else if amplitude != 0 && DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState, visible: windowVisible) {
+                TimelineView(.animation(minimumInterval: 1 / GlassMotion.maximumFramesPerSecond)) { context in
+                    frame(pose: GlassMotion.pose(time: context.date.timeIntervalSinceReferenceDate,
+                                                 amplitude: amplitude, period: period), sideColors: sideColors)
+                }
+            } else {
+                // Inactive, hidden and Reduce Motion all remove the timeline entirely.
+                frame(pose: .rest, sideColors: sideColors)
             }
         }
         .frame(width: size, height: size)
+        .background(VisibilityProbe(visible: $windowVisible))
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 
-    private func frame(angle: Double, tilt: Double, lift: CGFloat, withShadows: Bool = true) -> some View {
+    private var shadows: some View {
+        ZStack {
+            if let image = GlassLibrary.image(name) {
+                Image(nsImage: image).resizable().renderingMode(.template).aspectRatio(contentMode: .fit)
+                    .foregroundStyle(glow.opacity(0.28))
+                    .blur(radius: size * 0.10)
+                Image(nsImage: image).resizable().renderingMode(.template).aspectRatio(contentMode: .fit)
+                    .foregroundStyle(.black.opacity(0.36))
+                    .blur(radius: size * 0.055)
+                    .offset(y: size * 0.055)
+            }
+        }
+        .frame(width: size, height: size)
+    }
+
+    private func frame(pose: GlassMotion.Pose, sideColors: [Color]) -> some View {
         let image = GlassLibrary.image(name)
-        let radians = angle * .pi / 180
-        let wall = size * depth
-        // At a slow idle swing (under 15°) the side wall moves about 3 pt and is not visible,
-        // so it is not drawn; a busy swing shows it with 12 layers.
-        let layers = amplitude >= 15 ? 12 : 0
+        let radians = pose.angle * .pi / 180
+        let wall = size * min(max(depth, 0), 0.065)
+        let layers = sideColors.count
         return ZStack {
             if let image {
-                // Side wall: copies receding along the depth axis, darker the deeper they go.
+                // Six silhouette layers, rather than twelve copies of the bright face artwork.
+                // The baked-in volume is enough at idle, so idle still adds no side layers.
                 ForEach(0..<layers, id: \.self) { i in
                     let k = CGFloat(layers - i) / CGFloat(layers)
-                    Image(nsImage: image).resizable().interpolation(.medium).aspectRatio(contentMode: .fit)
-                        .brightness(-0.18 - 0.22 * Double(k))
-                        .saturation(1.15)
-                        .offset(x: -CGFloat(sin(radians)) * wall * k, y: CGFloat(sin(tilt * .pi / 180)) * wall * k * 0.6 + wall * 0.25 * k)
+                    Image(nsImage: image).resizable().renderingMode(.template).interpolation(.medium)
+                        .aspectRatio(contentMode: .fit)
+                        .foregroundStyle(sideColors[i])
+                        .offset(x: -CGFloat(sin(radians)) * wall * k, y: wall * 0.14 * k)
                 }
                 Image(nsImage: image).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
-                    .brightness(0.04 * sin(radians * 2))
-                // Highlight that slides across the glass as it turns.
+                    .brightness(0.025 * sin(radians))
                 LinearGradient(stops: [.init(color: .clear, location: 0),
-                                       .init(color: .white.opacity(0.55), location: 0.5),
+                                       .init(color: .white.opacity(0.32), location: 0.5),
                                        .init(color: .clear, location: 1)],
                                startPoint: .leading, endPoint: .trailing)
-                    .frame(width: size * 0.42)
+                    .frame(width: size * 0.34)
                     .rotationEffect(.degrees(18))
-                    .offset(x: CGFloat(sin(radians)) * size * 0.9)
+                    .offset(x: CGFloat(sin(radians)) * size * 0.65 - size * 0.1)
                     .frame(width: size, height: size)
                     .mask(Image(nsImage: image).resizable().aspectRatio(contentMode: .fit))
                     .blendMode(.plusLighter)
-                    .opacity(0.42)
+                    .opacity(0.28)
             } else {
                 Image(systemName: "circle.hexagongrid").resizable().aspectRatio(contentMode: .fit).foregroundStyle(.white.opacity(0.3))
             }
         }
         .frame(width: size, height: size)
-        .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
-        .rotation3DEffect(.degrees(tilt), axis: (x: 1, y: 0, z: 0), perspective: 0.5)
-        .offset(y: lift)
+        .rotation3DEffect(.degrees(pose.angle), axis: (x: 0, y: 1, z: 0), perspective: 0.35)
+        .rotation3DEffect(.degrees(pose.tilt), axis: (x: 1, y: 0, z: 0), perspective: 0.35)
+        .offset(y: pose.lift)
         .drawingGroup()
-        .modifier(GlassShadows(on: withShadows, size: size, glow: glow))
-        .accessibilityHidden(true)
-    }
-}
-
-/// Drop shadow and glow for a still object. The animated object gets none: its shadows are a
-/// separate static layer, so they are not blurred again on every frame.
-private struct GlassShadows: ViewModifier {
-    let on: Bool
-    let size: CGFloat
-    let glow: Color
-
-    func body(content: Content) -> some View {
-        if on {
-            content
-                .shadow(color: .black.opacity(0.45), radius: size * 0.07, x: 0, y: size * 0.06)
-                .shadow(color: glow.opacity(0.4), radius: size * 0.12)
-        } else {
-            content
-        }
     }
 }
 

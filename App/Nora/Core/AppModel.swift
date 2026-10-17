@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import Foundation
 import MoleKit
 import Observation
@@ -16,32 +17,39 @@ final class AppModel {
 
     var moleState: MoleState = .locating
     var selection: Module = .smartCare {
-        didSet { if selection != reviewOrigin { reviewOrigin = nil } }
+        didSet { if selection != oldValue { showConsole = false } }
     }
     /// A module opened from a Smart Care tile. Its screens lead back to Smart Care instead of
-    /// starting over, so the scan behind the tiles stays intact. Any other navigation clears it.
+    /// starting over, so the scan behind the tiles stays intact. Sidebar navigation preserves this return route.
     private(set) var reviewOrigin: Module?
 
     func reviewFromSmartCare(_ module: Module) {
         reviewOrigin = module
+        if module == .cleanup { cleanup.showList = false; cleanup.listSection = nil }
         selection = module
     }
     /// Debug launch arguments for screenshots and checks: `-NoraModule cleanup -NoraAutoScan 1`.
     let autoScan: Bool
 
-    init() {
+    /// Synthetic rendering only; release builds cannot enable this mode.
+    let isVisualSnapshot: Bool
+
+    init(visualSnapshot: Bool = false, home: URL = FileManager.default.homeDirectoryForCurrentUser,
+         trash: TrashReminderModel? = nil) {
+        self.home = home
         #if DEBUG
+        isVisualSnapshot = visualSnapshot
         if let name = UserDefaults.standard.string(forKey: "NoraModule"), let module = Module(rawValue: name) { selection = module }
-        autoScan = UserDefaults.standard.bool(forKey: "NoraAutoScan")
+        autoScan = !visualSnapshot && UserDefaults.standard.bool(forKey: "NoraAutoScan")
         #else
+        isVisualSnapshot = false
         autoScan = false
         #endif
+        self.trash = trash ?? TrashReminderModel.live(visualSnapshot: isVisualSnapshot)
+        self.trash.externalBlocker = { [weak self] in self?.trashBlocker }
         if !selection.isAvailable { selection = Module.available.first ?? .status }
     }
-    var showConsole = false {
-        // The console covers the orb; an invisible orb must not take clicks meant for it.
-        didSet { orb.hidden = showConsole; orb.updateHitArea() }
-    }
+    var showConsole = false
     let console = ConsoleLog()
     let status = StatusStore()
     let orb = OrbController()
@@ -56,8 +64,9 @@ final class AppModel {
     let protection = ProtectionModel()
     let tools = ToolsModel()
     let security = SecurityModel()
+    let trash: TrashReminderModel
 
-    let home = FileManager.default.homeDirectoryForCurrentUser
+    let home: URL
 
     /// `~/Library/Application Support/Nora`: askpass helper, whitelist journal, history.
     var supportDirectory: URL {
@@ -80,15 +89,42 @@ final class AppModel {
     /// One Cleanup or Projects run at a time, from its fresh check until the whitelist is put
     /// back: a second run would read the first one's temporary protection as the user's choice.
     @ObservationIgnored private var exclusiveRun: String?
+    @ObservationIgnored private var protectionProbe: MoleProbeCancellation?
 
     func beginExclusiveRun(_ id: String) -> Bool {
-        guard exclusiveRun == nil, !overlay.needsRecovery else { return false }
+        guard !trash.blocksOtherMutations, exclusiveRun == nil, !overlay.needsRecovery,
+              protectionProbe?.canRestoreProtection != false else { return false }
+        // Invalidate the editor's asynchronous snapshot even if this run starts and finishes
+        // before that read returns; a transient overlay must never become editable user rules.
+        protection.cancelLoad()
         exclusiveRun = id
+        protectionProbe = MoleProbeCancellation()
         return true
     }
 
+    func probeCancellation(for runID: String) throws -> MoleProbeCancellation {
+        guard exclusiveRun == runID, let protectionProbe else { throw WhitelistOverlayError.pendingRecovery }
+        return protectionProbe
+    }
+
+    func recoverProtection() throws {
+        guard exclusiveRun == nil else { throw WhitelistOverlayError.pendingRecovery }
+        guard protectionProbe?.canRestoreProtection != false else { throw MoleProbeError.unsettled }
+        try overlay.recoverIfNeeded()
+    }
+
+    /// Both cleanup defers and manual recovery pass through the same settlement barrier.
+    func recoverProtection(runID: String) throws {
+        guard exclusiveRun == runID else { throw WhitelistOverlayError.pendingRecovery }
+        guard protectionProbe?.canRestoreProtection != false else { throw MoleProbeError.unsettled }
+        try overlay.recover(runID: runID)
+    }
+
     func endExclusiveRun(_ id: String) {
-        if exclusiveRun == id { exclusiveRun = nil }
+        if exclusiveRun == id {
+            exclusiveRun = nil
+            if protectionProbe?.canRestoreProtection == true { protectionProbe = nil }
+        }
     }
 
     /// Protects `paths` for one run through the whitelist overlay, then asks Mole whether each
@@ -97,15 +133,27 @@ final class AppModel {
     /// run stops here instead. The caller's `recover(runID:)` takes the overlay off again.
     func protect(_ paths: [String], with mole: Mole, runID: String) async throws {
         let (overlay, installation, home) = (overlay, mole.installation, home)
-        try await Task.detached { try Self.protect(paths, overlay: overlay, installation: installation, home: home, runID: runID) }.value
+        let cancellation = try probeCancellation(for: runID)
+        try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            try await Task.detached {
+                try Self.protect(paths, overlay: overlay, installation: installation, home: home,
+                                 runID: runID, cancellation: cancellation)
+            }.value
+            try Task.checkCancellation()
+        } onCancel: { cancellation.cancel() }
     }
 
     /// `protect` without the main actor, for drivers that decide inside a PTY session.
     nonisolated static func protect(_ paths: [String], overlay: WhitelistOverlay, installation: MoleInstallation,
-                                    home: URL, runID: String) throws {
+                                    home: URL, runID: String, cancellation: MoleProbeCancellation) throws {
+        try cancellation.checkCancellation()
         guard !paths.isEmpty else { return }
-        try overlay.apply(protecting: paths, defaults: try installation.cleanWhitelistDefaults(home: home), runID: runID)
-        let open = try installation.unprotected(paths, home: home)
+        let defaults = try installation.cleanWhitelistDefaults(home: home, cancellation: cancellation)
+        try cancellation.checkCancellation()
+        try overlay.apply(protecting: paths, defaults: defaults, runID: runID)
+        let open = try installation.unprotected(paths, home: home, cancellation: cancellation)
+        try cancellation.checkCancellation()
         if let first = open.first {
             let path = first.replacingOccurrences(of: home.path, with: "~", options: .anchored)
             throw NoraError.commandFailed(open.count == 1
@@ -115,7 +163,47 @@ final class AppModel {
     }
 
     /// A preview taken now would not see what the running task protects for itself.
-    var exclusiveRunActive: Bool { exclusiveRun != nil || overlay.needsRecovery }
+    var exclusiveRunActive: Bool {
+        exclusiveRun != nil || overlay.needsRecovery || protectionProbe?.canRestoreProtection == false
+    }
+
+    static let trashBusyMessage = String(localized: "A Trash operation or recovery check is in progress. Try again when it finishes.")
+
+    private var trashBlocker: TrashReminderBlock? {
+        if exclusiveRunActive || Module.allCases.contains(where: { isBusy($0) })
+            || tools.touchIDBusy || tools.updateBusy || tools.externalBusy || tools.externalCleaning
+            || tools.completionBusy || tools.removeBusy || console.entries.contains(where: { $0.isRunning }) {
+            return .busy(String(localized: "Another Nora operation is running. Try again when it finishes."))
+        }
+        do {
+            if try hasPendingHandoverStrictly() {
+                return .recovery(String(localized: "An app update needs recovery before the Trash can be emptied."))
+            }
+        } catch {
+            return .recovery(String(localized: "An app update needs recovery before the Trash can be emptied."))
+        }
+        return nil
+    }
+
+    /// Absence is only ENOENT; unreadable paths, symlinks and corrupt journals block Trash.
+    private func hasPendingHandoverStrictly() throws -> Bool {
+        let url = home.appendingPathComponent("Library/Application Support/Nora/app-handover.json")
+        let fd = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK)
+        guard fd >= 0 else {
+            if errno == ENOENT { return false }
+            throw CocoaError(.fileReadNoPermission)
+        }
+        let file = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+        defer { try? file.close() }
+        var info = stat()
+        guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
+              info.st_size >= 0, info.st_size <= 16 * 1024 * 1024 else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let data = try file.read(upToCount: 16 * 1024 * 1024 + 1) ?? Data()
+        guard data.count <= 16 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
+        return !(try JSONDecoder().decode([OutsideApps.Journal.Entry].self, from: data)).isEmpty
+    }
 
     static let busyScanMessage = String(localized: "A cleaning task is running. Scan again when it finishes.")
 
@@ -164,7 +252,14 @@ final class AppModel {
             message: String(localized: "Nora needs your Mac password for this Mole command. Nora does not see or store it."),
             cancel: String(localized: "Cancel"),
             ok: String(localized: "OK"))
-        try? overlay.recoverIfNeeded()
+        do { try recoverProtection() }
+        catch {
+            cleanup.recoveryRequired = true
+            cleanup.failed = true
+            cleanup.resultHeadline = String(localized: "Recovery required")
+            cleanup.resultLines = [CleanupModel.describe(error)]
+            cleanup.stage = .done
+        }
         handover.recover()
     }
 
@@ -206,6 +301,7 @@ final class AppModel {
     /// Runs any command, streaming its output into the console. Throws `ProcessFailure` on a
     /// non-zero exit and `CancellationError` when its task was stopped.
     func stream(_ command: ShellCommand, environment: [String: String]) async throws {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         let id = console.begin(command)
         do {
             for try await line in ProcessRunner.lines(URL(fileURLWithPath: command.executable), command.arguments, environment: environment) {
@@ -227,6 +323,7 @@ final class AppModel {
 
     /// Runs a Mole command in a PTY (prompts, same-tty sudo), mirroring the screen into the console.
     func runPTY(_ arguments: [String], sudo: Bool = false, environment: [String: String] = [:]) async throws -> PTYRun.Result {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
         var env = mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }
         if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
@@ -255,6 +352,7 @@ final class AppModel {
         environment: [String: String] = [:],
         _ driver: @escaping @Sendable (PTYSession) throws -> T
     ) async throws -> (value: T, result: PTYRun.Result) {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
         var env = mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }
         if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
@@ -281,6 +379,7 @@ final class AppModel {
     /// the session waits; `run` starts only if it returns without throwing.
     func runGated(check: [String], run: [String],
                   decide: @escaping @Sendable (_ output: String, _ status: Int32) throws -> Void) async throws -> PTYRun.Result {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
         let env = PrivilegeBroker.environment(mole.environment.merging(userEnvironment) { $1 }, askpass: askpassURL)
         let (exe, args) = PrivilegeBroker.gated(executable: mole.executable.path, check: check, run: run)
@@ -294,12 +393,13 @@ final class AppModel {
                 let status = screen.last { $0.hasPrefix(marker) }.flatMap { Int32($0.dropFirst(marker.count)) } ?? -1
                 let output = TerminalText.render(session.transcriptBytes)
                 try decide(String(output[..<(output.range(of: PrivilegeBroker.gateMarker)?.lowerBound ?? output.endIndex)]), status)
+                try Task.checkCancellation()
                 session.write("go\n")
             }
             console.replace(id, outcome.result.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init))
             try console.checkStopped(id)
             if case .exited(let code) = outcome.result.status { console.finish(id, status: code) } else { console.finish(id, status: -1) }
-            return outcome.result
+            return outcome.result.runPhaseResult()
         } catch {
             try console.checkStopped(id)
             console.fail(id, error: error)
@@ -309,25 +409,27 @@ final class AppModel {
 
     /// Runs a Mole command in pipe mode, streaming its output into the console as it arrives.
     func run(_ arguments: [String], environment: [String: String] = [:]) async throws -> CommandResult {
+        guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
         let id = console.begin(mole.command(arguments, environment: environment))
-        var out: [String] = [], err: [String] = []
-        var status: Int32 = 0
+        let console = self.console
         do {
-            for try await line in ProcessRunner.lines(mole.executable, arguments, environment: mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }) {
-                if line.isError { err.append(line.text) } else { out.append(line.text) }
-                console.append(id, [ANSI.strip(line.text)])
-            }
-        } catch let failure as ProcessFailure {
-            status = failure.status
+            // Unlike cancelling an AsyncStream iterator, this awaits process-group settlement.
+            let result = try await ProcessRunner.run(mole.executable, arguments,
+                environment: mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 },
+                onOutput: { line in
+                    Task { @MainActor in console.append(id, [ANSI.strip(line.text)]) }
+                })
+            let output = result.stdout + (result.stderr.isEmpty ? "" : "\n" + result.stderr)
+            console.replace(id, output.split(separator: "\n", omittingEmptySubsequences: false).map { ANSI.strip(String($0)) })
+            try console.checkStopped(id)
+            console.finish(id, status: result.status)
+            return result
         } catch {
             try console.checkStopped(id)
             console.fail(id, error: error)
             throw error
         }
-        try console.checkStopped(id)
-        console.finish(id, status: status)
-        return CommandResult(status: status, stdout: out.joined(separator: "\n"), stderr: err.joined(separator: "\n"))
     }
 }
 
@@ -369,6 +471,8 @@ final class ConsoleLog {
         let owner: Module?
         let startedAt = Date()
         var output: [String] = []
+        var revision = 0
+        var omittedLines = 0
         var status: Int32?
         var failure: String?
         var isRunning: Bool { status == nil && failure == nil }
@@ -394,25 +498,34 @@ final class ConsoleLog {
         guard Task.isCancelled else { return }
         if let i = entries.firstIndex(where: { $0.id == id }), entries[i].isRunning {
             entries[i].failure = String(localized: "Stopped")
+            entries[i].revision += 1
         }
         throw CancellationError()
     }
 
     func append(_ id: UUID, _ lines: [String]) {
-        guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        guard let i = entries.firstIndex(where: { $0.id == id }), entries[i].isRunning else { return }
+        entries[i].revision += 1
         entries[i].output.append(contentsOf: lines)
-        if entries[i].output.count > maxLines { entries[i].output.removeFirst(entries[i].output.count - maxLines) }
+        if entries[i].output.count > maxLines {
+            entries[i].omittedLines += entries[i].output.count - maxLines
+            entries[i].output.removeFirst(entries[i].output.count - maxLines)
+        }
     }
 
     /// Shows the live PTY screen while the command runs.
     func mirror(_ id: UUID, _ lines: [String]) {
         guard let i = entries.firstIndex(where: { $0.id == id }), entries[i].isRunning else { return }
         let trimmed = Array(lines.reversed().drop { $0.trimmingCharacters(in: .whitespaces).isEmpty }.reversed())
-        entries[i].output = trimmed
+        entries[i].revision += 1
+        entries[i].omittedLines = max(0, trimmed.count - maxLines)
+        entries[i].output = Array(trimmed.suffix(maxLines))
     }
 
     func replace(_ id: UUID, _ lines: [String]) {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        entries[i].revision += 1
+        entries[i].omittedLines = max(0, lines.count - maxLines)
         entries[i].output = Array(lines.suffix(maxLines))
     }
 
@@ -425,11 +538,13 @@ final class ConsoleLog {
 
     func finish(_ id: UUID, status: Int32) {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        entries[i].revision += 1
         entries[i].status = status
     }
 
     func fail(_ id: UUID, error: Error) {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        entries[i].revision += 1
         entries[i].failure = error.localizedDescription
     }
 }

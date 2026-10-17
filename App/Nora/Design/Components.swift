@@ -177,6 +177,8 @@ struct CommandPreview: View {
 
 /// Health score ring 0–100.
 struct HealthRing: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     let score: Int?
     var size: CGFloat = 92
 
@@ -196,7 +198,7 @@ struct HealthRing: View {
             }
         }
         .frame(width: size, height: size)
-        .animation(.easeOut(duration: 0.6), value: score)
+        .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.6) : nil, value: score)
     }
 }
 
@@ -215,18 +217,27 @@ struct Spinner: View {
     }
 }
 
-/// Turns its content continuously at up to 30 frames a second, and stops while the window is not
-/// on screen. A `repeatForever` animation redraws the whole window at the display's refresh rate
+/// Turns its content at up to 24 frames a second, only while the window is active, visible and
+/// Reduce Motion is off. A `repeatForever` animation redraws the whole window at the display's refresh rate
 /// and goes on in a minimised or other-Space window: a Status card's spinner kept Nora at 38% of
 /// a core with nothing on screen.
 struct Spinning: ViewModifier {
     let period: Double
+    @Environment(\.controlActiveState) private var activeState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var visible = true
 
     func body(content: Content) -> some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !visible)) { context in
-            let turns = context.date.timeIntervalSinceReferenceDate / period
-            content.rotationEffect(.degrees((turns - turns.rounded(.down)) * 360))
+        Group {
+            if !DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState, visible: visible) {
+                // Keep the busy ring and its accessibility label, but create no animation timer.
+                content
+            } else {
+                TimelineView(.animation(minimumInterval: 1.0 / 24)) { context in
+                    let turns = context.date.timeIntervalSinceReferenceDate / period
+                    content.rotationEffect(.degrees((turns - turns.rounded(.down)) * 360))
+                }
+            }
         }
         .background(VisibilityProbe(visible: $visible))
     }
@@ -245,6 +256,7 @@ extension View {
 /// See `showsLiveStatus`. `onAppear` alone is not enough: SwiftUI keeps a closed window's screen
 /// alive, and a covered, minimised or other-Space window never disappears at all.
 private struct LiveStatusViewer: ViewModifier {
+    @Environment(AppModel.self) private var app
     let store: StatusStore
     let onChange: ((Bool) -> Void)?
     @State private var shown = false
@@ -260,7 +272,7 @@ private struct LiveStatusViewer: ViewModifier {
     }
 
     private func sync() {
-        let wanted = shown && visible
+        let wanted = shown && visible && !app.isVisualSnapshot
         guard wanted != holding else { return }
         holding = wanted
         if wanted { store.retain() } else { store.release() }
