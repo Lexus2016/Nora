@@ -393,6 +393,7 @@ final class SecurityModel {
 
     /// Moves every ticked finding to quarantine. A loaded user launch agent is unloaded first.
     func quarantineChecked(_ app: AppModel) {
+        guard !app.trash.blocksOtherMutations else { notice = AppModel.trashBusyMessage; return }
         let selected = findings.filter { checked.contains($0.id) }
         guard !selected.isEmpty, task == nil else { return }
         stage = .running
@@ -465,7 +466,8 @@ final class SecurityModel {
         }
     }
 
-    func restore(_ entry: QuarantineEntry) {
+    func restore(_ entry: QuarantineEntry, app: AppModel) {
+        guard !app.trash.blocksOtherMutations else { notice = AppModel.trashBusyMessage; return }
         do { try store.restore(entry) } catch { notice = error.localizedDescription }
         quarantine = store.list()
     }
