@@ -22,6 +22,7 @@ final class ProtectionModel {
     var newPattern = ""
     var message: String?
     var loaded = false
+    private(set) var loading = false
     private(set) var cleanupReady = false
     /// Lines of whitelist_optimize that are not task ids Nora knows (custom paths, newer ids).
     /// They are written back unchanged.
@@ -31,6 +32,24 @@ final class ProtectionModel {
 
     /// Injected in regression tests; the production writer remains atomic.
     @ObservationIgnored private let persist: (URL, String) throws -> Void
+    @ObservationIgnored private var loadTask: Task<Void, Never>?
+    @ObservationIgnored private var loadCancellation: MoleProbeCancellation?
+    private var loadGeneration = UUID()
+
+    /// A complete read is committed together. A failed or cancelled refresh never exposes a
+    /// mixture of old settings and newly read defaults to the editing controls.
+    struct Snapshot: Sendable {
+        var home: URL
+        var defaults: [String]
+        var cleanLines: [String]?
+        var tasks: [(name: String, id: String)]
+        var optimizeLines: [String]
+        var purgeLines: [String]?
+    }
+
+    private struct DefaultsReadError: Error {
+        let detail: String
+    }
 
     init(write: @escaping (URL, String) throws -> Void = { url, text in
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -46,60 +65,132 @@ final class ProtectionModel {
     /// Older Mole versions kept maintenance exclusions here; still read when the new file is absent.
     var legacyOptimizeURL: URL { configDir.appendingPathComponent("whitelist_checks") }
 
-    func load(_ app: AppModel) {
-        cleanListBusy = { [weak app] in app?.exclusiveRunActive ?? false }
-        loaded = false
-        cleanupReady = false
-        guard !cleanListLocked(), let mole = app.mole else { return }
-        guard loadDefaults({ try mole.installation.cleanWhitelistDefaults(home: app.home) }) else { return }
-        let cleanLines: [String]?
-        do {
-            cleanLines = try Self.readCleanLines(app.overlay.whitelistURL)
-        } catch {
-            cleanupReady = false
-            message = error.localizedDescription
-            return
+    @discardableResult
+    func load(_ app: AppModel) -> Task<Void, Never>? {
+        let busy = { [weak app] in app?.exclusiveRunActive ?? false }
+        guard let installation = app.mole?.installation else {
+            cancelLoad()
+            cleanListBusy = busy
+            return nil
         }
-        cleanFileExists = cleanLines != nil
-        let home = app.home.path
-        let expand: (String) -> String = { $0.hasPrefix("~/") ? home + $0.dropFirst(1) : $0 }
-        let defaultSet = Set(defaults.map(expand))
-        custom = (cleanLines ?? []).filter { !defaultSet.contains(expand($0)) }
-        do {
-            tasks = try mole.installation.optimizeTasks(home: app.home)
-            let optimizeLines = try Self.readCleanLines(optimizeURL) ?? Self.readCleanLines(legacyOptimizeURL) ?? []
-            let known = Set(tasks.map(\.id))
-            excludedTasks = Set(optimizeLines.filter(known.contains))
-            optimizeOther = optimizeLines.filter { !known.contains($0) }
-            let purge = try Self.readCleanLines(purgeURL)
-            projectFileExists = purge != nil
-            projectFolders = purge ?? []
-        } catch {
-            cleanupReady = false
-            message = error.localizedDescription
-            return
+        // Capture only immutable, Sendable inputs. AppModel and all observable state stay
+        // on the MainActor; shell probes and filesystem reads do not.
+        let home = app.home
+        let cleanURL = app.overlay.whitelistURL
+        let optimizeURL = optimizeURL, legacyURL = legacyOptimizeURL, purgeURL = purgeURL
+        return load(busy: busy) { cancellation in
+            try Self.readSnapshot(home: home, cancellation: cancellation,
+                readDefaults: { try installation.cleanWhitelistDefaults(home: home, cancellation: cancellation) },
+                readTasks: { try installation.optimizeTasks(home: home, cancellation: cancellation) },
+                readClean: { try Self.readCleanLines(cleanURL) },
+                readOptimize: { try Self.readCleanLines(optimizeURL) ?? Self.readCleanLines(legacyURL) ?? [] },
+                readPurge: { try Self.readCleanLines(purgeURL) })
         }
-        loaded = true
     }
 
-    /// A failed defaults read must never turn a first edit into an empty-default whitelist.
+    /// The reader is injected by regression tests; production uses the bounded Mole probes.
     @discardableResult
-    func loadDefaults(_ read: () throws -> [String]) -> Bool {
-        cleanupReady = false
-        loaded = false
-        do {
-            defaults = try read()
-            cleanupReady = true
-            message = nil
-            return true
-        } catch {
-            message = String(localized: "Protection could not load Mole's defaults. Editing is disabled; retry loading. \(error.localizedDescription)")
-            return false
+    func load(busy: @escaping () -> Bool = { false },
+              read: @escaping @Sendable (MoleProbeCancellation) throws -> Snapshot) -> Task<Void, Never>? {
+        cancelLoad()
+        cleanListBusy = busy
+        message = nil
+        guard !cleanListLocked() else { return nil }
+        let generation = loadGeneration
+        let cancellation = MoleProbeCancellation()
+        loadCancellation = cancellation
+        loading = true
+        let worker = Task.detached(priority: .userInitiated) {
+            try cancellation.checkCancellation()
+            let snapshot = try read(cancellation)
+            try cancellation.checkCancellation()
+            return snapshot
         }
+        let task = Task { [weak self] in
+            let result = await withTaskCancellationHandler {
+                await worker.result
+            } onCancel: {
+                cancellation.cancel()
+                worker.cancel()
+            }
+            guard let self, self.loadGeneration == generation else { return }
+            defer {
+                self.loading = false
+                self.loadTask = nil
+                self.loadCancellation = nil
+            }
+            guard !Task.isCancelled else { return }
+            do {
+                try cancellation.checkCancellation()
+                let snapshot = try result.get()
+                // A cleanup may have started while the synchronous reader was suspended.
+                // Its temporary whitelist must never become an editable configuration.
+                guard !self.cleanListLocked() else { return }
+                let home = snapshot.home.path
+                let expand: (String) -> String = { $0.hasPrefix("~/") ? home + $0.dropFirst(1) : $0 }
+                let defaultSet = Set(snapshot.defaults.map(expand))
+                self.defaults = snapshot.defaults
+                self.cleanFileExists = snapshot.cleanLines != nil
+                self.custom = (snapshot.cleanLines ?? []).filter { !defaultSet.contains(expand($0)) }
+                self.tasks = snapshot.tasks
+                let known = Set(snapshot.tasks.map(\.id))
+                self.excludedTasks = Set(snapshot.optimizeLines.filter(known.contains))
+                self.optimizeOther = snapshot.optimizeLines.filter { !known.contains($0) }
+                self.projectFileExists = snapshot.purgeLines != nil
+                self.projectFolders = snapshot.purgeLines ?? []
+                self.cleanupReady = true
+                self.loaded = true
+            } catch is CancellationError {
+                return
+            } catch let error as DefaultsReadError {
+                self.message = String(localized: "Protection could not load Mole's defaults. Editing is disabled; retry loading. \(error.detail)")
+            } catch {
+                self.message = error.localizedDescription
+            }
+        }
+        loadTask = task
+        return task
+    }
+
+    /// Invalidating the generation also rejects a reader that finishes after cancellation.
+    /// Probe settlement stays on the worker, so navigation never waits for a child to exit.
+    func cancelLoad() {
+        loadGeneration = UUID()
+        loadCancellation?.cancel()
+        loadTask?.cancel()
+        loadCancellation = nil
+        loadTask = nil
+        loading = false
+        loaded = false
+        cleanupReady = false
+    }
+
+    nonisolated static func readSnapshot(home: URL, cancellation: MoleProbeCancellation,
+                                        readDefaults: () throws -> [String],
+                                        readTasks: () throws -> [(name: String, id: String)],
+                                        readClean: () throws -> [String]?,
+                                        readOptimize: () throws -> [String],
+                                        readPurge: () throws -> [String]?) throws -> Snapshot {
+        try cancellation.checkCancellation()
+        let defaults: [String]
+        do { defaults = try readDefaults() }
+        catch is CancellationError { throw CancellationError() }
+        catch { throw DefaultsReadError(detail: error.localizedDescription) }
+        try cancellation.checkCancellation()
+        let clean = try readClean()
+        try cancellation.checkCancellation()
+        let tasks = try readTasks()
+        try cancellation.checkCancellation()
+        let optimize = try readOptimize()
+        try cancellation.checkCancellation()
+        let purge = try readPurge()
+        try cancellation.checkCancellation()
+        return Snapshot(home: home, defaults: defaults, cleanLines: clean, tasks: tasks,
+                        optimizeLines: optimize, purgeLines: purge)
     }
 
     /// Only an absent file means defaults apply. Unreadable files must block editing.
-    static func readCleanLines(_ url: URL) throws -> [String]? {
+    nonisolated static func readCleanLines(_ url: URL) throws -> [String]? {
         do {
             return lines(text: try String(contentsOf: url, encoding: .utf8))
         } catch let error as NSError where error.domain == NSCocoaErrorDomain && error.code == NSFileReadNoSuchFileError {
@@ -107,7 +198,7 @@ final class ProtectionModel {
         }
     }
 
-    static func lines(text: String?) -> [String]? {
+    nonisolated static func lines(text: String?) -> [String]? {
         guard let text else { return nil }
         return text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && !$0.hasPrefix("#") }
     }
@@ -235,12 +326,20 @@ struct ProtectionView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(18)
                 .glassPanel(radius: 20)
-                if !model.loaded { Button("Retry") { model.load(app) }.buttonStyle(GlassButtonStyle()) }
+                if model.loading {
+                    ProgressView("Loading").controlSize(.small)
+                } else if !model.loaded {
+                    Button("Retry") { model.load(app) }.buttonStyle(GlassButtonStyle())
+                }
                 if let message = model.message { Text(message).font(.system(size: 12)).foregroundStyle(Palette.muted) }
             }
             .padding(.horizontal, 34).padding(.top, 6)
         }
         .task { if !app.isVisualSnapshot && !model.loaded { model.load(app) } }
+        .onDisappear { if model.loading { model.cancelLoad() } }
+        .onChange(of: app.exclusiveRunActive) { _, active in
+            if active && model.loading { model.cancelLoad() }
+        }
     }
 
     private var cleanup: some View {
