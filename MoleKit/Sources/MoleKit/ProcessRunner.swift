@@ -49,6 +49,26 @@ public enum ChildProcesses {
     nonisolated(unsafe) private static var running: [ObjectIdentifier: Process] = [:]
     nonisolated(unsafe) private static var shuttingDown = false
     nonisolated(unsafe) private static var groups: Set<pid_t> = []
+    // Probe owners pin their unreaped leader and serialize signal vs reap. A sweep must keep
+    // the owner object, never copy just its PID and signal it after ownership has ended.
+    nonisolated(unsafe) private static var probes: [ObjectIdentifier: ManagedProbeChild] = [:]
+
+    /// Atomic with the shutdown sweep: no child may start after quit has proved settlement,
+    /// and an already-started child is visible before the sweep can take its snapshot.
+    static func launchProbe(_ launch: () throws -> ManagedProbeChild) throws -> ManagedProbeChild {
+        try lock.withLock {
+            guard !shuttingDown else { throw CancellationError() }
+            let child = try launch()
+            probes[ObjectIdentifier(child)] = child
+            return child
+        }
+    }
+
+    static var activeProbeCount: Int { lock.withLock { probes.count } }
+
+    static func unregisterProbe(_ child: ManagedProbeChild) {
+        lock.withLock { _ = probes.removeValue(forKey: ObjectIdentifier(child)) }
+    }
 
     public static func register(_ process: Process) {
         lock.withLock { running[ObjectIdentifier(process)] = process }
@@ -118,12 +138,13 @@ public enum ChildProcesses {
     /// Sends SIGTERM to every child that is still running. The list is taken under the lock and
     /// the signals are sent after it is released, because termination handlers take the same lock.
     public static func terminateAll() {
-        let (children, leaders) = lock.withLock { () -> ([Process], [pid_t]) in
+        let (children, leaders, ownedProbes) = lock.withLock { () -> ([Process], [pid_t], [ManagedProbeChild]) in
             shuttingDown = true
-            return (Array(running.values), Array(groups))
+            return (Array(running.values), Array(groups), Array(probes.values))
         }
         for child in children where child.isRunning { child.terminate() }
         for leader in leaders { kill(-leader, SIGTERM) }
+        for probe in ownedProbes { probe.signal(SIGTERM) }
     }
 
     /// The quit barrier: stops every child and its whole group, SIGKILL after `grace`. Returns
@@ -133,16 +154,18 @@ public enum ChildProcesses {
     public static func terminateAllAndWait(grace: TimeInterval = 3) -> Bool {
         terminateAll()
         if waitUntilGone(Date().addingTimeInterval(grace)) { return true }
-        let (children, leaders) = lock.withLock { (Array(running.values), Array(groups)) }
+        let (children, leaders, ownedProbes) = lock.withLock { (Array(running.values), Array(groups), Array(probes.values)) }
         for child in children where child.isRunning { kill(child.processIdentifier, SIGKILL) }
         for leader in leaders { kill(-leader, SIGKILL) }
+        for probe in ownedProbes { probe.signal(SIGKILL) }
         return waitUntilGone(Date().addingTimeInterval(1))
     }
 
     private static func waitUntilGone(_ deadline: Date) -> Bool {
         while true {
-            let (children, leaders) = lock.withLock { (Array(running.values), Array(groups)) }
-            if !children.contains(where: \.isRunning) && !leaders.contains(where: groupAlive) { return true }
+            let (children, leaders, ownedProbes) = lock.withLock { (Array(running.values), Array(groups), Array(probes.values)) }
+            if !children.contains(where: \.isRunning) && !leaders.contains(where: groupAlive)
+                && !ownedProbes.contains(where: { !$0.isSettled }) { return true }
             guard Date() < deadline else { return false }
             usleep(50_000)
         }
