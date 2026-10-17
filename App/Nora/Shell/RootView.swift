@@ -24,13 +24,15 @@ struct RootView: View {
 /// Icon rail on the left, the selected module's scene on the right; the scene runs under the
 /// hidden title bar like CleanMyMac.
 struct MainView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     @Environment(AppModel.self) private var app
 
     var body: some View {
         @Bindable var app = app
         ZStack(alignment: .bottom) {
             SceneBackground(palette: app.selection.palette)
-                .animation(.easeInOut(duration: 0.45), value: app.selection)
+                .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeInOut(duration: 0.45) : nil, value: app.selection)
             HStack(spacing: 0) {
                 Rail(selection: $app.selection).zIndex(2)
                 ModuleDetail(module: app.selection)
@@ -47,8 +49,8 @@ struct MainView: View {
             }
         }
         .ignoresSafeArea()
-        .animation(.easeOut(duration: 0.22), value: app.selection)
-        .animation(.easeOut(duration: 0.22), value: app.showConsole)
+        .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.22) : nil, value: app.selection)
+        .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.22) : nil, value: app.showConsole)
         .background(Button("") { app.showConsole.toggle() }.keyboardShortcut("j", modifiers: .command).hidden())
         .background(WindowReader { window in app.orb.attach(to: window, app: app) })
     }
@@ -78,6 +80,8 @@ struct ModuleDetail: View {
 
 /// The icon-only sidebar. A module that is scanning or running shows a ring on its icon.
 struct Rail: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     static let width: CGFloat = 84
     @Binding var selection: Module
     @Environment(AppModel.self) private var app
@@ -168,8 +172,8 @@ struct Rail: View {
             }
         }
         .zIndex(tooltip == module ? 1 : 0)
-        .animation(.easeOut(duration: 0.16), value: tooltip)
-        .animation(.easeOut(duration: 0.2), value: isSelected)
+        .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.16) : nil, value: tooltip)
+        .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.2) : nil, value: isSelected)
     }
 }
 
