@@ -90,6 +90,7 @@ struct TrashPromptView: View {
                 .padding(.bottom, 8)
             Toggle(isOn: Binding(get: { model.remindersEnabled }, set: model.setRemindersEnabled)) {
                 Text("Remind me about Trash").font(.system(size: 13))
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .toggleStyle(.switch).tint(Color(hex: 0x23C49E))
             .controlSize(.small)
