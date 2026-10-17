@@ -1,3 +1,4 @@
+import CPTYShim
 import Darwin
 import Foundation
 import XCTest
@@ -473,6 +474,49 @@ final class HomeTrashSafetyTests: XCTestCase {
         try fixture.file("item", "keep")
         XCTAssertEqual(service.execute(try service.scan()).status, .recoveryRequired)
         XCTAssertEqual(try fixture.text("item"), "keep")
+    }
+
+    func testDarwinACLWrappersDistinguishAbsentDenyAndAllowEntries() throws {
+        let fixture = try Fixture()
+        let directory = try TrashFS.open(fixture.home)
+        func setACL(_ arguments: [String]) throws {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/chmod")
+            process.arguments = arguments + [fixture.home.path]
+            try process.run()
+            process.waitUntilExit()
+            XCTAssertEqual(process.terminationStatus, 0, "The isolated ACL fixture must be configured")
+        }
+        // Remove inherited ACLs on this generated directory only. An absent FILESEC_ACL
+        // property is valid; NULL/ENOENT from acl_get_fd_np was not a directory-read failure.
+        try setACL(["-N"])
+        XCTAssertNoThrow(try TrashFS.requireNoACL(directory))
+        XCTAssertNoThrow(try TrashFS.requireNoGrantACL(directory))
+
+        // Ancestors permit deny-only entries and must successfully iterate past the final
+        // entry (-1/EINVAL on Darwin). Private staging requires no entries at all.
+        try setACL(["+a", "everyone deny delete"])
+        try setACL(["+a", "everyone deny write"])
+        XCTAssertThrowsError(try TrashFS.requireNoACL(directory))
+        XCTAssertNoThrow(try TrashFS.requireNoGrantACL(directory))
+
+        try setACL(["+a", "everyone allow read"])
+        XCTAssertThrowsError(try TrashFS.requireNoACL(directory))
+        XCTAssertThrowsError(try TrashFS.requireNoGrantACL(directory))
+        try setACL(["-N"])
+        XCTAssertNoThrow(try TrashFS.requireNoACL(directory))
+        XCTAssertNoThrow(try TrashFS.requireNoGrantACL(directory))
+    }
+
+    func testDarwinACLWrappersRejectUnknownDescriptorFailures() {
+        let privateResult = nora_trash_require_no_acl(-1)
+        let privateError = errno
+        let ancestorResult = nora_trash_require_no_grant_acl(-1)
+        let ancestorError = errno
+        XCTAssertEqual(privateResult, -1)
+        XCTAssertEqual(privateError, EBADF)
+        XCTAssertEqual(ancestorResult, -1)
+        XCTAssertEqual(ancestorError, EBADF)
     }
 
     func testSymlinkSupportAncestorDoesNotRedirectStaging() throws {
