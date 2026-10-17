@@ -205,7 +205,7 @@ struct SpaceMapView: View {
             DoneView(module: module,
                      headline: model.trashFailures.isEmpty ? String(localized: "\(model.trashed.count) items moved to the Trash") : String(localized: "Some items stayed"),
                      lines: model.trashed.prefix(5).map { "✓ \($0)" } + model.trashFailures.map { "✕ \($0)" },
-                     failed: model.trashed.isEmpty) { model.reset() }
+                     failed: model.trashed.isEmpty || !model.trashFailures.isEmpty) { model.reset() }
         }
     }
 
@@ -371,6 +371,8 @@ private struct SpaceLens: View {
 
 /// Bubbles whose area follows each entry's share, packed around the largest one.
 private struct BubbleMap: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     let entries: [DiskAnalysis.Entry]
     let total: Int64
     let tint: Color
@@ -386,7 +388,7 @@ private struct BubbleMap: View {
                         .onTapGesture { open(entry) }
                 }
             }
-            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: entries.map(\.path))
+            .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .spring(response: 0.5, dampingFraction: 0.8) : nil, value: entries.map(\.path))
         }
     }
 
@@ -421,6 +423,8 @@ private struct BubbleMap: View {
 }
 
 private struct Bubble: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.controlActiveState) private var activeState
     let entry: DiskAnalysis.Entry
     let radius: Double
     let tint: Color
@@ -441,10 +445,10 @@ private struct Bubble: View {
             }
         }
         .frame(width: d, height: d)
-        .scaleEffect(hovering ? 1.04 : 1)
+        .scaleEffect(hovering && DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? 1.04 : 1)
         .shadow(color: .black.opacity(0.25), radius: 10, y: 5)
         .onHover { hovering = $0 }
-        .animation(.easeOut(duration: 0.15), value: hovering)
+        .animation(DecorativeMotion.isAllowed(reduceMotion: reduceMotion, activeState: activeState) ? .easeOut(duration: 0.15) : nil, value: hovering)
         .help(Text("\(entry.name) · \(Format.bytes(entry.size))"))
     }
 }
