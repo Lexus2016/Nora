@@ -3,6 +3,40 @@
     <channel>
         <title>Nora</title>
         <item>
+            <title>1.3.0</title>
+            <pubDate>Sat, 17 Oct 2026 20:40:13 +0200</pubDate>
+            <link>https://github.com/Lexus2016/Nora</link>
+            <sparkle:version>6</sparkle:version>
+            <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[A safety audit of every module, and a reminder for the Trash. The audit's main change is that Nora now refuses to act, instead of guessing, when Mole's output or a file's state cannot be trusted: an incomplete or stale preview, an unreadable protection list or a failed save no longer leads to a removal or to a "done" screen.
+
+### Added
+- Trash reminders. While Nora is running it notices new files in your home Trash (`~/.Trash`; external disks are not looked at) and offers a review in a small panel. Settings has a switch for the reminders, and "Review home Trash…" in Nora's menu works with them off. The reminder never deletes anything: after the review, "Delete permanently" is a separate step with its own confirmation that says it cannot be undone, and its button stays inert for the first moments after it appears, so the second click of a double-click on "Empty Trash…" cannot reach it. Only the items you reviewed are removed; files that reach the Trash later are left alone, and if the Trash changed since the review you review it again. Stopping part-way leaves what was already deleted deleted. If an interruption leaves items set aside, deletion stays blocked until Nora has restored them. The result counts the entries removed, not freed space: the size shown is a logical size and can differ from the disk space returned. After a successful deletion the panel closes by itself after a few seconds; any other result (stopped, changed, failed, needs recovery) stays until you dismiss it.
+- The repository now runs the MoleKit and app tests on GitHub for every push to `main`.
+
+### Changed
+- Decorative glass animation is bounded: at most 24 frames a second, a smaller swing (up to 18°) and fewer layers on the busy hero, with a lighter shadow and a tinted edge. It stops completely while the window is inactive or hidden and when Reduce Motion is on.
+- The console opens on the last command of the current module, with a History picker, pause and "jump to latest"; scrolling by hand stops following the output, and a shortened log says so.
+- The README states the limits of the checks: Cleanup and Projects use Mole commands that rescan rather than run a fixed list of paths, so a file that appears after the check can still be affected. See `docs/audits/2026-10-17-remediation.uk.md`.
+
+### Fixed
+- Cleanup, Projects and Installers previews are rejected, not shown, when the list is incomplete, older than the last scan, has duplicate or ambiguous rows, or is empty without Mole saying so. An Installers scan that exits with an error no longer reads as "no installers". A file name with two spaces in a row is no longer cut short, and the final confirmation is sent only after the whole prompt has arrived and matches your selection exactly.
+- Cleanup no longer reports the size of a preview as space freed; without a report from Mole the result says it is unverified. Projects, Installers and Performance no longer promise space they did not measure.
+- Review shows every warning Mole gave, and the Full Disk Access explanation stays available.
+- If restoring the protection list fails, Nora shows it with a Retry button and blocks the next run. When something else changed the protection file meanwhile, both versions are kept and you are asked to reconcile them. If the defaults cannot be read, Protection cannot be edited over them, and a failed save is rolled back.
+- Smart Care and Cleanup no longer show a stale scan or results after Start over or a new scan, and Done returns to Smart Care when you came from there. Clean, Run and Remove stay visible but disabled with the reason, the found size is kept apart from the selected size, and error tiles have Retry. Opening the console no longer hides the action button.
+- Space Map no longer counts a folder and its contents twice, and refuses a stale or failed load. Tools checks Touch ID setup by its exit status and shows errors. Uninstall confirms the app and its helpers are gone, a malformed Homebrew reply is rejected, and updates that were blocked or stopped are not counted as done.
+- Security: a failed `launchctl` status check stops the action, and a quarantine that unloaded an agent but could not move it says so. Notices from manual database updates now show in Settings.
+- History shows a loading state and, when Mole fails, an error with Retry instead of an empty dashboard. Checking the latest Mole release shows the failure with Retry. Commands from Tools, Security, History and Space Map are logged under their own module, so "see console" no longer opens an empty log.
+- "Update Mole" is named for what it does, and a successful exit is no longer presented as proof that a new version is installed.
+- Space Map's Start over no longer takes Command-[ from Back, and Performance's Run is disabled when there is nothing to do.
+- Checkboxes in Space Map and Security, the external-drive picker and the selected sidebar item now have accessible names and traits.
+
+]]></description>
+            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.0/Nora-1.3.0.dmg" length="7870066" type="application/octet-stream" sparkle:edSignature="qSdjRx9RINltieSwcyhi6S5NcLb6Dz5mM+HK8IEm6iyL638ejHeZgHSc7e8icI6b9Dg+bBR7Ex8lzNXsrSxWAQ=="/>
+        </item>
+        <item>
             <title>1.2.1</title>
             <pubDate>Thu, 15 Oct 2026 11:49:48 +0200</pubDate>
             <link>https://github.com/Lexus2016/Nora</link>
@@ -64,35 +98,6 @@
 - The menu bar title and the quick menu show only current numbers: when Mole's status stream stops or goes quiet for 15 seconds they show dashes (and the quick menu the reason) instead of the last values.
 ]]></description>
             <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.2.0/Nora-1.2.0.dmg" length="7172871" type="application/octet-stream" sparkle:edSignature="jwWGKsgc4LBHuMiP+SMj25xseqD9cvtrZeOP6sWMX7gNbZcdjZocuDXAT+3+0EipkAhELd0lvyCrRYE4G+uTCA=="/>
-        </item>
-        <item>
-            <title>1.1.0</title>
-            <pubDate>Wed, 14 Oct 2026 19:23:17 +0200</pubDate>
-            <link>https://github.com/Lexus2016/Nora</link>
-            <sparkle:version>3</sparkle:version>
-            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[### Added
-- Applications now finds updates for apps you installed from a DMG or a zip, not only for Homebrew apps. Nora reads each app's own update feed and Homebrew's public app list, and matches an app to that list only when both its name and its bundle ID agree. If Homebrew can take the app over, Update moves the old copy to the Trash, installs the new version with `brew install --cask` and puts the old copy back if the install fails, or the next time Nora starts if it was quit in the middle. From then on Homebrew keeps the app up to date. Other apps get an **Open** button, and their own updater installs the new version.
-- Settings → Credits names ClamAV (Cisco Talos), YARA (VirusTotal) and Sparkle next to Mole, in English, Ukrainian and Russian.
-- Settings → Credits has a **Third-party licenses** button that opens the bundled license texts.
-- Stop in every operation that can end safely: Cleanup, Projects and Installers runs, Smart Care's Run, the Applications removal and updates and Security's quarantine (these two finish the item in progress first), `brew install` and the virus database download, and the external drive clean.
-- The ClamAV database update shows that it is downloading.
-
-### Changed
-- Menu and scene icons match: each section's icon in the sidebar and the menu bar draws the same object as its scene. New glass objects for Cleanup (a trash can instead of a star with a white ball), Applications (four app tiles instead of a tile with a trash can, so it no longer looks like Cleanup), Projects (a clean `</>`), Performance (a bolt instead of a shield), History (a clock with a back arrow) and Tools (a wrench and a screwdriver instead of a gear).
-- The app icon's glass vessel is 20% smaller, with more white around it.
-- Tools → Remove Mole shows an app-removal icon instead of the trash can, which now belongs to Cleanup.
-- Homebrew updates run one app at a time, so Stop can wait for the app in progress.
-- The Applications scan now goes online: it downloads Homebrew's public app list from formulae.brew.sh and reads the update feeds of apps installed from a download. Every request is shown in the console.
-
-### Fixed
-- Review buttons on a glass object (Smart Care tiles and the large result cards) have a darker backing, so their text stays readable over a bright object.
-- When two sections worked at once, such as Cleanup and Applications updates, each showed the other's current item. Every section now shows only its own command's output.
-- A stopped command no longer shows as running forever in the console, and a stopped `brew install` no longer counts as a success.
-- The app now ships Sparkle's MIT license and the external licenses it includes (`ThirdPartyNotices.txt`). 1.0.0 bundled Sparkle without them.
-]]></description>
-            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.1.0/Nora-1.1.0.dmg" length="7021101" type="application/octet-stream" sparkle:edSignature="5Y4K6fknDgjFdjOJSfUvdsRJ4M1VH1KVC+YxdoYlUt3SNCu0gBRwckbOisMMJfiZtgwuNpL4nr3VoDqgOt6xBA=="/>
         </item>
     </channel>
 </rss>
