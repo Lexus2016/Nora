@@ -90,9 +90,23 @@ final class SecurityModel {
     var watchActive = false
     /// clamd is loading its database (several seconds); Settings shows the switch as on meanwhile.
     private(set) var watchStarting = false
+    private(set) var watchStopping = false
+    private(set) var watchOperationCount = 0
     /// Why the last attempt to turn the Downloads watch on failed, shown under the switch.
     private(set) var watchError: String?
-    var clamav = ClamAVTools.locate()
+    var clamav: ClamAVTools
+    private(set) var installedEngine: ClamAVVersionInfo?
+    private(set) var engineCatalog: ClamAVFormulaInfo?
+    private(set) var engineCheckedAt: Date?
+    private(set) var refreshingClamAV = false
+    private(set) var checkingEngine = false
+    private(set) var upgradingEngine = false
+    private(set) var engineResult: String?
+    private(set) var databaseResult: String?
+    private(set) var lastEngineSuccess: Date?
+    private(set) var lastDatabaseSuccess: Date?
+    private(set) var homebrewAvailable = false
+    private(set) var engineManagedByHomebrew = false
     var databaseReady = false
     /// The formula `brew install` is working on, for the button's busy state.
     private(set) var installing: String?
@@ -106,10 +120,14 @@ final class SecurityModel {
     /// preview lists the same paths a Quick scan will cover.
     private(set) var previewLaunchPaths: [String] = []
 
+    @ObservationIgnored private let clamavServices: ClamAVManagementServices
+    @ObservationIgnored private let preferences: UserDefaults
+    private static let engineSuccessKey = "security.clamav.lastEngineSuccess"
+    private static let databaseSuccessKey = "security.clamav.lastUpdate"
     @ObservationIgnored private let home: URL
     @ObservationIgnored private let layout: ClamAVLayout
     @ObservationIgnored private let store: QuarantineStore
-    @ObservationIgnored private var task: Task<Void, Never>?
+    private var task: Task<Void, Never>?
     @ObservationIgnored private var watch: DownloadsWatch?
     @ObservationIgnored private var clamd: ClamdSession?
     /// When clamd last stopped under a running watch, for the restart limit.
@@ -117,6 +135,9 @@ final class SecurityModel {
     /// Downloads whose check failed, checked again when the watch restarts.
     @ObservationIgnored private var watchRetry: [URL] = []
     @ObservationIgnored private var watchStart: Task<Void, Never>?
+    @ObservationIgnored private var watchTasks: [UUID: Task<Void, Never>] = [:]
+    @ObservationIgnored private var stoppingWatchChecks: [@MainActor () -> Bool] = []
+    @ObservationIgnored private var watchSettlementTask: Task<Void, Never>?
     @ObservationIgnored private var watchGeneration: UUID?
     @ObservationIgnored private var scheduledRun = false
     /// When an update was last tried, whatever the outcome. A failing download is retried hourly
@@ -128,7 +149,18 @@ final class SecurityModel {
     @ObservationIgnored let ownFolders: [String]
 
     /// Cheap by design: no scans, processes or permission prompts happen here.
-    init(home: URL = FileManager.default.homeDirectoryForCurrentUser, support: URL? = nil) {
+    init(home: URL = FileManager.default.homeDirectoryForCurrentUser, support: URL? = nil,
+         clamavServices: ClamAVManagementServices = ClamAVManagementServices(), preferences: UserDefaults = .standard) {
+        self.clamavServices = clamavServices
+        self.preferences = preferences
+        let found = clamavServices.locate()
+        self.clamav = found
+        self.lastEngineSuccess = preferences.object(forKey: Self.engineSuccessKey) as? Date
+        self.lastDatabaseSuccess = preferences.object(forKey: Self.databaseSuccessKey) as? Date
+        self.homebrewAvailable = clamavServices.brew() != nil
+        if let scanner = found.clamscan, let brew = clamavServices.brew() {
+            self.engineManagedByHomebrew = clamavServices.isHomebrewManaged(scanner, brew)
+        }
         let base = support ?? home.appendingPathComponent("Library/Application Support/Nora", isDirectory: true)
         self.ownFolders = [base.appendingPathComponent("Quarantine").path, base.appendingPathComponent("clamav").path]
         let layout = ClamAVLayout(root: base.appendingPathComponent("clamav", isDirectory: true))
@@ -169,13 +201,28 @@ final class SecurityModel {
         previewLaunchPaths = await LaunchAudit.scan(LaunchAudit.defaultDirectories).items.compactMap(\.program)
     }
 
+    var securityBusy: Bool { task != nil }
+    var clamavSetupBusy: Bool { installing != nil || updatingDatabase || upgradingEngine || checkingEngine || refreshingClamAV }
+    var canUpgradeEngine: Bool {
+        !securityBusy && !watchActive && !watchStarting && !watchStopping && watchOperationCount == 0 && homebrewAvailable && engineManagedByHomebrew
+            && engineCatalog?.outdated == true && engineCatalog?.pinned == false
+            && !(engineCatalog?.installedVersions.isEmpty ?? true)
+    }
+
+    var clamavInstallationStatus: String {
+        if clamav.isInstalled { return String(localized: "Installed") }
+        if clamav.clamscan != nil || clamav.freshclam != nil { return String(localized: "Incomplete installation") }
+        return String(localized: "ClamAV is not installed.")
+    }
+
     var databaseStatus: String {
         if !clamav.isInstalled { return String(localized: "ClamAV is not installed.") }
-        guard databaseReady else { return String(localized: "Not downloaded yet") }
-        if let date = SecuritySettings.lastDatabaseUpdate {
-            return String(localized: "Updated \(date.formatted(date: .abbreviated, time: .shortened))")
+        switch ClamAVVersionInfo.freshness(hasDatabase: databaseReady, builtAt: installedEngine?.databaseDate, now: clamavServices.now()) {
+        case .missing: return String(localized: "Not downloaded yet")
+        case .unknown: return String(localized: "Downloaded; freshness unknown")
+        case .recent: return String(localized: "Definitions are less than 48 hours old")
+        case .old: return String(localized: "Definitions are at least 48 hours old. Update recommended.")
         }
-        return String(localized: "Ready")
     }
 
     // MARK: - Scan
@@ -265,11 +312,11 @@ final class SecurityModel {
         // A database older than a day, or none: update first. A failed update still scans with
         // the copy on this Mac and says how old it is; an old database beats no scan.
         if let freshclam = clamav.freshclam,
-           !layout.hasDatabase || ScanSchedule.isUpdateDue(now: .now, last: SecuritySettings.lastDatabaseUpdate) {
+           !layout.hasDatabase || ScanSchedule.isUpdateDue(now: .now, last: lastDatabaseSuccess) {
             progress = String(localized: "Updating the virus database")
             if let failure = await refreshDatabase(freshclam, app) {
                 let message = layout.hasDatabase
-                    ? SecuritySettings.lastDatabaseUpdate.map { String(localized: "The virus database could not be updated, so this scan used the copy from \($0.formatted(date: .abbreviated, time: .omitted)).") }
+                    ? lastDatabaseSuccess.map { String(localized: "The virus database could not be updated. This scan used the local copy, last successfully checked on \($0.formatted(date: .abbreviated, time: .omitted)).") }
                         ?? String(localized: "The virus database could not be updated, so this scan used the copy already on this Mac.")
                     : failure
                 notice = notice.map { $0 + "\n" + message } ?? message
@@ -431,70 +478,242 @@ final class SecurityModel {
 
     // MARK: - ClamAV database and tools
 
+    /// Local metadata only; never checks a remote catalog merely because Settings appeared.
+    @discardableResult
+    func refreshClamAVStatus(_ app: AppModel) -> Task<Void, Never>? {
+        guard task == nil else { return nil }
+        refreshTools()
+        guard clamav.clamscan != nil else { return nil }
+        refreshingClamAV = true
+        engineResult = nil
+        let operation = Task(.security) {
+            defer { self.task = nil; self.refreshingClamAV = false }
+            do { try await self.readInstalledEngine(app) }
+            catch { self.engineResult = self.clamavFailure(error) }
+        }
+        task = operation
+        return operation
+    }
+
+    @discardableResult
+    func checkEngineUpdate(_ app: AppModel) -> Task<Void, Never>? {
+        guard task == nil else { return nil }
+        refreshTools()
+        engineCatalog = nil
+        engineCheckedAt = nil
+        guard let brew = clamavServices.brew() else {
+            engineResult = String(localized: "Homebrew was not found. Install Homebrew first.")
+            return nil
+        }
+        checkingEngine = true
+        engineResult = nil
+        let operation = Task(.security) {
+            defer { self.task = nil; self.checkingEngine = false }
+            do {
+                if self.clamav.clamscan != nil { try await self.readInstalledEngine(app) }
+                try await self.readEngineCatalog(brew, app)
+                self.engineResult = self.engineCatalog?.pinned == true
+                    ? String(localized: "Homebrew has pinned ClamAV. Unpin it before updating.") : nil
+            } catch { self.engineResult = self.clamavFailure(error) }
+        }
+        task = operation
+        return operation
+    }
+
+    /// Engine updates never run while Nora's daemon/watch or another security job is using it.
+    /// No service is restarted automatically; the user can turn the watch back on afterwards.
+    @discardableResult
+    func upgradeEngine(_ app: AppModel) -> Task<Void, Never>? {
+        guard task == nil else { return nil }
+        refreshTools()
+        guard canUpgradeEngine, let brew = clamavServices.brew() else {
+            engineResult = String(localized: "Check for an engine update and turn off Watch Downloads before upgrading.")
+            return nil
+        }
+        upgradingEngine = true
+        engineResult = nil
+        let operation = Task(.security) {
+            defer { self.task = nil; self.upgradingEngine = false; self.refreshTools() }
+            do {
+                let result = try await self.runClamAVLogged(ShellCommand(brew.path, ClamAVFormulaInfo.upgradeArguments), app)
+                try self.requireClamAVSuccess(result)
+                self.refreshTools()
+                try await self.readInstalledEngine(app)
+                try await self.readEngineCatalog(brew, app)
+                guard let engine = self.installedEngine, let catalog = self.engineCatalog,
+                      engine.engine == catalog.version, catalog.hasVerifiedPackage else {
+                    throw SecurityError.commandFailed(String(localized: "Homebrew finished, but the installed engine could not be verified as the catalog version. Check the console."))
+                }
+                self.lastEngineSuccess = self.clamavServices.now()
+                self.preferences.set(self.lastEngineSuccess, forKey: Self.engineSuccessKey)
+                self.engineResult = String(localized: "Engine installation verified. Virus definitions are updated separately.")
+            } catch {
+                self.engineCatalog = nil
+                self.engineCheckedAt = nil
+                self.engineResult = self.clamavFailure(error)
+            }
+        }
+        task = operation
+        return operation
+    }
+
     /// Runs freshclam with Nora's config. Manual and scheduled updates both call this.
-    func updateDatabase(_ app: AppModel) {
-        guard task == nil, let freshclam = clamav.freshclam else { return }
+    @discardableResult
+    func updateDatabase(_ app: AppModel) -> Task<Void, Never>? {
+        guard task == nil, let freshclam = clamav.freshclam else { return nil }
         updatingDatabase = true
-        task = Task(.security) {
+        databaseResult = nil
+        let operation = Task(.security) {
             defer { self.task = nil; self.updatingDatabase = false }
             self.notice = await self.refreshDatabase(freshclam, app)
         }
+        task = operation
+        return operation
     }
 
-    /// Cancels `brew install` or a database download. Both resume cleanly on the next try.
+    /// Cancellation keeps the previous successful timestamps. A stopped install may be partial.
     func cancelSetup() {
-        guard installing != nil || updatingDatabase else { return }
+        guard clamavSetupBusy else { return }
         task?.cancel()
     }
 
-    /// One freshclam run. Nil when the database is current afterwards, otherwise why not.
-    /// Only a successful update counts; a failed one is retried at the next check.
+    private func readInstalledEngine(_ app: AppModel) async throws {
+        installedEngine = nil
+        guard let scanner = clamav.clamscan else { return }
+        let result = try await runClamAVLogged(ShellCommand(scanner.path, ["--database", layout.database.path, "--version"]), app, timeout: 15)
+        try requireClamAVSuccess(result)
+        guard let info = ClamAVVersionInfo.parse(result.stdout) else {
+            throw SecurityError.commandFailed(String(localized: "ClamAV returned an unreadable version. Check the console."))
+        }
+        installedEngine = info
+    }
+
+    private func readEngineCatalog(_ brew: URL, _ app: AppModel) async throws {
+        let result = try await runClamAVLogged(ShellCommand(brew.path, ClamAVFormulaInfo.checkArguments), app, timeout: 30)
+        try requireClamAVSuccess(result)
+        do { engineCatalog = try ClamAVFormulaInfo.parse(Data(result.stdout.utf8)) }
+        catch { throw SecurityError.commandFailed(String(localized: "Homebrew returned unreadable ClamAV metadata. Update availability is unknown.")) }
+        engineCheckedAt = clamavServices.now()
+    }
+
+    private func runClamAVLogged(_ command: ShellCommand, _ app: AppModel, timeout: TimeInterval? = nil) async throws -> CommandResult {
+        // Avoid Homebrew's incidental cleanup and use exactly the catalog the check inspected.
+        let environment = BrewTools.environment.merging(["LC_ALL": "C", "TZ": "UTC", "HOMEBREW_NO_INSTALL_CLEANUP": "1"]) { $1 }
+        let id = app.console.begin(command)
+        do {
+            let result = try await clamavServices.run(command, environment, timeout)
+            if Task.isCancelled {
+                // ProcessRunner returns its final buffers after stopping the child. Preserve
+                // those diagnostics without turning a stopped action into exit-zero success.
+                let output = result.stdout + (result.stderr.isEmpty ? "" : "\n" + result.stderr)
+                app.console.append(id, output.split(separator: "\n", omittingEmptySubsequences: false).map { ANSI.strip(String($0)) })
+                throw CancellationError()
+            }
+            app.console.finish(id, result: result)
+            return result
+        } catch {
+            app.console.fail(id, error: SecurityError.commandFailed(self.clamavFailure(error)))
+            throw error
+        }
+    }
+
+    private func requireClamAVSuccess(_ result: CommandResult) throws {
+        try Task.checkCancellation()
+        guard result.succeeded else {
+            let detail = Self.lastLine(result.stderr.isEmpty ? result.stdout : result.stderr)
+            throw SecurityError.commandFailed(String(localized: "ClamAV command failed (exit \(result.status)). Check network access and folder permissions. The console has details. \(detail)"))
+        }
+    }
+
+    private func clamavFailure(_ error: Error) -> String {
+        if Task.isCancelled || error is CancellationError {
+            return upgradingEngine || installing != nil
+                ? String(localized: "ClamAV action stopped. A partial installation may need retrying.")
+                : String(localized: "ClamAV action stopped.")
+        }
+        if error is MoleProbeError {
+            return String(localized: "ClamAV status could not be checked. The check timed out or its helper failed. Retry and check the console.")
+        }
+        return error.localizedDescription
+    }
+
+    /// A success requires both freshclam exit 0 and a database on disk. Header age remains
+    /// separate: a successful check can legitimately leave an older database unchanged.
     private func refreshDatabase(_ freshclam: URL, _ app: AppModel) async -> String? {
-        // Timed from the end of the attempt, so a slow failing download cannot keep a due
-        // scheduled scan waiting.
-        defer { lastUpdateAttempt = Date() }
+        defer { lastUpdateAttempt = clamavServices.now() }
         do {
             try layout.writeConfigs()
-            let result = try await runLogged(ShellCommand(freshclam.path, ["--config-file", layout.freshclamConfig.path]), app)
-            if Task.isCancelled { return String(localized: "The database update was stopped.") }
-            if result.succeeded { SecuritySettings.lastDatabaseUpdate = Date() }
+            let result = try await runClamAVLogged(ShellCommand(freshclam.path, ["--config-file", layout.freshclamConfig.path]), app)
+            try requireClamAVSuccess(result)
             databaseReady = layout.hasDatabase
-            return result.succeeded ? nil : Self.lastLine(result.stderr.isEmpty ? result.stdout : result.stderr,
-                                                          fallback: String(localized: "The database update failed."))
+            guard databaseReady else {
+                throw SecurityError.commandFailed(String(localized: "freshclam finished, but Nora's virus database is still missing. Check the console."))
+            }
+            lastDatabaseSuccess = clamavServices.now()
+            preferences.set(lastDatabaseSuccess, forKey: Self.databaseSuccessKey)
+            databaseResult = String(localized: "Virus definitions checked successfully. The engine was not upgraded.")
+            do { try await readInstalledEngine(app) }
+            catch { engineResult = clamavFailure(error) }
+            return nil
         } catch {
-            return Task.isCancelled ? String(localized: "The database update was stopped.") : error.localizedDescription
+            databaseReady = layout.hasDatabase
+            installedEngine = nil
+            let message = clamavFailure(error)
+            databaseResult = message
+            return message
         }
     }
 
     /// Installs a Homebrew formula. Called only from a button the user clicks.
-    func install(_ formula: String, _ app: AppModel) {
-        guard task == nil else { return }
-        guard let brew = BrewTools.brew else {
+    @discardableResult
+    func install(_ formula: String, _ app: AppModel) -> Task<Void, Never>? {
+        guard task == nil, ["clamav", "yara"].contains(formula) else { return nil }
+        guard formula != "clamav" || (!watchActive && !watchStarting && !watchStopping && watchOperationCount == 0) else {
+            notice = String(localized: "Check for an engine update and turn off Watch Downloads before upgrading.")
+            return nil
+        }
+        guard let brew = clamavServices.brew() else {
             notice = String(localized: "Homebrew was not found. Install Homebrew first.")
-            return
+            return nil
         }
         installing = formula
-        task = Task(.security) {
-            defer { self.task = nil; self.installing = nil; self.downloadingDatabase = false }
+        let operation = Task(.security) {
+            defer { self.task = nil; self.installing = nil; self.downloadingDatabase = false; self.refreshTools() }
             do {
-                try await app.stream(ShellCommand(brew.path, ["install", formula]), environment: BrewTools.environment)
+                let result = try await self.runClamAVLogged(ShellCommand(brew.path, ["install", "--formula", formula]), app)
+                try self.requireClamAVSuccess(result)
                 self.notice = nil
-                // ClamAV is no use without its database: fetch it in the same click.
-                if formula == "clamav", let freshclam = ClamAVTools.locate().freshclam {
-                    self.downloadingDatabase = true
-                    self.notice = await self.refreshDatabase(freshclam, app)
+                self.refreshTools()
+                if formula == "clamav" {
+                    try await self.readInstalledEngine(app)
+                    guard self.clamav.isInstalled else {
+                        throw SecurityError.commandFailed(String(localized: "ClamAV installation could not be verified. Check the console."))
+                    }
+                    self.lastEngineSuccess = self.clamavServices.now()
+                    self.preferences.set(self.lastEngineSuccess, forKey: Self.engineSuccessKey)
+                    self.engineResult = String(localized: "Engine installation verified. Virus definitions are updated separately.")
+                    if let freshclam = self.clamav.freshclam {
+                        self.downloadingDatabase = true
+                        self.notice = await self.refreshDatabase(freshclam, app)
+                    }
                 }
-            } catch is CancellationError {
-                self.notice = String(localized: "brew install \(formula) was stopped. Install again when you are ready.")
             } catch {
-                self.notice = String(localized: "brew install \(formula) did not finish. The console shows the output.")
+                self.notice = self.clamavFailure(error)
+                if formula == "clamav" { self.engineResult = self.notice }
             }
-            self.refreshTools()
         }
+        task = operation
+        return operation
     }
 
     func refreshTools() {
-        clamav = ClamAVTools.locate()
+        let found = clamavServices.locate()
+        if found != clamav { installedEngine = nil; engineCatalog = nil; engineCheckedAt = nil }
+        clamav = found
+        homebrewAvailable = clamavServices.brew() != nil
+        if let scanner = clamav.clamscan, let brew = clamavServices.brew() {
+            engineManagedByHomebrew = clamavServices.isHomebrewManaged(scanner, brew)
+        } else { engineManagedByHomebrew = false }
         databaseReady = layout.hasDatabase
         quarantine = store.list()
     }
@@ -506,7 +725,7 @@ final class SecurityModel {
     func tick(_ app: AppModel, now: Date = .now) {
         guard task == nil, stage == .start || stage == .review, checked.isEmpty, clamav.isInstalled else { return }
         // Kept fresh whenever ClamAV is installed, not only for the schedule or the watch.
-        if ScanSchedule.isUpdateDue(now: now, last: SecuritySettings.lastDatabaseUpdate),
+        if ScanSchedule.isUpdateDue(now: now, last: lastDatabaseSuccess),
            lastUpdateAttempt.map({ now.timeIntervalSince($0) >= 3_600 }) ?? true {
             updateDatabase(app)
             return
@@ -521,10 +740,19 @@ final class SecurityModel {
 
     /// Turns the Downloads watch on or off. On starts clamd as a child process and the FSEvents-style directory watch.
     func setWatch(_ on: Bool, _ app: AppModel) {
+        guard !on || (!upgradingEngine && installing == nil) else {
+            watchError = String(localized: "Wait for the ClamAV installation to finish before starting Watch Downloads.")
+            return
+        }
         SecuritySettings.watchEnabled = on
         watchError = nil
         guard on else {
             shutdown()
+            return
+        }
+        guard !watchStopping else {
+            SecuritySettings.watchEnabled = false
+            watchError = String(localized: "ClamAV is still stopping. Wait before restarting the watch or updating the engine.")
             return
         }
         guard watch == nil else { return }
@@ -551,9 +779,10 @@ final class SecurityModel {
         SecurityNotifier.requestAuthorization()
         watchStarting = true
         watchGeneration = generation
-        watchStart = Task(.security) {
+        watchStart = runWatchOperation {
             defer { if self.watchGeneration == generation { self.watchStarting = false } }
             do {
+                try Task.checkCancellation()
                 try await session.start()
                 try Task.checkCancellation()
                 try watch.start()
@@ -592,9 +821,54 @@ final class SecurityModel {
         watchStart = nil
         watch?.stop()
         watch = nil
-        clamd?.stop()
+        if let session = clamd {
+            session.stop()
+            stoppingWatchChecks.append { session.isRunning }
+        }
         clamd = nil
         watchActive = false
+        for operation in watchTasks.values { operation.cancel() }
+        awaitWatchSettlement()
+    }
+
+    /// Retains the stopped session's real liveness check, including for synthetic lifetime tests.
+    func trackStoppingWatch(isRunning: @escaping @MainActor () -> Bool) {
+        stoppingWatchChecks.append(isRunning)
+        awaitWatchSettlement()
+    }
+
+    private func awaitWatchSettlement() {
+        guard !stoppingWatchChecks.isEmpty || watchOperationCount > 0 else { return }
+        watchStopping = true
+        guard watchSettlementTask == nil else { return }
+        watchSettlementTask = Task { @MainActor in
+            defer { self.watchSettlementTask = nil }
+            while !Task.isCancelled {
+                self.stoppingWatchChecks.removeAll { !$0() }
+                if self.stoppingWatchChecks.isEmpty && self.watchOperationCount == 0 {
+                    self.watchStopping = false
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+        }
+    }
+
+    /// Tracks startup and each daemon scan until its process runner has actually returned.
+    /// Injection-friendly so lifetime regressions never need a real clamd process.
+    @discardableResult
+    func runWatchOperation(_ operation: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
+        let id = UUID()
+        watchOperationCount += 1
+        let task = Task(.security) {
+            defer {
+                self.watchOperationCount -= 1
+                self.watchTasks[id] = nil
+            }
+            await operation()
+        }
+        watchTasks[id] = task
+        return task
     }
 
     /// clamd stopped under a running watch. It restarts up to three times in ten minutes; after
@@ -609,12 +883,19 @@ final class SecurityModel {
             notice = watchError
             return
         }
-        setWatch(true, app)
-        watchError = String(localized: "ClamAV stopped. Nora restarted the Downloads watch.")
+        Task { @MainActor in
+            if let settlement = self.watchSettlementTask { await settlement.value }
+            guard SecuritySettings.watchEnabled, self.watch == nil else { return }
+            self.setWatch(true, app)
+            if self.watchStarting || self.watchActive {
+                self.watchError = String(localized: "ClamAV stopped. Nora is restarting the Downloads watch.")
+            }
+        }
     }
 
     private func inspectDownload(_ file: URL, session: ClamdSession, generation: UUID, _ app: AppModel) {
-        Task(.security) {
+        guard watchGeneration == generation else { return }
+        runWatchOperation {
             let result = try? await self.runLogged(session.scanCommand(for: file), app)
             // A result for a watch that has since stopped or restarted changes nothing.
             guard self.watchGeneration == generation else { return }
