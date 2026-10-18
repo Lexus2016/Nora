@@ -49,10 +49,11 @@ final class HistoryModel {
         return try JSONDecoder().decode(MoleHistory.self, from: Data(result.stdout.utf8)).sessions
     }
 
-    var totalFreed: Int64 { sessions.reduce(0) { $0 + $1.size } }
+    var runSessions: [MoleHistory.Session] { sessions.filter { !$0.command.hasSuffix("-dry-run") } }
+    var totalFreed: Int64 { runSessions.reduce(0) { $0 + $1.size } }
 
     var freedByCommand: [(command: String, size: Int64)] {
-        Dictionary(grouping: sessions, by: \.command)
+        Dictionary(grouping: runSessions, by: \.command)
             .map { ($0.key, $0.value.reduce(0) { $0 + $1.size }) }
             .filter { $0.1 > 0 }
             .sorted { $0.1 > $1.1 }
@@ -61,14 +62,14 @@ final class HistoryModel {
     /// `failed` counts files Mole could not remove; `failedTasks` counts maintenance tasks (Mole
     /// keeps them apart), so a failed optimize shows up too.
     var actions: (removed: Int, trashed: Int, skipped: Int, failed: Int, failedTasks: Int) {
-        sessions.reduce((0, 0, 0, 0, 0)) { ($0.0 + $1.removed, $0.1 + $1.trashed, $0.2 + $1.skipped, $0.3 + $1.failed, $0.4 + $1.failedTasks) }
+        runSessions.reduce((0, 0, 0, 0, 0)) { ($0.0 + $1.removed, $0.1 + $1.trashed, $0.2 + $1.skipped, $0.3 + $1.failed, $0.4 + $1.failedTasks) }
     }
 
     /// Freed bytes per day for the last 30 days.
     var daily: [(day: Date, size: Int64)] {
         let calendar = Calendar.current
         let since = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-        let grouped = Dictionary(grouping: sessions.filter { ($0.started ?? .distantPast) >= since }) {
+        let grouped = Dictionary(grouping: runSessions.filter { ($0.started ?? .distantPast) >= since }) {
             calendar.startOfDay(for: $0.started ?? Date())
         }
         return grouped.map { ($0.key, $0.value.reduce(0) { $0 + $1.size }) }.sorted { $0.0 < $1.0 }
@@ -236,14 +237,22 @@ struct HistoryView: View {
     }
 
     static func commandTitle(_ command: String) -> String {
-        switch command {
-        case "clean": String(localized: "Cleanup")
-        case "purge": String(localized: "Projects")
-        case "installer": String(localized: "Installers")
-        case "uninstall": String(localized: "Applications")
-        case "optimize": String(localized: "Performance")
-        default: command
+        let preview = command.hasSuffix("-dry-run")
+        let base = preview ? String(command.dropLast("-dry-run".count)) : command
+        let title: String
+        switch base {
+        case "clean": title = String(localized: "Cleanup")
+        case "purge": title = String(localized: "Projects")
+        case "installer": title = String(localized: "Installers")
+        case "uninstall": title = String(localized: "Applications")
+        case "optimize": title = String(localized: "Performance")
+        case "analyze": title = String(localized: "Space Map")
+        case "touchid": title = String(localized: "Touch ID for sudo")
+        case "remove": title = String(localized: "Remove Mole")
+        case "completion": title = String(localized: "Shell completion")
+        default: title = base
         }
+        return preview ? String(localized: "Preview: \(title)") : title
     }
 
     static func healthWord(_ score: Int?) -> String {

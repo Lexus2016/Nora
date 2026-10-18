@@ -55,6 +55,59 @@ struct UninstallParsingTests {
         let spoofed = ["Files to be removed:", "◎ App , 1MB", "➤ Remove 1 app", "  ✓ ~/hidden , 9GB", "➤ Remove 1 app, 1MB  Enter confirm, ESC cancel:"]
         #expect(RemovalList(spoofed) == nil)
     }
+
+    @Test func readsMole161PersonalDataWithoutTreatingItAsDeletion() {
+        let lines = ["Files to be removed:", "◎ App [Brew] , 1MB", "  ✓ /Applications/App.app , 1MB",
+                     "Personal data kept:", "  ⊙ ~/Library/Preferences/app.plist", "D choose personal data",
+                     "➤ Remove 1 app, 1MB  Enter confirm, ESC cancel:"]
+        let plan = RemovalList(lines, allowingPersonalData: true)
+        #expect(plan?.groups == ["App [Brew]"])
+        #expect(plan?.entries == ["/Applications/App.app"])
+        #expect(plan?.personalData == ["~/Library/Preferences/app.plist"])
+        #expect(RemovalList(lines) == nil)
+        #expect(RemovalList(Array(lines.dropLast(2)) + [lines.last!], allowingPersonalData: true) == nil)
+        #expect(RemovalList(lines.dropLast() + ["  ✓ ~/hidden , 1MB", lines.last!], allowingPersonalData: true) == nil)
+    }
+
+    @Test func readsFullySelectedDataPlanWithChoiceControl() {
+        let lines = ["Files to be removed:", "◎ App , 1MB", "  ✓ /Applications/App.app , 1MB",
+                     "  ✓ ~/Library/Preferences/app.plist , 1KB", "D choose personal data",
+                     "➤ Remove 1 app, 1MB  Enter confirm, ESC cancel:"]
+        #expect(RemovalList(lines, allowingPersonalData: true)?.entries.count == 2)
+        #expect(RemovalList(lines, allowingPersonalData: true)?.personalData.isEmpty == true)
+    }
+
+    @Test func personalDataMenuRequiresExactVisiblePathsAndSelection() {
+        let paths: Set<String> = ["~/Library/Application Support/App", "~/Library/Preferences/app.plist"]
+        let lines = ["Personal data to remove  0/2 selected", "➤ ○ ~/Library/Application Support/App",
+                     "  ○ ~/Library/Preferences/app.plist",
+                     "↑↓ | Space Select | A All | Enter Save | Q Cancel", "/ Search | h/l Page"]
+        #expect(UninstallDriver.personalDataMenu(lines, paths: paths, selected: false))
+        #expect(!UninstallDriver.personalDataMenu(lines, paths: paths, selected: true))
+        let selected = lines.map { $0.replacingOccurrences(of: "0/2", with: "2/2").replacingOccurrences(of: "○", with: "●") }
+        #expect(UninstallDriver.personalDataMenu(selected, paths: paths, selected: true))
+        #expect(!UninstallDriver.personalDataMenu(selected, paths: ["~/Library/Preferences/other.plist"], selected: true))
+        #expect(!UninstallDriver.personalDataMenu(selected + ["Page 1/2"], paths: paths, selected: true))
+        #expect(!UninstallDriver.personalDataMenu(selected.filter { !$0.contains("Support/App") }, paths: paths, selected: true))
+        #expect(!UninstallDriver.personalDataMenu(selected + ["wrapped path"], paths: paths, selected: true))
+    }
+
+    @Test func refusesRunningAppBeforeFinalRemovalConfirmation() throws {
+        let script = """
+        printf '◎ Matched 1 app(s):\\n1. Fixture  1MB  |  Last: Today\\nProceed with uninstallation? [y/N] '
+        read -r answer
+        printf '\\nFiles to be removed:\\n◎ Fixture , 1MB\\n  ✓ /synthetic/Fixture.app , 1MB\\n➤ Remove 1 app, 1MB [Running]  Enter confirm, ESC cancel: '
+        IFS= read -r -s -n1 key
+        [[ "$key" == $'\\e' ]] || exit 9
+        """
+        let session = try PTYSession(executable: "/bin/bash", arguments: ["-c", script],
+                                     environment: ["PATH": "/usr/bin:/bin", "TERM": "xterm-256color", "LANG": "en_US.UTF-8"])
+        defer { session.close() }
+        #expect(throws: UninstallDriverError.appIsRunning) {
+            try UninstallDriver().uninstall(app: "Fixture", expectedEntries: ["/synthetic/Fixture.app"], in: session)
+        }
+        #expect(try session.waitForExit(timeout: 5) == .exited(0))
+    }
 }
 
 @Suite(.enabled(if: MoleE2E.enabled), .serialized)
@@ -122,6 +175,20 @@ struct UninstallE2ETests {
         let mo = try #require(MoleE2E.executable)
         let version = try MoleInstallation(executable: mo).version(environment: MoleE2E.environment(home: home))
         try MoleE2E.recordFixture(session.transcriptBytes, name: "uninstall-fixture-app.transcript", version: version, home: home)
+    }
+
+    @Test func previewsAllDataWithoutRemovingAnything() throws {
+        let home = try makeHome()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let mo = try #require(MoleE2E.executable)
+        let session = try PTYSession(executable: mo.path, arguments: ["uninstall", "--dry-run", Self.name],
+                                     environment: MoleE2E.environment(home: home, noAuth: true), currentDirectory: home.path)
+        defer { session.close() }
+        let entries = try UninstallDriver().preview(app: Self.name, in: session)
+        #expect(Set(entries) == Self.entries)
+        #expect(try session.waitForExit(timeout: 60) == .exited(0))
+        #expect(present(in: home) == Self.entries)
+        #expect(session.unknownSequences.isEmpty)
     }
 
     @Test func cancelsWhenThePlanHasAnUnexpectedPath() throws {

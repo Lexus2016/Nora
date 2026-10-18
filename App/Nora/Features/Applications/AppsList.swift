@@ -15,9 +15,9 @@ struct AppsList: View {
             HStack(spacing: 16) {
                 GlassImage(name: module.glass, size: 72, glow: module.palette.glow)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(model.listFilter == .unused ? "Unused apps" : module.title)
+                    Text(model.listFilter == .unused ? "Unused apps" : "All apps")
                         .font(.system(size: 32, weight: .light)).shadow(color: module.palette.glow.opacity(0.5), radius: 12)
-                    Text("Removes an app together with its helpers, caches and settings. Personal data stays.")
+                    Text("Review the app, its settings and personal data before removal.")
                         .font(.system(size: 13)).foregroundStyle(Palette.fg2)
                 }
                 Spacer()
@@ -90,10 +90,11 @@ struct AppsReview: View {
     var body: some View {
         ModuleScene(module: module, leading: .back { model.back() },
                     orb: OrbAction(title: model.permanent ? "Delete" : "Remove", destructive: true, action: {
-                        if model.permanent { confirmPermanent = true } else { model.uninstall(app) }
+                        if model.permanent { confirmPermanent = true } else { model.requestUninstall(app) }
                     })) {
         VStack(alignment: .leading, spacing: 14) {
             StepHeader(module: module, title: "Review removal", subtitle: String(localized: "\(model.plans.count) apps"))
+            if let error = model.error { Notice(text: error, color: Palette.warn) }
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(model.plans) { plan in
@@ -121,15 +122,57 @@ struct AppsReview: View {
                 CommandPreview(command: model.uninstallCommand(for: model.plans.filter { $0.error == nil && !$0.entries.isEmpty }.map(\.app))).frame(maxWidth: 620)
                 Toggle("Delete permanently instead of moving to the Trash", isOn: $model.permanent).toggleStyle(.switch).controlSize(.small)
                 Text("Nora answers Mole only if its list matches this preview.").font(.system(size: 11)).foregroundStyle(Palette.muted)
+                Text("App settings and personal data listed above will also be removed.")
+                    .font(.system(size: 11)).foregroundStyle(Palette.fg2)
             }
         }
         .padding(.horizontal, 34).padding(.top, 8)
         }
         .confirmationDialog("Delete these apps permanently?", isPresented: $confirmPermanent) {
-            Button("Delete permanently", role: .destructive) { model.uninstall(app) }
+            Button("Delete permanently", role: .destructive) { model.requestUninstall(app) }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("They skip the Trash and cannot be restored.")
         }
+        .sheet(isPresented: $model.askingToQuitForRemoval, onDismiss: model.cancelRemovalQuit) {
+            AppsQuitRemovalPrompt(apps: model.removalOpenApps, cancel: model.cancelRemovalQuit,
+                                  confirm: { model.quitAndUninstall(app) })
+        }
+    }
+}
+
+struct AppsQuitRemovalPrompt: View {
+    let apps: [InstalledApp]
+    let cancel: () -> Void
+    let confirm: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Quit apps before removing them?").font(.system(size: 21, weight: .semibold))
+            Text("These apps are open. Nora will ask them to quit so you can save your work. An app that stays open will not be removed.")
+                .font(.system(size: 13)).foregroundStyle(Palette.fg2).fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(apps) { item in
+                        HStack(spacing: 12) {
+                            Image(nsImage: NSWorkspace.shared.icon(forFile: item.path)).resizable().frame(width: 32, height: 32)
+                            Text(item.name).font(.system(size: 15, weight: .medium))
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .frame(height: min(220, CGFloat(apps.count) * 52))
+            Divider()
+            HStack {
+                Button("Cancel", action: cancel).buttonStyle(GlassButtonStyle()).keyboardShortcut(.cancelAction)
+                Spacer()
+                Button("Quit and remove", action: confirm).buttonStyle(PrimaryButtonStyle())
+            }
+        }
+        .padding(24).frame(width: 480)
+        .foregroundStyle(.white)
+        .background(Palette.window)
     }
 }

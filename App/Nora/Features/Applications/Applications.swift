@@ -51,6 +51,9 @@ final class AppsModel {
     /// The question is on screen. Kept apart from `openToQuit`, so dismissing the alert never
     /// empties the list before "Quit and update" has read it.
     var askingToQuit = false
+    var removalOpenApps: [InstalledApp] = []
+    var askingToQuitForRemoval = false
+    var quittingForRemoval = false
     /// Stop was pressed during removal or updates: the app in progress finishes, the rest wait.
     /// Cutting `mo uninstall` or `brew upgrade` short could leave an app half removed.
     var stopRequested = false
@@ -107,7 +110,7 @@ final class AppsModel {
 
     // MARK: - Scan
 
-    func scan(_ app: AppModel) {
+    func scan(_ app: AppModel, destination: Screen = .results) {
         error = nil
         scanTitle = "Looking at your apps…"
         scanStep = String(localized: "Listing apps")
@@ -132,7 +135,7 @@ final class AppsModel {
                 let now = Date()
                 unusedPaths = Set(apps.filter { AppUsage.isUnused(lastUsed: lastUsed[$0.path], now: now) }.map(\.path))
                 selected = selected.intersection(apps.map(\.path))
-                screen = .results
+                screen = destination
                 stage = .review
             } catch is CancellationError {
                 stage = .start
@@ -451,8 +454,11 @@ final class AppsModel {
                 guard !Task.isCancelled else { break }
                 let target = plans[index].app
                 do {
-                    let (entries, _) = try await app.drive(["uninstall", "--dry-run", target.uninstallName]) { session in
+                    let (entries, _) = try await app.drive(["uninstall", "--dry-run", target.name]) { session in
                         try UninstallDriver().preview(app: target.name, in: session)
+                    }
+                    guard Self.removalPlanIncludesApp(entries, path: target.path) else {
+                        throw UninstallDriverError.planMismatch(unexpected: entries, missing: [target.path])
                     }
                     plans[index].entries = entries
                 } catch is CancellationError {
@@ -475,8 +481,8 @@ final class AppsModel {
     /// What the removal runs, one command per app, as the review footers show it.
     func uninstallCommand(for apps: [InstalledApp]) -> String {
         apps.map { item in
-            let admin = !FileManager.default.isDeletableFile(atPath: item.path)
-            let args = ["uninstall", item.uninstallName] + (permanent ? ["--permanent"] : [])
+            let admin = Self.uninstallNeedsAdmin(item)
+            let args = ["uninstall", item.name] + (permanent ? ["--permanent"] : [])
             return (admin ? "sudo -A -v && " : "") + ShellCommand("mo", args).description
         }
         .joined(separator: "; ")
@@ -506,8 +512,42 @@ final class AppsModel {
         return paths.filter { !isAbsent($0) }.sorted()
     }
 
-    func uninstall(_ app: AppModel) {
+    nonisolated static func removalPlanIncludesApp(_ entries: [String], path: String) -> Bool {
+        entries.contains { ($0 as NSString).expandingTildeInPath == path }
+    }
+
+    nonisolated static func uninstallNeedsAdmin(_ app: InstalledApp) -> Bool {
+        app.source == "Homebrew" || !FileManager.default.isDeletableFile(atPath: app.path)
+    }
+
+    func requestUninstall(_ app: AppModel, isOpen: (String) -> Bool = { OpenApps.running(at: $0) != nil }) {
+        guard stage == .review, screen == .plans else { return }
+        guard !app.trash.blocksOtherMutations else {
+            error = AppModel.trashBusyMessage
+            cancelRemovalQuit()
+            return
+        }
+        error = nil
+        removalOpenApps = plans.filter { $0.error == nil && !$0.entries.isEmpty }.map(\.app).filter { isOpen($0.path) }
+        if removalOpenApps.isEmpty { uninstall(app, approvedToQuit: []) }
+        else { askingToQuitForRemoval = true }
+    }
+
+    func cancelRemovalQuit() {
+        askingToQuitForRemoval = false
+        removalOpenApps = []
+    }
+
+    func quitAndUninstall(_ app: AppModel) {
+        guard askingToQuitForRemoval else { return }
+        let approved = Set(removalOpenApps.map(\.path))
+        cancelRemovalQuit()
+        uninstall(app, approvedToQuit: approved)
+    }
+
+    private func uninstall(_ app: AppModel, approvedToQuit: Set<String>) {
         guard stage == .review, screen == .plans, !plans.isEmpty else { return }
+        guard !app.trash.blocksOtherMutations else { error = AppModel.trashBusyMessage; return }
         let ready = plans.filter { $0.error == nil && !$0.entries.isEmpty }
         runningUpdates = false
         stopRequested = false
@@ -516,8 +556,20 @@ final class AppsModel {
             var removed: [String] = [], removedPaths: Set<String> = [], problems: [String] = [], skipped: [String] = []
             for plan in ready {
                 if stopRequested { skipped.append(plan.app.name); continue }
-                let args = ["uninstall", plan.app.uninstallName] + (permanent ? ["--permanent"] : [])
-                let needsAdmin = !FileManager.default.isDeletableFile(atPath: plan.app.path)
+                quittingForRemoval = OpenApps.running(at: plan.app.path) != nil
+                let (_, block) = await Self.quit([plan.app.path], approved: approvedToQuit,
+                    isOpen: { OpenApps.running(at: $0) != nil }, quit: { path in
+                        guard let running = OpenApps.running(at: path) else { return true }
+                        return await OpenApps.quit(running)
+                    })
+                quittingForRemoval = false
+                if stopRequested { skipped.append(plan.app.name); continue }
+                if block != nil || OpenApps.running(at: plan.app.path) != nil {
+                    problems.append(String(localized: "\(plan.app.name): it is still open or was opened after confirmation, so it was not removed."))
+                    continue
+                }
+                let args = ["uninstall", plan.app.name] + (permanent ? ["--permanent"] : [])
+                let needsAdmin = Self.uninstallNeedsAdmin(plan.app)
                 do {
                     let expected = Set(plan.entries)
                     let (_, result) = try await app.drive(args, sudo: needsAdmin) { session in
@@ -564,6 +616,8 @@ final class AppsModel {
             String(localized: "Mole's removal plan changed since the preview. Nothing was removed.")
         case UninstallDriverError.unreadablePlan:
             String(localized: "Nora could not read Mole's full removal plan. Nothing was removed.")
+        case UninstallDriverError.appIsRunning:
+            String(localized: "The app opened during the removal check. Quit it and review removal again.")
         default:
             error.localizedDescription
         }
@@ -572,6 +626,7 @@ final class AppsModel {
     // MARK: - Navigation
 
     func openList(_ filter: ListFilter) {
+        search = ""
         listFilter = filter
         screen = .list
     }
@@ -590,6 +645,7 @@ final class AppsModel {
 
     /// One step back inside the review stage; from the results it returns to the start screen.
     func back() {
+        cancelRemovalQuit()
         switch screen {
         case .plans:
             plans = []
@@ -602,6 +658,7 @@ final class AppsModel {
     }
 
     func reset() {
+        cancelRemovalQuit()
         plans = []
         selected = []
         selectedUpdates = []
@@ -631,7 +688,7 @@ struct ApplicationsView: View {
             }
         case .running:
             WorkingView(module: module,
-                        title: model.reopening ? "Opening the apps again…" : model.stopRequested ? "Finishing the current app…"
+                        title: model.quittingForRemoval ? "Quitting apps…" : model.reopening ? "Opening the apps again…" : model.stopRequested ? "Finishing the current app…"
                             : model.runningUpdates ? "Updating apps…" : "Removing apps…",
                         detail: model.reopening ? nil : WorkingView.currentItem(app.console.output(of: module)),
                         onStop: model.stopRequested || model.reopening ? nil : { model.stopAfterCurrent() })
@@ -645,12 +702,13 @@ struct ApplicationsView: View {
     private var start: some View {
         ModuleStart(module: module,
                     subtitle: "Remove an app with its helpers, caches and settings, update your apps, and find the ones you no longer open.",
-                    features: [Feature(symbol: "xmark.app", text: "Uninstaller"),
+                    features: [Feature(symbol: "square.grid.2x2", text: "All apps"),
                                Feature(symbol: "arrow.triangle.2.circlepath", text: "Updates"),
                                Feature(symbol: "moon.zzz", text: "Unused apps"),
                                Feature(symbol: "chart.bar", text: "Largest apps")],
                     command: model.scanCommand,
-                    action: { model.scan(app) }) {
+                    scanTitle: "All apps",
+                    action: { model.listFilter = .all; model.search = ""; model.scan(app, destination: .list) }) {
             if let error = model.error { Notice(text: error, color: Palette.crit) }
         }
     }

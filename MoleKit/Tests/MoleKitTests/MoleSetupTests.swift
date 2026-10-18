@@ -30,8 +30,8 @@ struct MoleSetupTests {
         #expect(commands.map(\.executable) == ["/bin/mkdir", "/usr/bin/curl", "/bin/sh", "/bin/bash"])
         #expect(commands[1].arguments.contains("--max-time") && commands[1].arguments.contains("--connect-timeout"), "a stalled download ends")
         #expect(commands[0].arguments == ["-p", "/Users/someone/.local/bin"])
-        #expect(commands[1].arguments.last == "https://raw.githubusercontent.com/tw93/Mole/V1.59.1/install.sh")
+        #expect(commands[1].arguments.last == "https://raw.githubusercontent.com/tw93/Mole/V1.61.0/install.sh")
         #expect(commands[2].arguments[1].contains(MoleSetup.installScriptSHA256))
-        #expect(commands[3].arguments.suffix(3) == ["--prefix", "/Users/someone/.local/bin", "1.59.1"])
+        #expect(commands[3].arguments.suffix(3) == ["--prefix", "/Users/someone/.local/bin", "1.61.0"])
     }
 }

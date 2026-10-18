@@ -467,7 +467,7 @@
   "Settings": "Налаштування",
   "Settings…": "Налаштування…",
   "Shader, GPU and update caches of your browsers. History and passwords stay.": "Кеші шейдерів, GPU і оновлень ваших браузерів. Історія та паролі залишаються.",
-  "Shell completion": "Автодоповнення оболонки",
+  "Shell completion": "Доповнення команд",
   "Shortcut: ⌥⌘N opens the quick menu.": "Комбінація: ⌥⌘N відкриває швидке меню.",
   "Show Nora in the menu bar": "Показувати Nora в рядку меню",
   "Show all apps": "Показати всі програми",
@@ -1035,5 +1035,15 @@
     "few": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати.",
     "many": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати.",
     "other": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
-  }
+  },
+  "All apps": "Всі програми",
+  "%@: it is still open or was opened after confirmation, so it was not removed.": "%@: програма залишилася відкритою або її відкрили після підтвердження, тому її не видалено.",
+  "The app opened during the removal check. Quit it and review removal again.": "Програма відкрилася під час перевірки видалення. Завершіть її та знову перегляньте список видалення.",
+  "Review the app, its settings and personal data before removal.": "Перед видаленням перегляньте програму, її налаштування та особисті дані.",
+  "App settings and personal data listed above will also be removed.": "Налаштування програми та особисті дані з наведеного списку також буде видалено.",
+  "Quit apps before removing them?": "Завершити програми перед видаленням?",
+  "These apps are open. Nora will ask them to quit so you can save your work. An app that stays open will not be removed.": "Ці програми зараз відкриті. Nora попросить їх завершитися, щоб ви могли зберегти роботу. Програму, яка залишиться відкритою, не буде видалено.",
+  "Quit and remove": "Завершити й видалити",
+  "Preview: %@": "Попередній перегляд: %@",
+  "Quitting apps…": "Завершення програм…"
 }

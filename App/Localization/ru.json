@@ -467,7 +467,7 @@
   "Settings": "Настройки",
   "Settings…": "Настройки…",
   "Shader, GPU and update caches of your browsers. History and passwords stay.": "Кэши шейдеров, GPU и обновлений ваших браузеров. История и пароли сохраняются.",
-  "Shell completion": "Автодополнение оболочки",
+  "Shell completion": "Дополнение команд",
   "Shortcut: ⌥⌘N opens the quick menu.": "Комбинация: ⌥⌘N открывает быстрое меню.",
   "Show Nora in the menu bar": "Показывать Nora в строке меню",
   "Show all apps": "Показать все программы",
@@ -1035,5 +1035,15 @@
     "few": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить.",
     "many": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить.",
     "other": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
-  }
+  },
+  "All apps": "Все программы",
+  "%@: it is still open or was opened after confirmation, so it was not removed.": "%@: программа осталась открытой или её открыли после подтверждения, поэтому она не удалена.",
+  "The app opened during the removal check. Quit it and review removal again.": "Программа открылась во время проверки удаления. Завершите её и снова просмотрите список удаления.",
+  "Review the app, its settings and personal data before removal.": "Перед удалением просмотрите программу, её настройки и личные данные.",
+  "App settings and personal data listed above will also be removed.": "Настройки программы и личные данные из списка выше также будут удалены.",
+  "Quit apps before removing them?": "Завершить программы перед удалением?",
+  "These apps are open. Nora will ask them to quit so you can save your work. An app that stays open will not be removed.": "Эти программы сейчас открыты. Nora попросит их завершиться, чтобы вы могли сохранить работу. Программа, которая останется открытой, не будет удалена.",
+  "Quit and remove": "Завершить и удалить",
+  "Preview: %@": "Предварительный просмотр: %@",
+  "Quitting apps…": "Завершение программ…"
 }

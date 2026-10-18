@@ -1,10 +1,34 @@
 import Darwin
 import Foundation
+import MoleKit
 import XCTest
 @testable import Nora
 
 @MainActor
 final class TrashIntegrationTests: XCTestCase {
+    func testBlockedTrashPreventsRemovalPromptAndQuittingBeforeConfirmation() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let trash = TrashReminderModel(services: .disabled, monitor: InertTrashDirectoryMonitor(), permitsMonitoring: false)
+        let app = AppModel(visualSnapshot: true, home: root, trash: trash)
+        let item = try XCTUnwrap(InstalledApp.decodeList(Data("""
+            [{"name":"Fixture","path":"/synthetic/Fixture.app"}]
+            """.utf8)).first)
+        app.apps.stage = .review
+        app.apps.screen = .plans
+        app.apps.plans = [.init(app: item, entries: [item.path])]
+        app.apps.requestUninstall(app, isOpen: { _ in XCTFail("Blocked removal must stop before checking apps"); return true })
+        XCTAssertFalse(app.apps.askingToQuitForRemoval)
+        XCTAssertEqual(app.apps.error, AppModel.trashBusyMessage)
+        app.apps.removalOpenApps = [item]
+        app.apps.askingToQuitForRemoval = true
+        app.apps.quitAndUninstall(app)
+        XCTAssertEqual(app.apps.stage, .review)
+        XCTAssertFalse(app.apps.quittingForRemoval)
+        XCTAssertFalse(app.apps.askingToQuitForRemoval)
+        XCTAssertTrue(app.console.entries.isEmpty)
+    }
+
     func testUnknownTrashRecoveryBlocksCleanupAndAppUpgrade() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

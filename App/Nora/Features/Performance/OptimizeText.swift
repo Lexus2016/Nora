@@ -1,7 +1,8 @@
 import Foundation
 
-/// Mole's optimize tasks in Nora's language. The 20 tasks are a fixed catalog
-/// (lib/optimize/catalog.sh in 1.59), so names and descriptions are translated here. Status lines
+/// Known Mole 1.59–1.61 task names in Nora's language; the installed backend supplies the task list.
+/// Відомі назви завдань Mole 1.59–1.61 мовою Nora; список завдань надає встановлена версія.
+/// Status lines
 /// are free text with many variants; Nora shows its own words for the usual reasons a task needs
 /// attention or was skipped, and any other line as Mole wrote it.
 enum OptimizeText {
@@ -49,6 +50,8 @@ enum OptimizeText {
         "Shared file lists not readable (check directory permissions and Full Disk Access)":
             String(localized: "Finder lists could not be read. Give Nora Full Disk Access."),
         "Disk verify skipped (set MOLE_ENABLE_DISK_VERIFY=1 to enable)":
+            String(localized: "Disk check is off by default in Mole."),
+        "Disk verify skipped":
             String(localized: "Disk check is off by default in Mole."),
         "sqlite3 not available": String(localized: "sqlite3 is not available on this Mac."),
         "Database optimization incomplete": String(localized: "Database optimization did not finish."),

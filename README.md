@@ -154,4 +154,4 @@ You may use, copy, modify and share Nora's code for any noncommercial purpose: p
 
 Mole is a separate GPL-3.0 project. Nora runs it as an external program and does not include its code, so Mole's license is unaffected.
 
-Compatibility: the minimum accepted Mole version is 1.55.0, while the installer/reference parser fixtures target 1.59.1 / 1.59.x. Accepting a version is not proof that every newer backend is compatible. Unknown or incomplete output is rejected by the guarded previews; a complete mutation-capability/version gate remains a release requirement.
+Compatibility: the minimum accepted Mole version remains 1.55.0. The official installer is pinned to 1.61.0 with a verified checksum; parser fixtures cover 1.59.x and the 1.61.0 uninstall format. Mole 1.61.0 was checked with isolated-home end-to-end tests and read-only live probes. See [the compatibility audit](docs/audits/2026-10-18-mole-1.61-compat.md) for evidence and untested cases. Accepting a version does not prove compatibility with every future release; guarded previews reject unknown or incomplete output.

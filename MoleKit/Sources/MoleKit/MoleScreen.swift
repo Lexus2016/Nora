@@ -39,21 +39,35 @@ extension PTYSession {
 struct RemovalList: Equatable {
     var groups: [String] = []
     var entries: [String] = []
+    var personalData: [String] = []
 
     init(groups: [String] = [], entries: [String] = []) {
         self.groups = groups
         self.entries = entries
     }
 
-    init?(_ lines: [String]) {
+    init?(_ lines: [String], allowingPersonalData: Bool = false) {
         guard let start = lines.firstIndex(of: "Files to be removed:"),
               lines.lastIndex(of: "Files to be removed:") == start else { return nil }
         let rest = lines[(start + 1)...].map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         // The prompt is the one "➤" line and the last thing on screen. A file name that draws its
         // own "➤" (a carriage return inside it) cannot end the list early and hide what follows.
         guard let prompt = rest.last, prompt.hasPrefix("➤"), rest.filter({ $0.hasPrefix("➤") }).count == 1 else { return nil }
+        var inPersonalData = false
+        var sawDataControl = false
         for line in rest.dropLast() {
-            if line.hasPrefix("◎ ") {
+            if allowingPersonalData && line == "Personal data kept:" && !inPersonalData && !sawDataControl {
+                inPersonalData = true
+            } else if allowingPersonalData && line == "D choose personal data" && !sawDataControl {
+                sawDataControl = true
+            } else if sawDataControl {
+                return nil
+            } else if inPersonalData {
+                guard line.hasPrefix("⊙ ") else { return nil }
+                let path = String(line.dropFirst(2))
+                guard path.hasPrefix("/") || path.hasPrefix("~/") else { return nil }
+                personalData.append(path)
+            } else if line.hasPrefix("◎ ") {
                 groups.append(Self.stripSize(line.dropFirst(2)))
             } else if line.hasPrefix("✓ ") {
                 entries.append(Self.stripSize(line.dropFirst(2)))
@@ -61,6 +75,9 @@ struct RemovalList: Equatable {
                 return nil
             }
         }
+        guard !inPersonalData || (!personalData.isEmpty && sawDataControl),
+              Set(personalData).count == personalData.count,
+              Set(entries).isDisjoint(with: personalData) else { return nil }
     }
 
     private static func stripSize(_ text: Substring) -> String {

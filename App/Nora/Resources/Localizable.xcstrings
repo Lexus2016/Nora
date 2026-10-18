@@ -353,6 +353,28 @@
         }
       }
     },
+    "%@: it is still open or was opened after confirmation, so it was not removed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: it is still open or was opened after confirmation, so it was not removed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: программа осталась открытой или её открыли после подтверждения, поэтому она не удалена."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: програма залишилася відкритою або її відкрили після підтвердження, тому її не видалено."
+          }
+        }
+      }
+    },
     "%@: it stayed open, so it was not updated.": {
       "localizations": {
         "ru": {
@@ -2135,6 +2157,28 @@
         }
       }
     },
+    "All apps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All apps"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все программы"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Всі програми"
+          }
+        }
+      }
+    },
     "All commands": {
       "localizations": {
         "ru": {
@@ -2357,6 +2401,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Кеші програм і системні кеші"
+          }
+        }
+      }
+    },
+    "App settings and personal data listed above will also be removed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App settings and personal data listed above will also be removed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Настройки программы и личные данные из списка выше также будут удалены."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Налаштування програми та особисті дані з наведеного списку також буде видалено."
           }
         }
       }
@@ -9871,6 +9937,28 @@
         }
       }
     },
+    "Preview: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview: %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предварительный просмотр: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попередній перегляд: %@"
+          }
+        }
+      }
+    },
     "Processor": {
       "localizations": {
         "ru": {
@@ -10111,6 +10199,28 @@
         }
       }
     },
+    "Quit and remove": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit and remove"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершить и удалить"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершити й видалити"
+          }
+        }
+      }
+    },
     "Quit and update": {
       "localizations": {
         "ru": {
@@ -10123,6 +10233,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Закрити й оновити"
+          }
+        }
+      }
+    },
+    "Quit apps before removing them?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit apps before removing them?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершить программы перед удалением?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершити програми перед видаленням?"
           }
         }
       }
@@ -10155,6 +10287,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Спершу закрийте ці програми: %@"
+          }
+        }
+      }
+    },
+    "Quitting apps…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitting apps…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершение программ…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершення програм…"
           }
         }
       }
@@ -10599,6 +10753,22 @@
         }
       }
     },
+    "Remove Mole": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить Mole"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалити Mole"
+          }
+        }
+      }
+    },
     "Remove an app with its helpers, caches and settings, update your apps, and find the ones you no longer open.": {
       "localizations": {
         "ru": {
@@ -10643,22 +10813,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видаліть кеші, журнали та залишки, щоб звільнити місце. Кожну позицію видно до того, як щось буде видалено."
-          }
-        }
-      }
-    },
-    "Removes an app together with its helpers, caches and settings. Personal data stays.": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удаляет программу вместе со вспомогательными файлами, кэшами и настройками. Личные данные сохраняются."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видаляє програму разом із допоміжними файлами, кешами та налаштуваннями. Особисті дані залишаються."
           }
         }
       }
@@ -11147,6 +11301,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Переглянути результат"
+          }
+        }
+      }
+    },
+    "Review the app, its settings and personal data before removal.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review the app, its settings and personal data before removal."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед удалением просмотрите программу, её настройки и личные данные."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перед видаленням перегляньте програму, її налаштування та особисті дані."
           }
         }
       }
@@ -11687,16 +11863,22 @@
     },
     "Shell completion": {
       "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shell completion"
+          }
+        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Автодополнение оболочки"
+            "value": "Дополнение команд"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Автодоповнення оболонки"
+            "value": "Доповнення команд"
           }
         }
       }
@@ -12975,6 +13157,28 @@
         }
       }
     },
+    "The app opened during the removal check. Quit it and review removal again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app opened during the removal check. Quit it and review removal again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Программа открылась во время проверки удаления. Завершите её и снова просмотрите список удаления."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Програма відкрилася під час перевірки видалення. Завершіть її та знову перегляньте список видалення."
+          }
+        }
+      }
+    },
     "The arguments decode base64.": {
       "localizations": {
         "ru": {
@@ -13451,6 +13655,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не вдалося оновити вірусну базу. Для сканування використано локальну копію, яку востаннє успішно перевірено %@."
+          }
+        }
+      }
+    },
+    "These apps are open. Nora will ask them to quit so you can save your work. An app that stays open will not be removed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These apps are open. Nora will ask them to quit so you can save your work. An app that stays open will not be removed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эти программы сейчас открыты. Nora попросит их завершиться, чтобы вы могли сохранить работу. Программа, которая останется открытой, не будет удалена."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ці програми зараз відкриті. Nora попросить їх завершитися, щоб ви могли зберегти роботу. Програму, яка залишиться відкритою, не буде видалено."
           }
         }
       }
@@ -14007,22 +14233,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видалити"
-          }
-        }
-      }
-    },
-    "Uninstaller": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удаление программ"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видалення програм"
           }
         }
       }

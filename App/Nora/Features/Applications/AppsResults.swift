@@ -20,6 +20,7 @@ struct AppsResults: View {
                             // Reflow at the minimum window width instead of squeezing
                             // localized category captions beside their icons.
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 340), spacing: 18)], spacing: 18) {
+                                allAppsCard.frame(height: max(220, (geo.size.height - 18) / 2))
                                 unusedCard.frame(height: max(220, (geo.size.height - 18) / 2))
                                 largestCard.frame(height: max(220, (geo.size.height - 18) / 2))
                                 installersCard.frame(height: max(220, (geo.size.height - 18) / 2))
@@ -31,6 +32,15 @@ struct AppsResults: View {
             }
             .padding(.horizontal, 34).padding(.top, 16).padding(.bottom, 6)
         }
+    }
+
+    private var allAppsCard: some View {
+        CategoryCard(value: "\(model.apps.count)",
+                     caption: String(localized: "All apps"),
+                     detail: String(localized: "Manage my apps"),
+                     symbol: "square.grid.2x2", tint: module.palette.glow,
+                     reviewTitle: "Show all apps",
+                     review: { model.openList(.all) })
     }
 
     private var updatesCard: some View {

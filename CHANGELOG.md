@@ -6,9 +6,23 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 
 ### Changed
 - Clicking "Empty Trash" now starts cleanup and closes the reminder immediately. The extra scan, separate confirmation, button delay and wait for a result are removed. Cleanup continues in the background using the reviewed items, with the existing filesystem checks and protection against duplicate runs.
+- Applications now has a prominent "All apps" entry on its start screen and results, with the total app count. Opening it clears an old search and the unused-app filter without losing your selection.
+- Before removing selected apps that are open, Nora lists them and asks permission to quit. Apps can ask you to save your work; an app that stays open or opens after confirmation is skipped.
+- The verified official Mole installer is pinned to 1.61.0. The compatibility audit and its limits are recorded in `docs/audits/2026-10-18-mole-1.61-compat.md`.
+
+### Fixed
+- Uninstall uses the application's name rather than its Homebrew package token, reads Mole 1.61's personal-data selection and `[Brew]` groups, and authenticates Homebrew removals when required. Settings and personal data are included in the visible review; execution still requires the exact reviewed app and file list. Unknown, truncated or changed output is rejected before removal.
+- History no longer counts dry-run estimates as space freed or completed actions. Performance recognizes Mole 1.61's disk-verification skip message.
 
 ### Змінено
 - Натискання «Очистити кошик» одразу запускає очищення й закриває нагадування. Прибрано повторне сканування, окреме підтвердження, затримку кнопки та очікування результату. Очищення триває у фоні за вже показаним списком, зі збереженням перевірок файлової системи й захисту від повторного запуску.
+- На початковому екрані «Програми» та в результатах з'явився помітний перехід «Всі програми» із загальною кількістю. Перехід очищає попередній пошук і фільтр невикористовуваних програм, зберігаючи ваш вибір.
+- Перед видаленням відкритих програм Nora показує їхній список і просить дозволити завершення. Програми можуть запропонувати зберегти роботу; програма, яка залишилася відкритою або відкрилася після підтвердження, пропускається.
+- Перевірений офіційний інсталятор Mole оновлено до 1.61.0. Результати та межі перевірки сумісності описано в `docs/audits/2026-10-18-mole-1.61-compat.md`.
+
+### Виправлено
+- Видалення використовує назву програми замість назви пакета Homebrew, розуміє новий вибір особистих даних і групи `[Brew]` у Mole 1.61, а за потреби отримує права адміністратора для видалення через Homebrew. Налаштування й особисті дані включені до видимого перегляду; виконання потребує точного збігу програми та списку файлів. Невідомий, обрізаний або змінений вивід зупиняє видалення.
+- Історія більше не зараховує оцінки попереднього перегляду до звільненого місця й виконаних дій. Обслуговування розпізнає нове повідомлення Mole 1.61 про пропущену перевірку диска.
 
 ## 1.3.0 (2026-10-17)
 

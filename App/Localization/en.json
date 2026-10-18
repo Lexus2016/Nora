@@ -150,5 +150,16 @@
   "%lld reviewed items will be permanently deleted. This cannot be undone.": {
     "one": "%lld reviewed item will be permanently deleted. This cannot be undone.",
     "other": "%lld reviewed items will be permanently deleted. This cannot be undone."
-  }
+  },
+  "All apps": "All apps",
+  "%@: it is still open or was opened after confirmation, so it was not removed.": "%@: it is still open or was opened after confirmation, so it was not removed.",
+  "The app opened during the removal check. Quit it and review removal again.": "The app opened during the removal check. Quit it and review removal again.",
+  "Review the app, its settings and personal data before removal.": "Review the app, its settings and personal data before removal.",
+  "App settings and personal data listed above will also be removed.": "App settings and personal data listed above will also be removed.",
+  "Quit apps before removing them?": "Quit apps before removing them?",
+  "These apps are open. Nora will ask them to quit so you can save your work. An app that stays open will not be removed.": "These apps are open. Nora will ask them to quit so you can save your work. An app that stays open will not be removed.",
+  "Quit and remove": "Quit and remove",
+  "Preview: %@": "Preview: %@",
+  "Shell completion": "Shell completion",
+  "Quitting apps…": "Quitting apps…"
 }
