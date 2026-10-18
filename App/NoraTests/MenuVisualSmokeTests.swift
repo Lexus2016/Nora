@@ -30,6 +30,9 @@ final class MenuVisualSmokeTests: XCTestCase {
         let app = fixture(.applications)
         try configure(app, module: .applications, state: "review")
         for locale in ["en", "uk", "ru"] {
+            let start = fixture(.applications)
+            try snapshot(start, name: "applications-all-apps-start-\(locale)", locale: locale,
+                         size: CGSize(width: 1040, height: 620))
             try snapshot(app, name: "applications-all-apps-entry-\(locale)", locale: locale,
                          size: CGSize(width: 1040, height: 620))
             try capture(AppsQuitRemovalPrompt(apps: app.apps.apps, cancel: {}, confirm: {})

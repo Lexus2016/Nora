@@ -708,8 +708,13 @@ struct ApplicationsView: View {
                                Feature(symbol: "moon.zzz", text: "Unused apps"),
                                Feature(symbol: "chart.bar", text: "Largest apps")],
                     command: model.scanCommand,
-                    scanTitle: "All apps",
-                    action: { model.listFilter = .all; model.search = ""; model.scan(app, destination: .list) }) {
+                    action: { model.scan(app) }) {
+            Button("Show all apps") {
+                model.listFilter = .all
+                model.search = ""
+                model.scan(app, destination: .list)
+            }
+            .buttonStyle(PrimaryButtonStyle(glow: module.palette.glow))
             if let error = model.error { Notice(text: error, color: Palette.crit) }
         }
     }
