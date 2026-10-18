@@ -5,7 +5,7 @@ import AppKit
 @MainActor
 enum OpenApps {
     /// The running app whose bundle is at this path.
-    static func running(at path: String) -> NSRunningApplication? {
+    nonisolated static func running(at path: String) -> NSRunningApplication? {
         let target = URL(fileURLWithPath: path).standardizedFileURL.path
         return NSWorkspace.shared.runningApplications.first { $0.bundleURL?.standardizedFileURL.path == target }
     }

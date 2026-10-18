@@ -573,7 +573,8 @@ final class AppsModel {
                 do {
                     let expected = Set(plan.entries)
                     let (_, result) = try await app.drive(args, sudo: needsAdmin) { session in
-                        try UninstallDriver().uninstall(app: plan.app.name, expectedEntries: expected, in: session)
+                        try UninstallDriver().uninstall(app: plan.app.name, expectedEntries: expected, in: session,
+                            isAppRunning: { OpenApps.running(at: plan.app.path) != nil })
                     }
                     let remaining = Self.remainingRemovalPaths(appPath: plan.app.path, entries: plan.entries)
                     // Keep the app list truthful even if the bundle went but some helpers remain.

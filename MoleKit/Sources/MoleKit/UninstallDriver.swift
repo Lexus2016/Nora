@@ -26,12 +26,9 @@ public struct UninstallDriver {
 
     public init() {}
 
-    public func uninstall(app name: String, expectedEntries: Set<String>, in session: PTYSession) throws {
+    public func uninstall(app name: String, expectedEntries: Set<String>, in session: PTYSession,
+                          isAppRunning: () -> Bool = { false }) throws {
         let plan = try review(app: name, in: session)
-        guard !Self.showsRunningApp(session.lines) else {
-            session.send(.escape)
-            throw UninstallDriverError.appIsRunning
-        }
         let listed = Set(plan.entries)
         guard listed == expectedEntries else {
             session.send(.escape)
@@ -39,6 +36,12 @@ public struct UninstallDriver {
                 unexpected: listed.subtracting(expectedEntries).sorted(),
                 missing: expectedEntries.subtracting(listed).sorted()
             )
+        }
+        // Mole's running marker predates its file scan; refresh OS state at the final prompt.
+        // Позначка Mole передує пошуку файлів; оновити стан macOS перед остаточним підтвердженням.
+        guard !Self.showsRunningApp(session.lines), !isAppRunning() else {
+            session.send(.escape)
+            throw UninstallDriverError.appIsRunning
         }
         session.send(.enter)
     }

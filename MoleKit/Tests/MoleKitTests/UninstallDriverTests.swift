@@ -108,6 +108,30 @@ struct UninstallParsingTests {
         }
         #expect(try session.waitForExit(timeout: 5) == .exited(0))
     }
+
+    @Test func refreshesRunningStateAfterScanEvenWithoutMolesRunningMarker() throws {
+        let script = """
+        printf '◎ Matched 1 app(s):\\n1. Fixture  1MB  |  Last: Today\\nProceed with uninstallation? [y/N] '
+        read -r answer
+        printf '\\nFiles to be removed:\\n◎ Fixture , 1MB\\n  ✓ /synthetic/Fixture.app , 1MB\\n➤ Remove 1 app, 1MB  Enter confirm, ESC cancel: '
+        IFS= read -r -s -n1 key
+        [[ "$key" == $'\\e' ]] || exit 9
+        """
+        let session = try PTYSession(executable: "/bin/bash", arguments: ["-c", script],
+                                     environment: ["PATH": "/usr/bin:/bin", "TERM": "xterm-256color", "LANG": "en_US.UTF-8"])
+        defer { session.close() }
+        var refreshed = false
+        #expect(throws: UninstallDriverError.appIsRunning) {
+            try UninstallDriver().uninstall(app: "Fixture", expectedEntries: ["/synthetic/Fixture.app"], in: session,
+                isAppRunning: {
+                    #expect(session.lines.contains { $0.contains("Enter confirm, ESC cancel") })
+                    refreshed = true
+                    return true
+                })
+        }
+        #expect(refreshed)
+        #expect(try session.waitForExit(timeout: 5) == .exited(0))
+    }
 }
 
 @Suite(.enabled(if: MoleE2E.enabled), .serialized)

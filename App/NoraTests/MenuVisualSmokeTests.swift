@@ -33,6 +33,7 @@ final class MenuVisualSmokeTests: XCTestCase {
             try snapshot(app, name: "applications-all-apps-entry-\(locale)", locale: locale,
                          size: CGSize(width: 1040, height: 620))
             try capture(AppsQuitRemovalPrompt(apps: app.apps.apps, cancel: {}, confirm: {})
+                .frame(width: 480, height: 360, alignment: .top)
                 .environment(\.locale, Locale(identifier: locale)).preferredColorScheme(.dark).allowsHitTesting(false),
                 name: "applications-quit-before-removal-\(locale)", size: CGSize(width: 480, height: 360))
             let multiple = try InstalledApp.decodeList(Data("""
@@ -43,6 +44,7 @@ final class MenuVisualSmokeTests: XCTestCase {
                  {"name":"Example Mail","path":"/synthetic/Mail.app"}]
                 """.utf8))
             try capture(AppsQuitRemovalPrompt(apps: multiple, cancel: {}, confirm: {})
+                .frame(width: 480, height: 500, alignment: .top)
                 .environment(\.locale, Locale(identifier: locale)).preferredColorScheme(.dark).allowsHitTesting(false),
                 name: "applications-quit-multiple-before-removal-\(locale)", size: CGSize(width: 480, height: 500))
         }
