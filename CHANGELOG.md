@@ -2,6 +2,14 @@
 
 Changes to the Nora app, newest first. Work that is merged but not released yet goes under **Unreleased**; at release time it becomes the next version's section and its release notes.
 
+## 1.3.1 (2026-10-18)
+
+### Changed
+- Clicking "Empty Trash" now starts cleanup and closes the reminder immediately. The extra scan, separate confirmation, button delay and wait for a result are removed. Cleanup continues in the background using the reviewed items, with the existing filesystem checks and protection against duplicate runs.
+
+### Змінено
+- Натискання «Очистити кошик» одразу запускає очищення й закриває нагадування. Прибрано повторне сканування, окреме підтвердження, затримку кнопки та очікування результату. Очищення триває у фоні за вже показаним списком, зі збереженням перевірок файлової системи й захисту від повторного запуску.
+
 ## 1.3.0 (2026-10-17)
 
 A safety audit of every module, and a reminder for the Trash. The audit's main change is that Nora now refuses to act, instead of guessing, when Mole's output or a file's state cannot be trusted: an incomplete or stale preview, an unreadable protection list or a failed save no longer leads to a removal or to a "done" screen.

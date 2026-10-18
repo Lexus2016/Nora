@@ -6,9 +6,9 @@ import Observation
 @MainActor @Observable
 final class TrashReminderModel {
     enum Phase: Equatable {
-        case idle, scanning, review, confirmation, cleaning, finished, unavailable, recoveryRequired
+        case idle, scanning, review, cleaning, finished, unavailable, recoveryRequired
     }
-    private enum ScanPurpose: Equatable { case automatic, manual, confirmation }
+    private enum ScanPurpose: Equatable { case automatic, manual }
     private enum WorkKind: Equatable { case scan, execution, recovery }
 
     private(set) var phase: Phase = .idle
@@ -36,7 +36,6 @@ final class TrashReminderModel {
     @ObservationIgnored private var debounce: (any TrashReminderScheduledCall)?
     @ObservationIgnored private var fallback: (any TrashReminderScheduledCall)?
     @ObservationIgnored private var cooldown: (any TrashReminderScheduledCall)?
-    @ObservationIgnored private var completionClose: (any TrashReminderScheduledCall)?
     @ObservationIgnored private var work: Task<Void, Never>?
     @ObservationIgnored private var workKind: WorkKind?
     @ObservationIgnored private var cancellation: TrashCancellationToken?
@@ -51,8 +50,6 @@ final class TrashReminderModel {
     static let fallbackInterval: TimeInterval = 10
     static let debounceInterval: TimeInterval = 1
     static let dismissalCooldown: TimeInterval = 30 * 60
-    /// How long the "items removed" result stays up before the panel closes on its own.
-    static let completionDisplayInterval: TimeInterval = 3
 
     init(services: TrashReminderServices, monitor: any TrashDirectoryMonitoring,
          clock: any TrashReminderScheduling = TrashReminderClock(), preferences: UserDefaults? = nil,
@@ -84,8 +81,7 @@ final class TrashReminderModel {
         return model
     }
 
-    var canReviewDeletion: Bool { !stopped && phase == .review && (snapshot?.topLevelItemCount ?? 0) > 0 && work == nil }
-    var canConfirmDeletion: Bool { !stopped && phase == .confirmation && work == nil && snapshot != nil }
+    var canEmptyTrash: Bool { !stopped && phase == .review && (snapshot?.topLevelItemCount ?? 0) > 0 && work == nil }
     var isWorking: Bool { operationInProgress }
     /// Unknown startup status fails closed until the app awaits checkRecovery().
     var blocksOtherMutations: Bool { isWorking || !recoveryChecked || recoveryPending }
@@ -122,8 +118,6 @@ final class TrashReminderModel {
         invalidateScan()
         cancellation?.cancel()
         pendingScan = nil
-        completionClose?.cancel()
-        completionClose = nil
         present(false)
     }
 
@@ -150,8 +144,6 @@ final class TrashReminderModel {
     /// Always available from Nora's menu and settings, even when automatic reminders are off.
     func openReview() {
         guard !stopped else { return }
-        completionClose?.cancel()
-        completionClose = nil
         present(true)
         guard workKind != .execution && workKind != .recovery else { return }
         enqueueScan(.manual)
@@ -170,19 +162,10 @@ final class TrashReminderModel {
         present(false)
     }
 
-    /// First click only refreshes the review. The irreversible action needs a separate explicit click.
-    func requestDeletionConfirmation() {
-        guard canReviewDeletion else { return }
-        enqueueScan(.confirmation)
-    }
-
-    func cancelConfirmation() {
-        guard phase == .confirmation else { return }
-        phase = .review
-    }
-
-    func confirmDeletion() {
-        guard canConfirmDeletion, let reviewed = snapshot else { return }
+    /// Start the displayed batch and hide the panel immediately, without another scan or confirmation.
+    /// Запустити очищення показаного списку й одразу сховати вікно без повторної перевірки чи підтвердження.
+    func emptyTrash() {
+        guard canEmptyTrash, let reviewed = snapshot else { return }
         if let block = externalBlocker() { blockCleanup(block); return }
         phase = .cleaning
         notice = nil
@@ -192,6 +175,7 @@ final class TrashReminderModel {
         workKind = .execution
         operationInProgress = true
         canCancelOperation = true
+        dismiss()
         work = Task { @MainActor [weak self] in
             guard let self else { return }
             // The backend revalidates the frozen manifest and never sweeps later arrivals.
@@ -205,7 +189,6 @@ final class TrashReminderModel {
             self.dismissedSnapshot = reviewed
             self.dismissUntil = self.clock.now.addingTimeInterval(Self.dismissalCooldown)
             self.finishWork()
-            if result.status == .completed { self.scheduleCompletionClose() }
         }
     }
 
@@ -245,10 +228,6 @@ final class TrashReminderModel {
         guard isMonitoring else { return }
         guard workKind != .execution && workKind != .recovery else { return }
         invalidateScan()
-        if phase == .confirmation {
-            phase = .review
-            notice = String(localized: "Trash changed. Review the updated items before confirming.")
-        }
         debounce?.cancel()
         debounce = clock.schedule(after: Self.debounceInterval) { [weak self] in
             guard let self, self.isMonitoring else { return }
@@ -304,7 +283,6 @@ final class TrashReminderModel {
             return
         }
         refreshAfterBusy = false
-        let previous = snapshot
         generation += 1
         let expectedGeneration = generation
         let token = TrashCancellationToken()
@@ -333,13 +311,6 @@ final class TrashReminderModel {
                 guard expectedGeneration == self.generation else { self.finishWork(); return }
                 self.snapshot = next
                 self.phase = .review
-                if purpose == .confirmation, let previous {
-                    if next.matchesContents(of: previous) {
-                        self.phase = .confirmation
-                    } else {
-                        self.notice = String(localized: "Trash changed. Review the updated items before confirming.")
-                    }
-                }
                 if purpose != .automatic { self.present(true) }
                 else { self.offerCurrentSnapshot() }
             } catch {
@@ -352,18 +323,6 @@ final class TrashReminderModel {
                 if purpose != .automatic { self.present(true) }
             }
             self.finishWork()
-        }
-    }
-
-    /// Only a fully successful deletion closes itself. A cancelled, failed, changed or recovery result
-    /// needs to be read and acted on, so it stays until the user dismisses it.
-    private func scheduleCompletionClose() {
-        completionClose?.cancel()
-        completionClose = clock.schedule(after: Self.completionDisplayInterval) { [weak self] in
-            guard let self else { return }
-            self.completionClose = nil
-            guard self.phase == .finished, self.outcome?.status == .completed else { return }
-            self.present(false)
         }
     }
 

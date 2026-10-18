@@ -1004,7 +1004,7 @@
   "Only reviewed items are eligible. Stopping may leave some items already deleted.": "Удаляются только проверенные объекты. До остановки некоторые из них уже могут быть удалены.",
   "Size is unknown. Unreadable items are never treated as an empty Trash.": "Размер неизвестен. Недоступные объекты не означают, что корзина пуста.",
   "Preserved items need review. Permanent deletion is blocked.": "Нужно проверить сохранённые объекты. Удаление навсегда заблокировано.",
-  "Empty Trash…": "Очистить корзину…",
+  "Empty Trash": "Очистить корзину",
   "Review recovery in Nora": "Восстановление в Nora",
   "Review again": "Проверить снова",
   "Permanently delete only the reviewed items from home Trash. This cannot be undone.": "Навсегда удалить только проверенные объекты из домашней корзины. Это действие невозможно отменить.",

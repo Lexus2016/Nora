@@ -1351,88 +1351,6 @@
         }
       }
     },
-    "%lld reviewed items will be permanently deleted. This cannot be undone.": {
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld reviewed item will be permanently deleted. This cannot be undone."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld reviewed items will be permanently deleted. This cannot be undone."
-                }
-              }
-            }
-          }
-        },
-        "ru": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Проверенных объектов для удаления навсегда: %lld. Это действие невозможно отменить."
-                }
-              }
-            }
-          }
-        },
-        "uk": {
-          "variations": {
-            "plural": {
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
-                }
-              },
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Перевірених об’єктів для видалення назавжди: %lld. Цю дію неможливо скасувати."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld selected · %@": {
       "localizations": {
         "ru": {
@@ -4657,28 +4575,6 @@
         }
       }
     },
-    "Delete these items permanently?": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Delete these items permanently?"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Удалить эти объекты навсегда?"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Видалити ці об’єкти назавжди?"
-          }
-        }
-      }
-    },
     "Delete this file permanently?": {
       "localizations": {
         "ru": {
@@ -4999,24 +4895,24 @@
         }
       }
     },
-    "Empty Trash…": {
+    "Empty Trash": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Empty Trash…"
+            "value": "Empty Trash"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Очистить корзину…"
+            "value": "Очистить корзину"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Очистити кошик…"
+            "value": "Очистити кошик"
           }
         }
       }
@@ -5787,28 +5683,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Надайте Nora повний доступ до диска, щоб Mole міг очищати також Кошик і контейнери програм."
-          }
-        }
-      }
-    },
-    "Go back": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Go back"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Назад"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Назад"
           }
         }
       }
@@ -10531,28 +10405,6 @@
         }
       }
     },
-    "Refresh the contents before a separate permanent-deletion confirmation.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Refresh the contents before a separate permanent-deletion confirmation."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обновить содержимое перед отдельным подтверждением удаления навсегда."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оновити вміст перед окремим підтвердженням видалення назавжди."
-          }
-        }
-      }
-    },
     "Refreshes Quick Look thumbnails and the icon cache.": {
       "localizations": {
         "ru": {
@@ -13845,28 +13697,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Кошик змінився під час очищення"
-          }
-        }
-      }
-    },
-    "Trash changed. Review the updated items before confirming.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trash changed. Review the updated items before confirming."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Содержимое корзины изменилось. Проверьте обновлённые объекты перед подтверждением."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вміст кошика змінився. Перевірте оновлені об’єкти перед підтвердженням."
           }
         }
       }

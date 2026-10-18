@@ -116,17 +116,12 @@ final class TrashReminderTests: XCTestCase {
         fixture.model.shutdown()
     }
 
-    func testWakeInvalidatesConfirmationAndRechecksRoot() async {
+    func testWakeRechecksRootWithoutStartingDeletion() async {
         let fixture = Fixture()
         fixture.model.start()
         await settle()
-        fixture.model.requestDeletionConfirmation()
-        await settle()
-        XCTAssertEqual(fixture.model.phase, .confirmation)
         fixture.events.emitWake()
         XCTAssertEqual(fixture.events.probes, 1)
-        XCTAssertFalse(fixture.model.canConfirmDeletion)
-        fixture.model.confirmDeletion()
         XCTAssertEqual(fixture.service.executionCount, 0)
         fixture.clock.advance(by: 1)
         await settle()
@@ -150,39 +145,44 @@ final class TrashReminderTests: XCTestCase {
         XCTAssertEqual(fixture.service.scanCount, 1)
     }
 
-    func testChangedReviewRequiresReviewAgainInsteadOfOpeningConfirmation() async {
+    func testDeletionUsesDisplayedSnapshotWithoutRescanning() async {
         let fixture = Fixture()
         fixture.model.openReview()
         await settle()
         fixture.service.current = sample("replacement", bytes: 5_000)
-        fixture.model.requestDeletionConfirmation()
+        fixture.model.emptyTrash()
         await settle()
-        XCTAssertEqual(fixture.model.phase, .review)
-        XCTAssertNotNil(fixture.model.notice)
-        XCTAssertEqual(fixture.model.snapshot?.contentIdentity, "replacement")
-        fixture.model.confirmDeletion()
-        XCTAssertEqual(fixture.service.executionCount, 0)
+        XCTAssertEqual(fixture.service.scanCount, 1)
+        XCTAssertEqual(fixture.service.executedIdentity, "first")
+        XCTAssertEqual(fixture.service.executionCount, 1)
+        XCTAssertFalse(fixture.model.isPresented)
         fixture.model.shutdown()
     }
 
-    func testRefreshThenSeparateExplicitConfirmationIsRequiredAndDoubleClickRunsOnce() async {
+    func testOneClickClosesImmediatelyAndDoubleClickRunsOnce() async {
         let fixture = Fixture()
-        fixture.model.openReview()
+        fixture.model.start()
         await settle()
+        XCTAssertTrue(fixture.model.isPresented)
         XCTAssertEqual(fixture.service.executionCount, 0)
-        fixture.model.confirmDeletion()
-        XCTAssertEqual(fixture.service.executionCount, 0)
-        fixture.model.requestDeletionConfirmation()
-        await settle()
-        XCTAssertEqual(fixture.service.scanCount, 2)
-        XCTAssertEqual(fixture.model.phase, .confirmation)
-        XCTAssertEqual(fixture.service.executionCount, 0)
+        var presentations: [Bool] = []
+        fixture.model.presentationChanged = { presentations.append($0) }
         fixture.service.holdExecution = true
-        fixture.model.confirmDeletion()
-        fixture.model.confirmDeletion()
+        fixture.model.emptyTrash()
+        XCTAssertFalse(fixture.model.isPresented)
+        XCTAssertEqual(presentations, [false])
+        XCTAssertEqual(fixture.model.phase, .cleaning)
+        XCTAssertTrue(fixture.model.blocksOtherMutations)
+        fixture.model.emptyTrash()
         await settle()
         XCTAssertEqual(fixture.service.executionCount, 1)
+        XCTAssertEqual(fixture.service.scanCount, 1)
         XCTAssertEqual(fixture.service.executedIdentity, "first")
+        fixture.events.emitChange()
+        fixture.clock.advance(by: 15)
+        await settle()
+        XCTAssertFalse(fixture.model.isPresented)
+        XCTAssertEqual(fixture.service.scanCount, 1)
         fixture.model.cancelCurrentOperation()
         XCTAssertTrue(fixture.model.stopRequested)
         fixture.service.releaseExecution(.init(status: .cancelled, deletedEntryCount: 2, detail: "Synthetic cancellation after two entries."))
@@ -190,17 +190,17 @@ final class TrashReminderTests: XCTestCase {
         XCTAssertEqual(fixture.model.phase, .finished)
         XCTAssertEqual(fixture.model.outcome?.deletedEntryCount, 2)
         XCTAssertEqual(fixture.model.outcome?.status, .cancelled)
+        XCTAssertFalse(fixture.model.isPresented)
+        XCTAssertFalse(fixture.model.blocksOtherMutations)
         fixture.model.shutdown()
     }
 
-    func testExternalBusyAndLegacyRecoveryBlockBothDeletionSteps() async {
+    func testExternalBusyAndLegacyRecoveryBlockDeletion() async {
         let fixture = Fixture()
         fixture.model.openReview()
         await settle()
-        fixture.model.requestDeletionConfirmation()
-        await settle()
         fixture.model.externalBlocker = { .busy("Synthetic app update is using Trash.") }
-        fixture.model.confirmDeletion()
+        fixture.model.emptyTrash()
         XCTAssertEqual(fixture.model.phase, .unavailable)
         XCTAssertEqual(fixture.service.executionCount, 0)
         fixture.model.externalBlocker = { .recovery("Synthetic legacy handover is unresolved.") }
@@ -237,7 +237,7 @@ final class TrashReminderTests: XCTestCase {
         await settle()
         XCTAssertEqual(fixture.model.phase, .recoveryRequired)
         XCTAssertEqual(fixture.service.scanCount, 0)
-        fixture.model.confirmDeletion()
+        fixture.model.emptyTrash()
         XCTAssertEqual(fixture.service.executionCount, 0)
         fixture.service.recovery = .init(blocksNewRun: false, detail: "Synthetic items restored.")
         fixture.model.recoverPreservedItems()
@@ -255,7 +255,8 @@ final class TrashReminderTests: XCTestCase {
         await settle()
         XCTAssertEqual(fixture.model.phase, .unavailable)
         XCTAssertNil(fixture.model.snapshot)
-        XCTAssertFalse(fixture.model.canReviewDeletion)
+        XCTAssertFalse(fixture.model.canEmptyTrash)
+        fixture.model.emptyTrash()
         XCTAssertEqual(fixture.service.executionCount, 0)
         fixture.model.shutdown()
     }
@@ -277,14 +278,12 @@ final class TrashReminderTests: XCTestCase {
         let deletion = Fixture()
         deletion.model.openReview()
         await settle()
-        deletion.model.requestDeletionConfirmation()
-        await settle()
-        XCTAssertTrue(deletion.model.canConfirmDeletion)
+        XCTAssertTrue(deletion.model.canEmptyTrash)
         deletion.model.shutdown()
         await deletion.model.waitUntilSettled()
-        deletion.model.confirmDeletion()
+        deletion.model.emptyTrash()
         await settle()
-        XCTAssertFalse(deletion.model.canConfirmDeletion)
+        XCTAssertFalse(deletion.model.canEmptyTrash)
         XCTAssertEqual(deletion.service.executionCount, 0)
         XCTAssertFalse(deletion.model.isWorking)
 
@@ -333,10 +332,8 @@ final class TrashReminderTests: XCTestCase {
         let fixture = Fixture()
         fixture.model.openReview()
         await settle()
-        fixture.model.requestDeletionConfirmation()
-        await settle()
         fixture.service.holdExecution = true
-        fixture.model.confirmDeletion()
+        fixture.model.emptyTrash()
         await settle()
         fixture.model.shutdown()
         var settled = false
@@ -350,51 +347,84 @@ final class TrashReminderTests: XCTestCase {
         XCTAssertFalse(fixture.model.isWorking)
     }
 
-    func testSuccessfulDeletionClosesThePanelOnItsOwnAfterTheResultHasBeenShown() async {
+    func testSuccessfulBackgroundDeletionDoesNotReopenThePanel() async {
         let fixture = Fixture()
         fixture.model.openReview()
         await settle()
-        fixture.model.requestDeletionConfirmation()
-        await settle()
-        fixture.model.confirmDeletion()
+        fixture.model.emptyTrash()
+        XCTAssertFalse(fixture.model.isPresented)
         await settle()
         XCTAssertEqual(fixture.model.phase, .finished)
         XCTAssertEqual(fixture.model.outcome?.status, .completed)
-        XCTAssertTrue(fixture.model.isPresented, "The result is shown first")
-        fixture.clock.advance(by: TrashReminderModel.completionDisplayInterval - 0.5)
-        XCTAssertTrue(fixture.model.isPresented, "Still readable just before the interval ends")
-        fixture.clock.advance(by: 1)
         XCTAssertFalse(fixture.model.isPresented)
+        fixture.clock.advance(by: 30)
+        XCTAssertFalse(fixture.model.isPresented)
+        XCTAssertFalse(fixture.model.blocksOtherMutations)
         fixture.model.shutdown()
     }
 
-    func testCancelledDeletionAndAReopenedReviewStayOnScreen() async {
+    func testExplicitlyReopenedPanelStaysVisibleAfterBackgroundDeletionFinishes() async {
         let fixture = Fixture()
         fixture.model.openReview()
         await settle()
-        fixture.model.requestDeletionConfirmation()
-        await settle()
         fixture.service.holdExecution = true
-        fixture.model.confirmDeletion()
+        fixture.model.emptyTrash()
         await settle()
+        XCTAssertFalse(fixture.model.isPresented)
+        fixture.model.openReview()
+        XCTAssertTrue(fixture.model.isPresented)
+        XCTAssertEqual(fixture.service.scanCount, 1)
         fixture.service.releaseExecution(.init(status: .cancelled, deletedEntryCount: 1, detail: "Synthetic stop."))
         await settle()
         XCTAssertEqual(fixture.model.outcome?.status, .cancelled)
-        fixture.clock.advance(by: TrashReminderModel.completionDisplayInterval * 4)
-        XCTAssertTrue(fixture.model.isPresented, "A partial result needs to be read, so it never closes by itself")
+        fixture.clock.advance(by: 30)
+        XCTAssertTrue(fixture.model.isPresented)
 
         fixture.service.holdExecution = false
         fixture.model.openReview()
         await settle()
-        fixture.model.requestDeletionConfirmation()
-        await settle()
-        fixture.model.confirmDeletion()
+        fixture.model.emptyTrash()
         await settle()
         XCTAssertEqual(fixture.model.outcome?.status, .completed)
         fixture.model.openReview()
-        fixture.clock.advance(by: TrashReminderModel.completionDisplayInterval * 2)
-        XCTAssertTrue(fixture.model.isPresented, "Reopening the review cancels the pending automatic close")
+        fixture.clock.advance(by: 30)
+        XCTAssertTrue(fixture.model.isPresented)
         fixture.model.shutdown()
+    }
+
+    func testEmptyTrashCannotExecuteWithoutNonemptyReview() async {
+        let fixture = Fixture()
+        fixture.model.emptyTrash()
+        fixture.service.holdScan = true
+        fixture.model.openReview()
+        await settle()
+        fixture.model.emptyTrash()
+        fixture.service.releaseScan(.init(contentIdentity: "empty", topLevelItemCount: 0, entryCount: 0, logicalBytes: 0))
+        await settle()
+        XCTAssertEqual(fixture.model.phase, .review)
+        XCTAssertFalse(fixture.model.canEmptyTrash)
+        fixture.model.emptyTrash()
+        await settle()
+        XCTAssertEqual(fixture.service.executionCount, 0)
+        fixture.model.shutdown()
+    }
+
+    func testUnsuccessfulBackgroundDeletionStaysDismissedAndPreservesOutcome() async {
+        for status in [TrashReminderOutcome.Status.failed, .requiresNewReview, .recoveryRequired] {
+            let fixture = Fixture()
+            fixture.model.openReview()
+            await settle()
+            fixture.service.holdExecution = true
+            fixture.model.emptyTrash()
+            await settle()
+            fixture.service.releaseExecution(.init(status: status, deletedEntryCount: 0, detail: "Synthetic unsuccessful result."))
+            await settle()
+            XCTAssertFalse(fixture.model.isPresented)
+            XCTAssertEqual(fixture.model.outcome?.status, status)
+            XCTAssertEqual(fixture.model.recoveryPending, status == .recoveryRequired)
+            XCTAssertEqual(fixture.model.blocksOtherMutations, status == .recoveryRequired)
+            fixture.model.shutdown()
+        }
     }
 
     private func settle() async { for _ in 0..<30 { await Task.yield() } }

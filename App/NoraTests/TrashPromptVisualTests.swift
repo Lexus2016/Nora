@@ -10,12 +10,12 @@ final class TrashPromptVisualTests: XCTestCase {
         let snapshot = TrashReminderSnapshot(contentIdentity: "visual-only", topLevelItemCount: 8,
                                              entryCount: 31, logicalBytes: 1_400_000_000)
         for locale in ["en", "uk", "ru"] {
-            for phase in [TrashReminderModel.Phase.review, .confirmation, .scanning, .cleaning, .unavailable, .recoveryRequired, .finished] {
+            for phase in [TrashReminderModel.Phase.review, .scanning, .cleaning, .unavailable, .recoveryRequired, .finished] {
                 let model = TrashReminderModel(services: .disabled, monitor: InertTrashDirectoryMonitor(), permitsMonitoring: false)
                 model.setSnapshotFixture(phase: phase, snapshot: [.unavailable, .recoveryRequired].contains(phase) ? nil : snapshot,
                     outcome: phase == .finished ? .init(status: .cancelled, deletedEntryCount: 5,
                                                        detail: "Synthetic partial result. Nothing was executed.") : nil)
-                try capture(TrashPromptView(model: model, animationEnabled: false, confirmationDelay: .zero)
+                try capture(TrashPromptView(model: model, animationEnabled: false)
                     .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
                     name: "trash-panel-\(phase)-\(locale)-520x260", size: CGSize(width: 520, height: 260))
                 XCTAssertFalse(model.isMonitoring)

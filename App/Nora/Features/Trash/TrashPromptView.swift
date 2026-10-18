@@ -5,11 +5,7 @@ struct TrashPromptView: View {
     @Bindable var model: TrashReminderModel
     var animationEnabled = true
     var openNora: () -> Void = {}
-    /// The delete button stays inert this long after the confirmation appears. It takes the place of the
-    /// "Empty Trash…" button the moment the check ends, so the second click of a double-click must not land on it.
-    var confirmationDelay: Duration = .milliseconds(700)
     @Environment(\.locale) private var locale
-    @State private var confirmationArmed = false
 
     private let foreground = Color(hex: 0xEBFFF9)
 
@@ -76,13 +72,8 @@ struct TrashPromptView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(primaryDisabled)
-                .task(id: model.phase) {
-                    confirmationArmed = false
-                    guard model.phase == .confirmation, confirmationDelay > .zero else { return }
-                    try? await Task.sleep(for: confirmationDelay)
-                    if !Task.isCancelled { confirmationArmed = true }
-                }
-                // Deliberately no defaultAction/Return shortcut on either deletion step.
+                // Deletion requires an explicit click, with no defaultAction/Return shortcut.
+                // Видалення потребує явного натискання, без запуску клавішею Return.
                 .accessibilityHint(primaryHint)
                 Button(action: secondaryAction) {
                     Text(secondaryTitle).font(.system(size: 13, weight: .semibold))
@@ -132,7 +123,6 @@ struct TrashPromptView: View {
         switch model.phase {
         case .idle, .scanning: return "Checking home Trash…"
         case .review: return model.snapshot?.topLevelItemCount == 0 ? "Home Trash is empty" : "New files in your Trash"
-        case .confirmation: return "Delete these items permanently?"
         case .cleaning: return model.stopRequested ? "Stopping safely…" : "Emptying reviewed Trash…"
         case .unavailable: return "Trash could not be checked"
         case .recoveryRequired: return "Trash recovery needs attention"
@@ -152,9 +142,6 @@ struct TrashPromptView: View {
         case .idle, .scanning: return Text("Reading a bounded snapshot. Nothing is deleted.")
         case .review where model.snapshot?.topLevelItemCount == 0: return Text("No items were found in your home Trash.")
         case .review: return Text("Files will be permanently deleted. This cannot be undone.")
-        case .confirmation:
-            let count = model.snapshot?.topLevelItemCount ?? 0
-            return Text("\(count) reviewed items will be permanently deleted. This cannot be undone.")
         case .cleaning: return Text("Only reviewed items are eligible. Stopping may leave some items already deleted.")
         case .unavailable: return Text("Size is unknown. Unreadable items are never treated as an empty Trash.")
         case .recoveryRequired: return Text("Preserved items need review. Permanent deletion is blocked.")
@@ -175,8 +162,7 @@ struct TrashPromptView: View {
     private var primaryTitle: LocalizedStringKey {
         switch model.phase {
         case .idle, .scanning: return "Checking…"
-        case .review: return model.snapshot?.topLevelItemCount == 0 ? "Check again" : "Empty Trash…"
-        case .confirmation: return "Delete permanently"
+        case .review: return model.snapshot?.topLevelItemCount == 0 ? "Check again" : "Empty Trash"
         case .cleaning: return "Cleaning…"
         case .recoveryRequired: return "Review recovery in Nora"
         case .unavailable, .finished: return "Review again"
@@ -185,24 +171,21 @@ struct TrashPromptView: View {
 
     private var primaryDisabled: Bool {
         model.isWorking || model.phase == .scanning || model.phase == .cleaning
-            || (model.phase == .confirmation && confirmationDelay > .zero && !confirmationArmed)
     }
 
     private var primaryHint: Text {
-        if model.phase == .confirmation { return Text("Permanently delete only the reviewed items from home Trash. This cannot be undone.") }
-        return Text("Refresh the contents before a separate permanent-deletion confirmation.")
+        if model.canEmptyTrash { return Text("Permanently delete only the reviewed items from home Trash. This cannot be undone.") }
+        return Text("Review home Trash…")
     }
 
     private var secondaryTitle: LocalizedStringKey {
-        if model.phase == .confirmation { return "Go back" }
         if model.isWorking && model.canCancelOperation { return model.stopRequested ? "Stopping…" : "Cancel" }
         return "Not now"
     }
 
     private func primaryAction() {
         switch model.phase {
-        case .review where model.canReviewDeletion: model.requestDeletionConfirmation()
-        case .confirmation: model.confirmDeletion()
+        case .review where model.canEmptyTrash: model.emptyTrash()
         case .recoveryRequired: openNora()
         case .unavailable, .finished, .review: model.openReview()
         default: break
@@ -210,8 +193,7 @@ struct TrashPromptView: View {
     }
 
     private func secondaryAction() {
-        if model.phase == .confirmation { model.cancelConfirmation() }
-        else if model.isWorking && model.canCancelOperation { model.cancelCurrentOperation() }
+        if model.isWorking && model.canCancelOperation { model.cancelCurrentOperation() }
         else { model.dismiss() }
     }
 }
