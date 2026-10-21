@@ -3,6 +3,31 @@
     <channel>
         <title>Nora</title>
         <item>
+            <title>1.3.2</title>
+            <pubDate>Wed, 21 Oct 2026 20:43:15 +0200</pubDate>
+            <link>https://github.com/Lexus2016/Nora</link>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.3.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[### Changed
+- Watch Downloads no longer keeps ClamAV's virus database in memory around the clock. After 5 minutes without a download to check, Nora stops ClamAV (about 1 GB, up to 2.4 GB during the daily reload) and loads it again when the next download arrives, which takes a few seconds. The watch itself stays on, so no download is skipped, and it is still off by default.
+
+### Fixed
+- The Trash reminder no longer goes silent for 30 minutes after "Not now" or an emptied Trash. Something new in the Trash is offered again as soon as it is measured; only items you already waved off or had emptied stay quiet, and so does Finder's own `.DS_Store`.
+- "Empty Trash" cannot be clicked on a list that is already out of date. When something lands in the Trash while the reminder is open, the button waits for the rescan, so it empties the current list instead of being refused and leaving the Trash half done.
+- When cleanup finds that the Trash changed since the review, Nora shows the current list again instead of leaving the rest with no window. Items thrown away while a cleanup runs are offered when it finishes.
+
+### Змінено
+- «Стежити за Завантаженнями» більше не тримає вірусну базу ClamAV у пам'яті постійно. Після 5 хвилин без файлу для перевірки Nora зупиняє ClamAV (близько 1 ГБ, до 2,4 ГБ під час щоденного оновлення) і завантажує його знову, коли надходить наступний файл, це займає кілька секунд. Саме стеження лишається ввімкненим, тож жоден файл не пропускається, і за замовчуванням воно, як і раніше, вимкнене.
+
+### Виправлено
+- Нагадування про кошик більше не мовчить 30 хвилин після «Не зараз» чи очищення. Нове в кошику пропонується знову, щойно його виміряно; тихими лишаються лише елементи, які ви вже відхилили або очистили, а також службовий `.DS_Store` від Finder.
+- Кнопку «Очистити кошик» не можна натиснути на списку, який уже застарів. Якщо в кошик щось потрапило, поки нагадування відкрите, кнопка чекає на повторну перевірку, тож очищає актуальний список, а не отримує відмову й не лишає кошик напівочищеним.
+- Якщо під час очищення виявляється, що кошик змінився після перегляду, Nora знову показує актуальний список, а не лишає залишок без вікна. Те, що потрапило в кошик під час очищення, пропонується, коли воно завершиться.
+]]></description>
+            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.2/Nora-1.3.2.dmg" length="7931479" type="application/octet-stream" sparkle:edSignature="cXITCGNjXi3YeZL7Otz6CaEYSCx/GlNBHfQ8/urKPzxmDK3l4n9J4UHXFtoxI85tsntqW9RR2PssBKQ5UYZQBg=="/>
+        </item>
+        <item>
             <title>1.3.1</title>
             <pubDate>Sun, 18 Oct 2026 12:29:43 +0200</pubDate>
             <link>https://github.com/Lexus2016/Nora</link>
@@ -64,29 +89,6 @@
 
 ]]></description>
             <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.0/Nora-1.3.0.dmg" length="7870066" type="application/octet-stream" sparkle:edSignature="qSdjRx9RINltieSwcyhi6S5NcLb6Dz5mM+HK8IEm6iyL638ejHeZgHSc7e8icI6b9Dg+bBR7Ex8lzNXsrSxWAQ=="/>
-        </item>
-        <item>
-            <title>1.2.1</title>
-            <pubDate>Thu, 15 Oct 2026 11:49:48 +0200</pubDate>
-            <link>https://github.com/Lexus2016/Nora</link>
-            <sparkle:version>5</sparkle:version>
-            <sparkle:shortVersionString>1.2.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[Nora now uses far less CPU when none of it is on screen. In 1.2.0 a closed or hidden window could keep it at up to a third of a CPU core in the background; the same situations now measure under 1%.
-
-### Added
-- The quick menu's Processor tile shows the CPU temperature with the same coloured dot as the menu bar (green below 70 °C, orange from 70 °C, red from 90 °C), whether or not the menu bar shows it; the tooltip gives the value in degrees. It is read every 3 seconds, only while the menu is open.
-
-### Fixed
-- After the quick menu had been opened once, Nora kept drawing it in the background on every status sample and kept Mole's status stream running, even with every window closed: about 14% of a CPU core plus 1% for the stream, all the time. The menu now exists only while it is open, and the stream stops 10 seconds after it closes. The list of apps by memory is read every 3 seconds while the menu is open, not on every redraw.
-- System Status kept Mole's status stream and its live readings (`nettop`, `lsof`, the chip's sensors) running while its window was minimised, covered or on another Space, and redrew every card on every sample: with the window on another Space that took about 13% of Nora's main thread. They now run only while the window is on screen and resume when it comes back.
-- Spinners (in cards, next to a busy module in the sidebar and on the round button) redrew the whole window at the display's refresh rate, and went on when the window was minimised or on another Space. A spinner left turning in a hidden window could keep Nora at up to 38% of a core. Spinners now turn at up to 30 frames a second and stop while their window is not on screen; the same case measures under 1%.
-- With CPU or memory figures in the menu bar, Mole's status stream runs all the time, and System Status, Space Map or History left as the last screen in the closed window redrew on every sample: 23% of a core with nothing on screen. Samples now reach a screen only while it is on screen; the menu bar title reads them directly. The same state measures 0.7%.
-- With the main window closed, the round button's mouse monitors went on waking Nora for mouse moves in every other app. They now stop when the window closes and come back when it is on screen again.
-- The quick menu showed a cache of zero as "Zero KB" (in Ukrainian "Нуль КБ"); every size of zero now reads as a number, "0 KB".
-
-]]></description>
-            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.2.1/Nora-1.2.1.dmg" length="7185505" type="application/octet-stream" sparkle:edSignature="B7jgVmy5o6H6/vSDaTUGxnI9vg8cKrB6TNZGMhkoidM6uwHO/W+sJWkA1AZGnGa6QDjmqXTIXXpfgu3A9SQ+DA=="/>
         </item>
     </channel>
 </rss>
