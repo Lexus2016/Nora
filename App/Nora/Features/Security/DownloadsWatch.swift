@@ -202,18 +202,23 @@ final class ClamdSession {
             terminate()
             throw error
         }
-        terminate()
+        // Gave up waiting: stop a clamd that is still running. One that already died reports its own exit,
+        // and marking that exit as expected would hide from the watch that clamd is gone.
+        if process.isRunning { terminate() }
         throw SecurityError.clamdDidNotStart
     }
 
     var isRunning: Bool { process?.isRunning ?? false }
 
-    /// Running and not on its way out, so a scan sent now reaches a live socket.
-    private var isServing: Bool { isRunning && !expectedExit }
+    /// Running, not on its way out, and listening: a scan sent now reaches a live socket.
+    private var isServing: Bool {
+        isRunning && !expectedExit && FileManager.default.fileExists(atPath: layout.socket.path)
+    }
 
     /// Makes sure clamd is up, loading it again if it was unloaded for idleness. Callers that arrive while
     /// it loads share that one start; a second clamd would hold a second copy of the database.
     func ensureRunning() async throws {
+        guard !retired else { throw CancellationError() }
         if let launching { return try await launching.value }
         if isServing { return }
         // One task covers waiting for the unloaded process to go and starting its replacement, so a caller

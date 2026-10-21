@@ -54,6 +54,21 @@ final class ClamdIdleUnloadTests: XCTestCase {
         """)
     }
 
+    /// Loads once like clamd does, then dies on every later start before its socket appears: a clamd that
+    /// cannot come back after it was unloaded.
+    private func clamdThatCannotReload() throws -> URL {
+        try script("clamd", """
+        seen=0
+        [ -f "\(starts.path)" ] && seen=$(wc -l < "\(starts.path)" | tr -d ' ')
+        echo started >> "\(starts.path)"
+        [ "$seen" -ge 1 ] && exit 1
+        echo $$ >> "\(pids.path)"
+        echo $$ > "\(pidFile.path)"
+        : > "\(layout.socket.path)"
+        exec sleep 600
+        """)
+    }
+
     private func scanStub() throws -> URL {
         try script("clamdscan", "echo scan >> \"\(scans.path)\"\nexit 0")
     }
@@ -162,6 +177,16 @@ final class ClamdIdleUnloadTests: XCTestCase {
         XCTAssertTrue(livePids().isEmpty)
     }
 
+    func testClamdDyingWhileLoadingIsReportedAsACrashNotSwallowedByTheFailedStart() async throws {
+        let dead = try script("clamd", "echo started >> \"\(starts.path)\"\nexit 1")
+        let session = ClamdSession(clamd: dead, clamdscan: try scanStub(), layout: layout)
+        let crashes = Counter()
+        session.onExit = { crashes.value += 1 }
+        do { try await session.ensureRunning(); XCTFail("clamd that dies while loading must fail the start") } catch {}
+        try await wait { crashes.value > 0 }
+        XCTAssertEqual(crashes.value, 1, "The failed start must not mark the exit as expected: the watch has to learn clamd died")
+    }
+
     func testStopDuringALoadLeavesNoProcessAndNothingStartsAfterwards() async throws {
         let session = try makeSession()
         let loading = Task { try await session.ensureRunning() }
@@ -176,6 +201,41 @@ final class ClamdIdleUnloadTests: XCTestCase {
     }
 
     // MARK: - SecurityModel
+
+    func testDownloadIsKeptForRetryWhenClamdCannotReloadAfterIdle() async throws {
+        let downloads = dir.appendingPathComponent("Downloads", isDirectory: true)
+        try FileManager.default.createDirectory(at: downloads, withIntermediateDirectories: true)
+        var services = ClamAVManagementServices()
+        let tools = ClamAVTools(clamscan: try scanStub(), freshclam: try scanStub(), clamd: try clamdThatCannotReload(), clamdscan: try scanStub())
+        services.locate = { tools }
+        services.brew = { nil }
+        services.isHomebrewManaged = { _, _ in false }
+        services.requestNotifications = {}
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "clamd-reload-\(UUID().uuidString)"))
+        let app = AppModel(visualSnapshot: true, home: dir)
+        let model = SecurityModel(home: dir, support: dir.appendingPathComponent("Nora", isDirectory: true),
+                                  clamavServices: services, preferences: defaults)
+        model.watchIdleDelay = .milliseconds(400)
+        let preference = UserDefaults.standard.object(forKey: SecuritySettings.watchKey)
+        defer {
+            model.shutdown()
+            if let preference { UserDefaults.standard.set(preference, forKey: SecuritySettings.watchKey) }
+            else { UserDefaults.standard.removeObject(forKey: SecuritySettings.watchKey) }
+        }
+
+        model.setWatch(true, app)
+        try await wait { model.watchActive }
+        XCTAssertTrue(model.watchActive, model.watchError ?? "the watch did not start")
+        let first = try XCTUnwrap(currentPid())
+        try await wait { !self.isAlive(first) }
+
+        // A download lands while clamd is unloaded, and clamd then dies on every start before its socket appears.
+        try Data("fresh download".utf8).write(to: downloads.appendingPathComponent("tool.zip"))
+        try await wait(timeout: 60) { !model.watchActive && model.watchError != nil }
+        XCTAssertEqual(lines(scans), 0, "No scan can have run: clamd never came back")
+        XCTAssertTrue(model.watchRetry.map(\.lastPathComponent).contains("tool.zip"),
+                      "The download that triggered the failed reload must stay queued for the next watch, not vanish")
+    }
 
     func testWatchUnloadsClamdWhenQuietAndLoadsItForTheNextDownload() async throws {
         let downloads = dir.appendingPathComponent("Downloads", isDirectory: true)

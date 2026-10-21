@@ -133,7 +133,7 @@ final class SecurityModel {
     /// When clamd last stopped under a running watch, for the restart limit.
     @ObservationIgnored private var watchRestarts: [Date] = []
     /// Downloads whose check failed, checked again when the watch restarts.
-    @ObservationIgnored private var watchRetry: [URL] = []
+    @ObservationIgnored private(set) var watchRetry: [URL] = []
     @ObservationIgnored private var watchStart: Task<Void, Never>?
     @ObservationIgnored private var watchTasks: [UUID: Task<Void, Never>] = [:]
     @ObservationIgnored private var stoppingWatchChecks: [@MainActor () -> Bool] = []
@@ -937,8 +937,13 @@ final class SecurityModel {
             }
             var result: CommandResult?
             if startFailure == nil { result = try? await self.runLogged(session.scanCommand(for: file), app) }
-            // A result for a watch that has since stopped or restarted changes nothing.
-            guard self.watchGeneration == generation else { return }
+            // A result for a watch that has since stopped or restarted changes nothing. A verdict that never
+            // arrived leaves the file unchecked, though, and a restarted watch counts files already in
+            // Downloads as known: keep it for the retry.
+            guard self.watchGeneration == generation else {
+                if (result?.status ?? 2) > 1, !self.watchRetry.contains(file) { self.watchRetry.append(file) }
+                return
+            }
             let output = ClamScanParser.parse((result?.stdout ?? "") + "\n" + (result?.stderr ?? ""))
             for detection in output.detections {
                 self.watchFindings.append(Self.detectionFinding(detection))

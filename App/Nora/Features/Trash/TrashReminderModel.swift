@@ -156,7 +156,9 @@ final class TrashReminderModel {
         // A panel with no list to wave off (the scan failed) must not make the model forget the last batch.
         if let snapshot { dismissedSnapshot = snapshot }
         changedDuringCleanup = false
-        if workKind == .scan { invalidateScan(); pendingScan = nil }
+        // A rescan that is already running was started by a change the user has not seen. Closing the panel
+        // discards its answer, and nothing else would look at that change, so ask again.
+        if workKind == .scan { invalidateScan(); pendingScan = isMonitoring ? .automatic : nil }
         present(false)
     }
 

@@ -152,6 +152,28 @@ final class TrashReminderTests: XCTestCase {
         fixture.model.shutdown()
     }
 
+    func testNotNowDuringARescanStillOffersWhatArrivedInTheMeantime() async {
+        let fixture = Fixture()
+        fixture.model.start()
+        await settle()
+        XCTAssertTrue(fixture.model.isPresented)
+        // B lands, its rescan is under way, and the user closes the panel before it answers.
+        fixture.service.holdScan = true
+        fixture.events.emitChange()
+        fixture.clock.advance(by: 1)
+        await settle()
+        XCTAssertEqual(fixture.service.activeScans, 1)
+        fixture.model.dismiss()
+        XCTAssertFalse(fixture.model.isPresented)
+        fixture.service.holdScan = false
+        fixture.service.current = sample("arrived-during-the-rescan")
+        fixture.service.releaseScan(sample("discarded-stale-result"))
+        await settle()
+        XCTAssertTrue(fixture.model.isPresented, "The root change was consumed by the cancelled rescan; nothing else would ever look at B")
+        XCTAssertEqual(fixture.model.snapshot?.contentIdentity, "arrived-during-the-rescan")
+        fixture.model.shutdown()
+    }
+
     func testClosingAnUnavailableReviewKeepsThePreviousDismissal() async {
         let fixture = Fixture()
         fixture.model.start()
