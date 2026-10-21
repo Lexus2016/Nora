@@ -937,11 +937,11 @@ final class SecurityModel {
             }
             var result: CommandResult?
             if startFailure == nil { result = try? await self.runLogged(session.scanCommand(for: file), app) }
-            // A result for a watch that has since stopped or restarted changes nothing. A verdict that never
-            // arrived leaves the file unchecked, though, and a restarted watch counts files already in
-            // Downloads as known: keep it for the retry.
+            // A result for a watch that has since stopped or restarted changes nothing here. Anything but a clean
+            // verdict (none at all, an error, or an infection that was found) must not be lost with it, though:
+            // a restarted watch counts files already in Downloads as known, so keep the file for the retry.
             guard self.watchGeneration == generation else {
-                if (result?.status ?? 2) > 1, !self.watchRetry.contains(file) { self.watchRetry.append(file) }
+                if (result?.status ?? 2) != 0, !self.watchRetry.contains(file) { self.watchRetry.append(file) }
                 return
             }
             let output = ClamScanParser.parse((result?.stdout ?? "") + "\n" + (result?.stderr ?? ""))

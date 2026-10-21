@@ -193,6 +193,10 @@ final class ClamdIdleUnloadTests: XCTestCase {
         await Task.yield()
         session.stop()
         _ = try? await loading.value
+        // terminate() only sends the signal and the stub writes its log from another process: let the
+        // process go before anything is counted, or a busy machine measures a half-finished state.
+        try await wait { !session.isRunning }
+        XCTAssertFalse(session.isRunning, "A stopped session leaves no running clamd")
         if let pid = currentPid() { try await wait { !self.isAlive(pid) } ; XCTAssertFalse(isAlive(pid), "A stopped session leaves no orphan clamd") }
         let started = lines(starts)
         do { try await session.ensureRunning(); XCTFail("A stopped session must not start again") } catch {}
