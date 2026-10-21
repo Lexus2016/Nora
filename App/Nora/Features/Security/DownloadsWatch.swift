@@ -141,14 +141,23 @@ final class DownloadsWatch {
     }
 }
 
-/// A `clamd` child process that lives only while the Downloads watch is on. Scans use `clamdscan` against it.
+/// A `clamd` child process that lives only while the Downloads watch is on, and under a quiet watch only
+/// while a download needs it: the engine keeps its virus database in memory (1 GB or more), so it is
+/// stopped on purpose with `unloadForIdle()` and `ensureRunning()` loads it again. Scans use `clamdscan` against it.
 @MainActor
 final class ClamdSession {
     private let clamd: URL
     private let clamdscan: URL
     private let layout: ClamAVLayout
     private var process: Process?
-    /// Called when clamd exits, whether it crashed or was stopped. Set before `start()`.
+    /// Counts starts, so a late exit report from an earlier process is not taken for the current one.
+    private var launch = 0
+    /// The current process was told to stop, by `stop()` or by `unloadForIdle()`. Its exit is not a crash.
+    private var expectedExit = false
+    /// `stop()` was called: nothing starts again.
+    private var retired = false
+    private var launching: Task<Void, Error>?
+    /// Called when clamd exits without having been told to, that is, it crashed. Set before `start()`.
     var onExit: (@MainActor () -> Void)?
 
     init(clamd: URL, clamdscan: URL, layout: ClamAVLayout) {
@@ -160,16 +169,18 @@ final class ClamdSession {
     /// Starts clamd in the foreground and waits until its socket appears (the database is loaded by then).
     func start() async throws {
         try Task.checkCancellation()
+        guard !retired else { throw CancellationError() }
         let process = Process()
         process.executableURL = clamd
         process.arguments = ["--foreground", "--config-file", layout.clamdConfig.path]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         process.qualityOfService = .utility
-        let onExit = self.onExit
-        process.terminationHandler = { finished in
+        launch += 1
+        let mine = launch
+        process.terminationHandler = { [weak self] finished in
             ChildProcesses.unregister(finished)
-            Task { @MainActor in onExit?() }
+            Task { @MainActor in self?.exited(launch: mine) }
         }
         // A socket left by an earlier clamd would look like readiness of this one.
         try? FileManager.default.removeItem(at: layout.socket)
@@ -178,27 +189,71 @@ final class ClamdSession {
             ChildProcesses.unregister(process)
             throw error
         }
+        expectedExit = false
         self.process = process
         for _ in 0..<300 {
             if FileManager.default.fileExists(atPath: layout.socket.path) { return }
             guard process.isRunning else { break }
             try await Task.sleep(for: .milliseconds(200))
         }
-        stop()
+        terminate()
         throw SecurityError.clamdDidNotStart
     }
 
     var isRunning: Bool { process?.isRunning ?? false }
 
+    /// Running and not on its way out, so a scan sent now reaches a live socket.
+    private var isServing: Bool { isRunning && !expectedExit }
+
+    /// Makes sure clamd is up, loading it again if it was unloaded for idleness. Callers that arrive while
+    /// it loads share that one start; a second clamd would hold a second copy of the database.
+    func ensureRunning() async throws {
+        if let launching { return try await launching.value }
+        if isServing { return }
+        // The process that was unloaded may still be freeing its memory; its socket and name are not free yet.
+        if isRunning { try await waitUntilGone() }
+        let launching = Task { @MainActor in try await self.start() }
+        self.launching = launching
+        defer { self.launching = nil }
+        try await launching.value
+    }
+
+    private func waitUntilGone() async throws {
+        for _ in 0..<100 {
+            guard isRunning else { return }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw SecurityError.clamdDidNotStart
+    }
+
     func scanCommand(for file: URL) -> ShellCommand {
         ShellCommand(clamdscan.path, ["--config-file", layout.clamdConfig.path, "--infected", "--no-summary", "--fdpass", file.path])
     }
 
+    /// Stops clamd to give its memory back. The session stays usable: `ensureRunning()` starts it again.
+    func unloadForIdle() {
+        guard isServing else { return }
+        terminate()
+    }
+
+    /// Ends the session for good. A start that is still loading is cancelled and nothing starts afterwards.
     func stop() {
-        if let process {
-            if process.isRunning { process.terminate() }
-            // Keep the process registered and retained until its termination handler runs.
-            // A stop request is not evidence that the engine is no longer in use.
-        }
+        retired = true
+        launching?.cancel()
+        launching = nil
+        terminate()
+    }
+
+    private func terminate() {
+        expectedExit = true
+        if let process, process.isRunning { process.terminate() }
+        // Keep the process registered and retained until its termination handler runs.
+        // A stop request is not evidence that the engine is no longer in use.
+    }
+
+    private func exited(launch finished: Int) {
+        // An earlier process reporting late says nothing about the one that replaced it.
+        guard finished == launch, !expectedExit else { return }
+        onExit?()
     }
 }

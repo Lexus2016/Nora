@@ -61,7 +61,7 @@ final class TrashReminderTests: XCTestCase {
         fixture.model.shutdown()
     }
 
-    func testDismissedUnchangedSnapshotNeverRepeatsAndChangedBatchWaitsThirtyMinutes() async {
+    func testDismissedUnchangedSnapshotNeverRepeatsButNewArrivalIsOfferedAtOnce() async {
         let fixture = Fixture()
         fixture.model.start()
         await settle()
@@ -71,9 +71,9 @@ final class TrashReminderTests: XCTestCase {
         fixture.clock.advance(by: 1)
         await settle()
         XCTAssertFalse(fixture.model.isPresented)
-        fixture.clock.advance(by: 1_799)
+        fixture.clock.advance(by: 3_600)
         await settle()
-        XCTAssertFalse(fixture.model.isPresented, "Unchanged dismissed contents stay suppressed after the cooldown")
+        XCTAssertFalse(fixture.model.isPresented, "Unchanged dismissed contents stay suppressed for good")
 
         fixture.model.openReview()
         await settle()
@@ -82,12 +82,90 @@ final class TrashReminderTests: XCTestCase {
         fixture.events.emitChange()
         fixture.clock.advance(by: 1)
         await settle()
+        XCTAssertTrue(fixture.model.isPresented, "Something new in the Trash is offered after the debounce, not after a 30 minute wait")
+        fixture.model.shutdown()
+    }
+
+    func testReviewOnScreenCannotBeEmptiedWhileTheTrashChangesUnderIt() async {
+        let fixture = Fixture()
+        fixture.model.start()
+        await settle()
+        XCTAssertTrue(fixture.model.canEmptyTrash)
+        let reviewed = fixture.model.snapshot?.contentIdentity
+        // Something lands in the Trash; the rescan has not started yet (debounce).
+        fixture.service.current = sample("with-new-file", bytes: 2_000)
+        fixture.events.emitChange()
+        XCTAssertFalse(fixture.model.canEmptyTrash, "The listed items are stale the moment the Trash changes")
+        fixture.model.emptyTrash()
+        await settle()
+        XCTAssertEqual(fixture.service.executionCount, 0, "A click on the stale list must not reach the backend")
+        fixture.clock.advance(by: 1)
+        await settle()
+        XCTAssertTrue(fixture.model.canEmptyTrash)
+        XCTAssertNotEqual(fixture.model.snapshot?.contentIdentity, reviewed)
+        fixture.model.emptyTrash()
+        await settle()
+        XCTAssertEqual(fixture.service.executedIdentity, "with-new-file", "The click after the rescan empties the whole current list")
+        fixture.model.shutdown()
+    }
+
+    func testItemsThrownAwayDuringCleanupAreOfferedWhenItFinishes() async {
+        let fixture = Fixture()
+        fixture.model.start()
+        await settle()
+        fixture.service.holdExecution = true
+        fixture.model.emptyTrash()
+        await settle()
+        // The backend leaves later arrivals alone and the model ignores events while it runs.
+        fixture.service.current = sample("arrived-during-cleanup", bytes: 300)
+        fixture.events.emitChange()
+        fixture.clock.advance(by: 5)
+        await settle()
         XCTAssertFalse(fixture.model.isPresented)
         let scans = fixture.service.scanCount
-        fixture.clock.advance(by: 1_799)
+        fixture.service.releaseExecution(.init(status: .completed, deletedEntryCount: 4, detail: "Synthetic result."))
+        await settle()
+        XCTAssertEqual(fixture.service.scanCount, scans + 1, "Finishing a cleanup looks at the Trash again")
+        XCTAssertTrue(fixture.model.isPresented, "What arrived while cleaning is offered, not silenced for half an hour")
+        XCTAssertEqual(fixture.model.snapshot?.contentIdentity, "arrived-during-cleanup")
+        fixture.model.shutdown()
+    }
+
+    func testCleanupThatFindsTheTrashChangedReopensTheCurrentList() async {
+        let fixture = Fixture()
+        fixture.model.openReview()
+        await settle()
+        fixture.service.holdExecution = true
+        fixture.model.emptyTrash()
+        await settle()
+        XCTAssertFalse(fixture.model.isPresented)
+        fixture.service.current = sample("changed-since-review", bytes: 700)
+        fixture.service.releaseExecution(.init(status: .requiresNewReview, deletedEntryCount: 1, detail: "Trash changed since review."))
+        await settle()
+        XCTAssertTrue(fixture.model.isPresented, "A half-done cleanup must not leave the user without a window")
+        XCTAssertTrue(fixture.model.changedDuringCleanup)
+        XCTAssertEqual(fixture.model.phase, .review)
+        XCTAssertTrue(fixture.model.canEmptyTrash)
+        XCTAssertEqual(fixture.model.snapshot?.contentIdentity, "changed-since-review")
+        fixture.model.dismiss()
+        XCTAssertFalse(fixture.model.changedDuringCleanup)
+        fixture.model.shutdown()
+    }
+
+    func testNotNowRightAfterAnArrivalOffersTheNewItemAgain() async {
+        let fixture = Fixture()
+        fixture.model.start()
         await settle()
         XCTAssertTrue(fixture.model.isPresented)
-        XCTAssertEqual(fixture.service.scanCount, scans, "Cooldown expiry only offers the already measured changed batch")
+        fixture.service.current = sample("dropped-a-moment-ago")
+        fixture.events.emitChange()
+        // "Not now" lands inside the debounce window: it covers the list that was on screen, not the new item.
+        fixture.model.dismiss()
+        XCTAssertFalse(fixture.model.isPresented)
+        fixture.clock.advance(by: 1)
+        await settle()
+        XCTAssertTrue(fixture.model.isPresented, "The item that arrived after the list was shown is not covered by Not now")
+        XCTAssertEqual(fixture.model.snapshot?.contentIdentity, "dropped-a-moment-ago")
         fixture.model.shutdown()
     }
 
@@ -409,8 +487,8 @@ final class TrashReminderTests: XCTestCase {
         fixture.model.shutdown()
     }
 
-    func testUnsuccessfulBackgroundDeletionStaysDismissedAndPreservesOutcome() async {
-        for status in [TrashReminderOutcome.Status.failed, .requiresNewReview, .recoveryRequired] {
+    func testFailedOrInterruptedBackgroundDeletionStaysDismissedAndPreservesOutcome() async {
+        for status in [TrashReminderOutcome.Status.failed, .cancelled, .recoveryRequired] {
             let fixture = Fixture()
             fixture.model.openReview()
             await settle()

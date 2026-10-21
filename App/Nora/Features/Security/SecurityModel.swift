@@ -139,6 +139,10 @@ final class SecurityModel {
     @ObservationIgnored private var stoppingWatchChecks: [@MainActor () -> Bool] = []
     @ObservationIgnored private var watchSettlementTask: Task<Void, Never>?
     @ObservationIgnored private var watchGeneration: UUID?
+    /// How long clamd may sit unused under a running watch before Nora stops it to give back its memory
+    /// (1 GB or more). The watch stays on; the next download loads clamd again, which takes a few seconds.
+    @ObservationIgnored var watchIdleDelay: Duration = .seconds(300)
+    @ObservationIgnored private var idleUnload: Task<Void, Never>?
     @ObservationIgnored private var scheduledRun = false
     /// When an update was last tried, whatever the outcome. A failing download is retried hourly
     /// and never holds back a due scan that the existing database can run.
@@ -778,7 +782,7 @@ final class SecurityModel {
         }
         self.clamd = session
         self.watch = watch
-        SecurityNotifier.requestAuthorization()
+        clamavServices.requestNotifications()
         watchStarting = true
         watchGeneration = generation
         watchStart = runWatchOperation {
@@ -789,6 +793,7 @@ final class SecurityModel {
                 try Task.checkCancellation()
                 try watch.start()
                 self.watchActive = true
+                self.scheduleIdleUnload(session, generation: generation)
                 // Files a stopped clamd could not check get one more try with the new one.
                 let retry = self.watchRetry
                 self.watchRetry = []
@@ -821,6 +826,8 @@ final class SecurityModel {
         watchStarting = false
         watchStart?.cancel()
         watchStart = nil
+        idleUnload?.cancel()
+        idleUnload = nil
         watch?.stop()
         watch = nil
         if let session = clamd {
@@ -895,10 +902,32 @@ final class SecurityModel {
         }
     }
 
+    /// Stops clamd once nothing has needed it for `watchIdleDelay`. A check in flight counts as use: the
+    /// clock restarts when it ends. The watch itself stays on, so a download after that loads clamd again.
+    private func scheduleIdleUnload(_ session: ClamdSession, generation: UUID) {
+        idleUnload?.cancel()
+        let delay = watchIdleDelay
+        idleUnload = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: delay)
+            guard let self, !Task.isCancelled, self.watchGeneration == generation, self.watchActive else { return }
+            if self.watchOperationCount > 0 {
+                self.scheduleIdleUnload(session, generation: generation)
+                return
+            }
+            session.unloadForIdle()
+        }
+    }
+
     private func inspectDownload(_ file: URL, session: ClamdSession, generation: UUID, _ app: AppModel) {
         guard watchGeneration == generation else { return }
         runWatchOperation {
-            let result = try? await self.runLogged(session.scanCommand(for: file), app)
+            defer { if self.watchGeneration == generation { self.scheduleIdleUnload(session, generation: generation) } }
+            // A clamd that was unloaded for idleness is loaded again first. If it cannot be, the file is
+            // not clean: it is named in Settings and checked again, like any other check that failed.
+            var startFailure: String?
+            do { try await session.ensureRunning() } catch is CancellationError { return } catch { startFailure = error.localizedDescription }
+            var result: CommandResult?
+            if startFailure == nil { result = try? await self.runLogged(session.scanCommand(for: file), app) }
             // A result for a watch that has since stopped or restarted changes nothing.
             guard self.watchGeneration == generation else { return }
             let output = ClamScanParser.parse((result?.stdout ?? "") + "\n" + (result?.stderr ?? ""))
@@ -909,7 +938,7 @@ final class SecurityModel {
             }
             // clamdscan: 0 clean, 1 found, 2 or more an error. An error is not a clean file.
             guard let result, result.status <= 1 else {
-                let reason = result.map { Self.lastLine($0.stderr.isEmpty ? $0.stdout : $0.stderr, fallback: String(localized: "clamdscan stopped.")) }
+                let reason = startFailure ?? result.map { Self.lastLine($0.stderr.isEmpty ? $0.stdout : $0.stderr, fallback: String(localized: "clamdscan stopped.")) }
                     ?? String(localized: "clamdscan could not start.")
                 self.watchError = String(localized: "\(file.lastPathComponent) could not be checked: \(reason) It is checked again when it changes or when the watch restarts.")
                 if !self.watchRetry.contains(file) { self.watchRetry.append(file) }

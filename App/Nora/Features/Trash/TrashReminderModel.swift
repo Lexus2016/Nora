@@ -24,6 +24,8 @@ final class TrashReminderModel {
     private(set) var isMonitoring = false
     private(set) var recoveryChecked = false
     private(set) var recoveryPending = false
+    /// The last cleanup found the Trash changed since the review, and this review is the fresh one.
+    private(set) var changedDuringCleanup = false
 
     /// Integration sets this to cover legacy app-handover recovery and concurrent app updates.
     @ObservationIgnored var externalBlocker: @MainActor () -> TrashReminderBlock? = { nil }
@@ -35,21 +37,19 @@ final class TrashReminderModel {
     @ObservationIgnored private let permitsMonitoring: Bool
     @ObservationIgnored private var debounce: (any TrashReminderScheduledCall)?
     @ObservationIgnored private var fallback: (any TrashReminderScheduledCall)?
-    @ObservationIgnored private var cooldown: (any TrashReminderScheduledCall)?
     @ObservationIgnored private var work: Task<Void, Never>?
     @ObservationIgnored private var workKind: WorkKind?
     @ObservationIgnored private var cancellation: TrashCancellationToken?
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var pendingScan: ScanPurpose?
+    /// The batch the user last waved off or had emptied. Only items that are not in it are offered again.
     @ObservationIgnored private var dismissedSnapshot: TrashReminderSnapshot?
-    @ObservationIgnored private var dismissUntil: Date?
     @ObservationIgnored private var stopped = false
     @ObservationIgnored private var refreshAfterBusy = false
 
     static let preferenceKey = "trashRemindersEnabled"
     static let fallbackInterval: TimeInterval = 10
     static let debounceInterval: TimeInterval = 1
-    static let dismissalCooldown: TimeInterval = 30 * 60
 
     init(services: TrashReminderServices, monitor: any TrashDirectoryMonitoring,
          clock: any TrashReminderScheduling = TrashReminderClock(), preferences: UserDefaults? = nil,
@@ -144,20 +144,17 @@ final class TrashReminderModel {
     /// Always available from Nora's menu and settings, even when automatic reminders are off.
     func openReview() {
         guard !stopped else { return }
+        changedDuringCleanup = false
         present(true)
         guard workKind != .execution && workKind != .recovery else { return }
         enqueueScan(.manual)
     }
 
+    /// "Not now" silences what the user has just seen, not what arrives afterwards: a later item
+    /// that is not in this batch is offered again as soon as it has been measured.
     func dismiss() {
         dismissedSnapshot = snapshot
-        dismissUntil = clock.now.addingTimeInterval(Self.dismissalCooldown)
-        cooldown?.cancel()
-        cooldown = clock.schedule(after: Self.dismissalCooldown) { [weak self] in
-            guard let self, self.isMonitoring, !self.isPresented else { return }
-            // No disk scan at cooldown expiry: only a changed, previously measured batch is eligible.
-            self.offerCurrentSnapshot()
-        }
+        changedDuringCleanup = false
         if workKind == .scan { invalidateScan(); pendingScan = nil }
         present(false)
     }
@@ -168,6 +165,7 @@ final class TrashReminderModel {
         guard canEmptyTrash, let reviewed = snapshot else { return }
         if let block = externalBlocker() { blockCleanup(block); return }
         phase = .cleaning
+        changedDuringCleanup = false
         notice = nil
         stopRequested = false
         let token = TrashCancellationToken()
@@ -187,7 +185,20 @@ final class TrashReminderModel {
             self.phase = result.status == .recoveryRequired ? .recoveryRequired : .finished
             self.snapshot = nil
             self.dismissedSnapshot = reviewed
-            self.dismissUntil = self.clock.now.addingTimeInterval(Self.dismissalCooldown)
+            switch result.status {
+            case .completed:
+                // Events were ignored while the backend ran, so arrivals during cleanup are looked for here.
+                // `reviewed` is the dismissed batch: only what it did not cover is offered.
+                if self.isMonitoring { self.pendingScan = .automatic }
+            case .requiresNewReview:
+                // The Trash changed under the reviewed list and part of it may still be there. The user asked
+                // for it to be emptied, so show the current list again instead of leaving it silently half done.
+                self.dismissedSnapshot = nil
+                self.changedDuringCleanup = true
+                self.pendingScan = .manual
+            case .cancelled, .failed, .recoveryRequired:
+                break
+            }
             self.finishWork()
         }
     }
@@ -228,6 +239,9 @@ final class TrashReminderModel {
         guard isMonitoring else { return }
         guard workKind != .execution && workKind != .recovery else { return }
         invalidateScan()
+        // The list on screen no longer describes the Trash. Until the rescan lands the button must not
+        // act on it: cleanup of a stale list is refused by the backend and leaves the Trash half done.
+        if isPresented && phase == .review { phase = .scanning }
         debounce?.cancel()
         debounce = clock.schedule(after: Self.debounceInterval) { [weak self] in
             guard let self, self.isMonitoring else { return }
@@ -247,7 +261,6 @@ final class TrashReminderModel {
         monitor.stop()
         debounce?.cancel(); debounce = nil
         fallback?.cancel(); fallback = nil
-        cooldown?.cancel(); cooldown = nil
         refreshAfterBusy = false
     }
 
@@ -340,9 +353,8 @@ final class TrashReminderModel {
 
     private func offerCurrentSnapshot() {
         guard remindersEnabled, isMonitoring, !isPresented, externalBlocker() == nil,
-              let snapshot, snapshot.topLevelItemCount > 0 else { return }
-        if let dismissedSnapshot, snapshot.matchesContents(of: dismissedSnapshot) { return }
-        if let dismissUntil, clock.now < dismissUntil { return }
+              let snapshot, snapshot.topLevelItemCount > 0,
+              snapshot.hasArrivals(since: dismissedSnapshot) else { return }
         phase = .review
         present(true)
     }
@@ -398,7 +410,7 @@ final class TrashReminderModel {
 
     /// Distinguishes a rendered busy state from real work in native image assertions.
     var snapshotFixtureHasScheduledWork: Bool {
-        work != nil || cancellation != nil || debounce != nil || fallback != nil || cooldown != nil || pendingScan != nil
+        work != nil || cancellation != nil || debounce != nil || fallback != nil || pendingScan != nil
     }
     #endif
 }

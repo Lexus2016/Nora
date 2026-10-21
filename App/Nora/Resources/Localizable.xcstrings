@@ -13045,18 +13045,18 @@
         }
       }
     },
-    "The Downloads watch keeps ClamAV's virus database in memory: about 1 GB, and up to 2.4 GB during the daily reload. Turn it off to free that memory.": {
+    "The Downloads watch keeps ClamAV's virus database in memory only while it checks a file and for 5 minutes after: about 1 GB, and up to 2.4 GB during the daily reload. Then Nora stops ClamAV to free that memory, and the next download starts it again, which takes a few seconds.": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Слежение за Загрузками держит вирусную базу ClamAV в памяти: около 1 ГБ, а во время ежедневной перезагрузки до 2,4 ГБ. Выключите его, чтобы освободить эту память."
+            "value": "Слежение за Загрузками держит вирусную базу ClamAV в памяти только пока проверяет файл и ещё 5 минут после этого: около 1 ГБ, а во время ежедневной перезагрузки до 2,4 ГБ. Затем Nora останавливает ClamAV, чтобы освободить эту память, а следующая загрузка запускает его снова, это занимает несколько секунд."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Стеження за Завантаженнями тримає вірусну базу ClamAV у пам’яті: близько 1 ГБ, а під час щоденного перезавантаження до 2,4 ГБ. Вимкніть його, щоб звільнити цю пам’ять."
+            "value": "Стеження за Завантаженнями тримає вірусну базу ClamAV у пам’яті лише поки перевіряє файл і ще 5 хвилин після цього: близько 1 ГБ, а під час щоденного перезавантаження до 2,4 ГБ. Потім Nora зупиняє ClamAV, щоб звільнити цю пам’ять, а наступне завантаження запускає його знову, це займає кілька секунд."
           }
         }
       }

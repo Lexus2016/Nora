@@ -153,7 +153,7 @@ struct SecuritySettingsSection: View {
             if let error = model.watchError {
                 Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
             }
-            Text("The Downloads watch keeps ClamAV's virus database in memory: about 1 GB, and up to 2.4 GB during the daily reload. Turn it off to free that memory.")
+            Text("The Downloads watch keeps ClamAV's virus database in memory only while it checks a file and for 5 minutes after: about 1 GB, and up to 2.4 GB during the daily reload. Then Nora stops ClamAV to free that memory, and the next download starts it again, which takes a few seconds.")
                 .font(.system(size: 12)).foregroundStyle(.secondary)
             if let notice = model.notice {
                 Label(notice, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)

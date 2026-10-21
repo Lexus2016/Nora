@@ -716,7 +716,7 @@
  "Tasks to run: %@",
  "Temperatures",
  "The ClamAV scan did not finish.",
- "The Downloads watch keeps ClamAV's virus database in memory: about 1 GB, and up to 2.4 GB during the daily reload. Turn it off to free that memory.",
+ "The Downloads watch keeps ClamAV's virus database in memory only while it checks a file and for 5 minutes after: about 1 GB, and up to 2.4 GB during the daily reload. Then Nora stops ClamAV to free that memory, and the next download starts it again, which takes a few seconds.",
  "The Downloads watch needs ClamAV and its virus database. Install ClamAV and update the database first.",
  "The Mole update command finished. Check the installed version below.",
  "The Touch ID change did not finish. Check the console and retry.",

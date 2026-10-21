@@ -2,6 +2,24 @@
 
 Changes to the Nora app, newest first. Work that is merged but not released yet goes under **Unreleased**; at release time it becomes the next version's section and its release notes.
 
+## Unreleased
+
+### Changed
+- Watch Downloads no longer keeps ClamAV's virus database in memory around the clock. After 5 minutes without a download to check, Nora stops ClamAV (about 1 GB, up to 2.4 GB during the daily reload) and loads it again when the next download arrives, which takes a few seconds. The watch itself stays on, so no download is skipped, and it is still off by default.
+
+### Fixed
+- The Trash reminder no longer goes silent for 30 minutes after "Not now" or an emptied Trash. Something new in the Trash is offered again as soon as it is measured; only items you already waved off or had emptied stay quiet, and so does Finder's own `.DS_Store`.
+- "Empty Trash" cannot be clicked on a list that is already out of date. When something lands in the Trash while the reminder is open, the button waits for the rescan, so it empties the current list instead of being refused and leaving the Trash half done.
+- When cleanup finds that the Trash changed since the review, Nora shows the current list again instead of leaving the rest with no window. Items thrown away while a cleanup runs are offered when it finishes.
+
+### Змінено
+- «Стежити за Завантаженнями» більше не тримає вірусну базу ClamAV у пам'яті постійно. Після 5 хвилин без файлу для перевірки Nora зупиняє ClamAV (близько 1 ГБ, до 2,4 ГБ під час щоденного оновлення) і завантажує його знову, коли надходить наступний файл, це займає кілька секунд. Саме стеження лишається ввімкненим, тож жоден файл не пропускається, і за замовчуванням воно, як і раніше, вимкнене.
+
+### Виправлено
+- Нагадування про кошик більше не мовчить 30 хвилин після «Не зараз» чи очищення. Нове в кошику пропонується знову, щойно його виміряно; тихими лишаються лише елементи, які ви вже відхилили або очистили, а також службовий `.DS_Store` від Finder.
+- Кнопку «Очистити кошик» не можна натиснути на списку, який уже застарів. Якщо в кошик щось потрапило, поки нагадування відкрите, кнопка чекає на повторну перевірку, тож очищає актуальний список, а не отримує відмову й не лишає кошик напівочищеним.
+- Якщо під час очищення виявляється, що кошик змінився після перегляду, Nora знову показує актуальний список, а не лишає залишок без вікна. Те, що потрапило в кошик під час очищення, пропонується, коли воно завершиться.
+
 ## 1.3.1 (2026-10-18)
 
 ### Changed

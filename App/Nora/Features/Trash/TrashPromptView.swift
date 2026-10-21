@@ -122,7 +122,10 @@ struct TrashPromptView: View {
     private var title: LocalizedStringKey {
         switch model.phase {
         case .idle, .scanning: return "Checking home Trash…"
-        case .review: return model.snapshot?.topLevelItemCount == 0 ? "Home Trash is empty" : "New files in your Trash"
+        case .review:
+            if model.snapshot?.topLevelItemCount == 0 { return "Home Trash is empty" }
+            // The Trash changed under the first list: this one is current and one click away from done.
+            return model.changedDuringCleanup ? "Trash changed during cleanup" : "New files in your Trash"
         case .cleaning: return model.stopRequested ? "Stopping safely…" : "Emptying reviewed Trash…"
         case .unavailable: return "Trash could not be checked"
         case .recoveryRequired: return "Trash recovery needs attention"

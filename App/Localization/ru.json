@@ -513,7 +513,7 @@
   "Tab completion for mo in your shell. Nora shows the line it adds first.": "Автодополнение по Tab для mo в вашей оболочке. Nora сначала показывает строку, которую добавляет.",
   "Tasks are ready. Here is what we found:": "Задачи готовы. Вот что мы нашли:",
   "Temperatures": "Температуры",
-  "The Downloads watch keeps ClamAV's virus database in memory: about 1 GB, and up to 2.4 GB during the daily reload. Turn it off to free that memory.": "Слежение за Загрузками держит вирусную базу ClamAV в памяти: около 1 ГБ, а во время ежедневной перезагрузки до 2,4 ГБ. Выключите его, чтобы освободить эту память.",
+  "The Downloads watch keeps ClamAV's virus database in memory only while it checks a file and for 5 minutes after: about 1 GB, and up to 2.4 GB during the daily reload. Then Nora stops ClamAV to free that memory, and the next download starts it again, which takes a few seconds.": "Слежение за Загрузками держит вирусную базу ClamAV в памяти только пока проверяет файл и ещё 5 минут после этого: около 1 ГБ, а во время ежедневной перезагрузки до 2,4 ГБ. Затем Nora останавливает ClamAV, чтобы освободить эту память, а следующая загрузка запускает его снова, это занимает несколько секунд.",
   "The Downloads watch needs ClamAV and its virus database. Install ClamAV and update the database first.": "Слежению за Загрузками нужны ClamAV и его вирусная база. Сначала установите ClamAV и обновите базу.",
   "The History screen reads the operations log, so it stays empty while this is on.": "Экран «История» читает журнал операций, поэтому, пока эта опция включена, он пуст.",
   "The antivirus scan needs ClamAV from Homebrew.": "Антивирусному сканированию нужен ClamAV из Homebrew.",

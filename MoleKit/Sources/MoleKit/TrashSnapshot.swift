@@ -54,6 +54,28 @@ public struct TrashSnapshot: Codable, Sendable, Identifiable {
     public func matchesContents(of other: Self) -> Bool {
         rootIdentity == other.rootIdentity && entries == other.entries
     }
+
+    /// Finder rewrites its view settings here whenever the Trash window is looked at. The user did
+    /// not throw it away, so it never counts as something new. It stays in the manifest like any entry.
+    static let systemMetadataNames: Set<String> = [".DS_Store"]
+
+    private var topLevelEntries: [TrashSnapshotEntry] { entries.filter { !$0.relativePath.contains("/") } }
+
+    /// The Trash holds something the user put there, not only Finder's own files.
+    public var hasUserItems: Bool {
+        topLevelEntries.contains { !Self.systemMetadataNames.contains($0.relativePath) }
+    }
+
+    /// A top-level item is here that `other` did not have, or one replaced an object of the same name.
+    /// Items that only left do not count: put back or emptied by hand, they need no new question.
+    public func hasArrivals(since other: Self) -> Bool {
+        let before = Dictionary(other.topLevelEntries.map { ($0.relativePath, $0.identity) }, uniquingKeysWith: { first, _ in first })
+        return topLevelEntries.contains { entry in
+            guard !Self.systemMetadataNames.contains(entry.relativePath) else { return false }
+            guard let known = before[entry.relativePath] else { return true }
+            return !known.sameObject(as: entry.identity)
+        }
+    }
 }
 
 public final class TrashCancellationToken: @unchecked Sendable {

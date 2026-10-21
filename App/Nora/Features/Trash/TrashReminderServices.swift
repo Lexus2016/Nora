@@ -21,6 +21,15 @@ struct TrashReminderSnapshot: Sendable {
         if let manifest, let otherManifest = other.manifest { return manifest.matchesContents(of: otherManifest) }
         return manifest == nil && other.manifest == nil && contentIdentity == other.contentIdentity
     }
+
+    /// There is something here the user has not been asked about. Against nothing, any item of theirs;
+    /// against an earlier batch, an item that was not in it. A snapshot without a manifest (a fixture)
+    /// has no items to compare, so any change counts.
+    func hasArrivals(since other: Self?) -> Bool {
+        guard let other else { return manifest?.hasUserItems ?? (topLevelItemCount > 0) }
+        if let manifest, let otherManifest = other.manifest { return manifest.hasArrivals(since: otherManifest) }
+        return !matchesContents(of: other)
+    }
 }
 
 enum TrashReminderBlock {

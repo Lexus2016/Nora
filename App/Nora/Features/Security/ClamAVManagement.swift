@@ -19,4 +19,6 @@ struct ClamAVManagementServices {
                                             environment: environment)
     }
     var now: () -> Date = { Date() }
+    /// Asked when the Downloads watch starts. Tests replace it so no system prompt appears.
+    var requestNotifications: () -> Void = { SecurityNotifier.requestAuthorization() }
 }
