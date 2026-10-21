@@ -15,6 +15,13 @@ final class ClamdIdleUnloadTests: XCTestCase {
     private var starts: URL { dir.appendingPathComponent("starts.log") }
     private var scans: URL { dir.appendingPathComponent("scans.log") }
     private var pidFile: URL { dir.appendingPathComponent("clamd.pid") }
+    /// Every pid the stub ever had, to count how many clamd processes are alive at once.
+    private var pids: URL { dir.appendingPathComponent("pids.log") }
+
+    private func livePids() -> [pid_t] {
+        let text = (try? String(contentsOf: pids, encoding: .utf8)) ?? ""
+        return text.split(separator: "\n").compactMap { pid_t($0) }.filter { kill($0, 0) == 0 }
+    }
 
     override func setUp() async throws {
         let parent = URL(fileURLWithPath: String(cString: realpath(FileManager.default.temporaryDirectory.path, nil)))
@@ -25,6 +32,7 @@ final class ClamdIdleUnloadTests: XCTestCase {
     }
 
     override func tearDown() async throws {
+        for pid in livePids() { kill(pid, SIGKILL) }
         if let pid = currentPid() { kill(pid, SIGKILL) }
         try? FileManager.default.removeItem(at: dir)
     }
@@ -39,6 +47,7 @@ final class ClamdIdleUnloadTests: XCTestCase {
     private func clamdStub() throws -> URL {
         try script("clamd", """
         echo started >> "\(starts.path)"
+        echo $$ >> "\(pids.path)"
         echo $$ > "\(pidFile.path)"
         : > "\(layout.socket.path)"
         exec sleep 600
@@ -133,6 +142,24 @@ final class ClamdIdleUnloadTests: XCTestCase {
         XCTAssertEqual(lines(starts), 1, "Three checks at once load one clamd, not three copies of the database")
         session.stop()
         try await wait { self.currentPid().map { !self.isAlive($0) } ?? true }
+    }
+
+    func testChecksArrivingWhileTheUnloadedProcessIsStillExitingShareOneReplacement() async throws {
+        let session = try makeSession()
+        try await session.ensureRunning()
+        session.unloadForIdle()
+        // Three downloads land while the old clamd is still going away: waiting for it and starting the
+        // replacement are one shared step, or each caller starts its own copy of the database.
+        async let first: Void = session.ensureRunning()
+        async let second: Void = session.ensureRunning()
+        async let third: Void = session.ensureRunning()
+        _ = try await (first, second, third)
+        XCTAssertEqual(lines(starts), 2, "One start for the first load, one shared replacement")
+        try await wait { self.livePids().count == 1 }
+        XCTAssertEqual(livePids().count, 1, "Exactly one clamd is alive, none left outside the session's control")
+        session.stop()
+        try await wait { self.livePids().isEmpty }
+        XCTAssertTrue(livePids().isEmpty)
     }
 
     func testStopDuringALoadLeavesNoProcessAndNothingStartsAfterwards() async throws {

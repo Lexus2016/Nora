@@ -153,7 +153,8 @@ final class TrashReminderModel {
     /// "Not now" silences what the user has just seen, not what arrives afterwards: a later item
     /// that is not in this batch is offered again as soon as it has been measured.
     func dismiss() {
-        dismissedSnapshot = snapshot
+        // A panel with no list to wave off (the scan failed) must not make the model forget the last batch.
+        if let snapshot { dismissedSnapshot = snapshot }
         changedDuringCleanup = false
         if workKind == .scan { invalidateScan(); pendingScan = nil }
         present(false)

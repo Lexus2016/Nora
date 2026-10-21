@@ -925,7 +925,16 @@ final class SecurityModel {
             // A clamd that was unloaded for idleness is loaded again first. If it cannot be, the file is
             // not clean: it is named in Settings and checked again, like any other check that failed.
             var startFailure: String?
-            do { try await session.ensureRunning() } catch is CancellationError { return } catch { startFailure = error.localizedDescription }
+            do {
+                try await session.ensureRunning()
+            } catch is CancellationError {
+                // The watch is stopping, or restarting because clamd died while loading. A restarted watch
+                // treats files already in Downloads as known, so this one is kept to be checked again.
+                if !self.watchRetry.contains(file) { self.watchRetry.append(file) }
+                return
+            } catch {
+                startFailure = error.localizedDescription
+            }
             var result: CommandResult?
             if startFailure == nil { result = try? await self.runLogged(session.scanCommand(for: file), app) }
             // A result for a watch that has since stopped or restarted changes nothing.

@@ -191,10 +191,16 @@ final class ClamdSession {
         }
         expectedExit = false
         self.process = process
-        for _ in 0..<300 {
-            if FileManager.default.fileExists(atPath: layout.socket.path) { return }
-            guard process.isRunning else { break }
-            try await Task.sleep(for: .milliseconds(200))
+        do {
+            for _ in 0..<300 {
+                if FileManager.default.fileExists(atPath: layout.socket.path) { return }
+                guard process.isRunning else { break }
+                try await Task.sleep(for: .milliseconds(200))
+            }
+        } catch {
+            // Cancelled while the database loads: nothing else is waiting to stop this process.
+            terminate()
+            throw error
         }
         terminate()
         throw SecurityError.clamdDidNotStart
@@ -210,11 +216,15 @@ final class ClamdSession {
     func ensureRunning() async throws {
         if let launching { return try await launching.value }
         if isServing { return }
-        // The process that was unloaded may still be freeing its memory; its socket and name are not free yet.
-        if isRunning { try await waitUntilGone() }
-        let launching = Task { @MainActor in try await self.start() }
+        // One task covers waiting for the unloaded process to go and starting its replacement, so a caller
+        // that arrives during either step joins it. Nothing suspends between the checks above and storing it.
+        let launching = Task { @MainActor in
+            defer { self.launching = nil }
+            // The process that was unloaded may still be freeing its memory; its socket and name are not free yet.
+            if self.isRunning { try await self.waitUntilGone() }
+            try await self.start()
+        }
         self.launching = launching
-        defer { self.launching = nil }
         try await launching.value
     }
 

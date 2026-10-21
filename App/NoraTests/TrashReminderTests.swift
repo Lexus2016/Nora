@@ -152,6 +152,27 @@ final class TrashReminderTests: XCTestCase {
         fixture.model.shutdown()
     }
 
+    func testClosingAnUnavailableReviewKeepsThePreviousDismissal() async {
+        let fixture = Fixture()
+        fixture.model.start()
+        await settle()
+        XCTAssertTrue(fixture.model.isPresented)
+        fixture.model.dismiss() // batch A is waved off
+        // The user reopens the review, the scan fails, and the empty panel is closed again.
+        fixture.service.scanError = FixtureError.unreadable
+        fixture.model.openReview()
+        await settle()
+        XCTAssertNil(fixture.model.snapshot)
+        fixture.model.dismiss()
+        // Finder touches the Trash: the very same batch A is measured again.
+        fixture.service.scanError = nil
+        fixture.events.emitChange()
+        fixture.clock.advance(by: 1)
+        await settle()
+        XCTAssertFalse(fixture.model.isPresented, "Closing a panel with nothing to dismiss must not forget batch A")
+        fixture.model.shutdown()
+    }
+
     func testNotNowRightAfterAnArrivalOffersTheNewItemAgain() async {
         let fixture = Fixture()
         fixture.model.start()
