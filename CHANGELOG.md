@@ -2,7 +2,7 @@
 
 Changes to the Nora app, newest first. Work that is merged but not released yet goes under **Unreleased**; at release time it becomes the next version's section and its release notes.
 
-## Unreleased
+## 1.3.2 (2026-10-21)
 
 ### Changed
 - Watch Downloads no longer keeps ClamAV's virus database in memory around the clock. After 5 minutes without a download to check, Nora stops ClamAV (about 1 GB, up to 2.4 GB during the daily reload) and loads it again when the next download arrives, which takes a few seconds. The watch itself stays on, so no download is skipped, and it is still off by default.
