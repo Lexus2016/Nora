@@ -24,6 +24,13 @@
   <a href="https://github.com/Lexus2016/Nora/releases/latest"><b>⬇ Download Nora for macOS</b></a>
 </p>
 
+## Demo
+
+<p align="center">
+  <a href="docs/media/nora-promo.mp4"><img src="docs/media/nora-poster.jpg" width="300" alt="Nora demo"></a><br>
+  <a href="docs/media/nora-promo.mp4">Watch the 30-second demo</a>
+</p>
+
 ![Nora: Smart Care](docs/screenshots/en/02-smart-care-results.webp)
 
 ## Why Nora
