@@ -3,6 +3,33 @@
     <channel>
         <title>Nora</title>
         <item>
+            <title>1.3.3</title>
+            <pubDate>Mon, 26 Oct 2026 09:25:38 +0100</pubDate>
+            <link>https://github.com/Lexus2016/Nora</link>
+            <sparkle:version>9</sparkle:version>
+            <sparkle:shortVersionString>1.3.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[### Fixed
+- Installer review now shows every same-named copy as a separate row, without blank gaps, and each checkbox works independently. Previously, files sharing a name and source label reused the same row identity.
+- Installer confirmation now accepts repeated full filenames when they correspond to individually verified selected files. Changed counts, unexpected files, ambiguous truncated names and ambiguous menu rows still stop removal before confirmation.
+- Mole 1.64's explicit successful empty-installer result is now recognized instead of being reported as a failed scan.
+- App removal supports Mole 1.64's single confirmation as well as the earlier two-step flow. The matched app and full file plan are still checked before confirming; preview cancels without removing files.
+
+### Changed
+- The verified official Mole installer is pinned to 1.64.0, with its SHA-256 checked against both official raw and API downloads. Files selected in Nora's Installers section continue to go to the Trash.
+
+### Виправлено
+- Перегляд інсталяторів показує кожну однойменну копію окремим рядком, без порожніх проміжків; кожна позначка вибору працює незалежно. Раніше файли з однаковими назвою та позначкою джерела отримували спільний номер рядка.
+- Підтвердження видалення інсталяторів приймає повторні повні назви, якщо вони відповідають окремо перевіреним вибраним файлам. Інша кількість, зайві файли, неоднозначні обрізані назви й неоднозначні рядки меню й далі зупиняють видалення до підтвердження.
+- Явне повідомлення Mole 1.64 про успішне сканування без інсталяторів тепер розпізнається, замість помилки сканування.
+- Видалення програм підтримує єдине підтвердження Mole 1.64 та попередній порядок із двома запитаннями. Назва програми й повний список файлів перевіряються до підтвердження; попередній перегляд завершується скасуванням без видалення.
+
+### Змінено
+- Перевірений офіційний інсталятор Mole оновлено до 1.64.0; його SHA-256 звірено з обома офіційними способами отримання файлу. Вибрані в розділі «Інсталятори» файли й далі переміщуються до Кошика.
+]]></description>
+            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.3/Nora-1.3.3.dmg" length="7931793" type="application/octet-stream" sparkle:edSignature="ek/RUqIclFQOSb4cVaBlKlyUj5me8lQPetCqPlqoTnKTKsTLkbKizUHgBtmUDRIP3R8Jdtlj8uQYPf09ZCzuAg=="/>
+        </item>
+        <item>
             <title>1.3.2</title>
             <pubDate>Wed, 21 Oct 2026 20:43:15 +0200</pubDate>
             <link>https://github.com/Lexus2016/Nora</link>
@@ -55,40 +82,6 @@
 - Історія більше не зараховує оцінки попереднього перегляду до звільненого місця й виконаних дій. Обслуговування розпізнає нове повідомлення Mole 1.61 про пропущену перевірку диска.
 ]]></description>
             <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.1/Nora-1.3.1.dmg" length="7908071" type="application/octet-stream" sparkle:edSignature="sgQ4VtwhRrpDYkR7nzEPvAINcOiwTXIozkxq7MeBvDCmd+ZPc3cixAjMzp9qgQBUFgTzUETe7hbdHm87wTmZCw=="/>
-        </item>
-        <item>
-            <title>1.3.0</title>
-            <pubDate>Sat, 17 Oct 2026 20:40:13 +0200</pubDate>
-            <link>https://github.com/Lexus2016/Nora</link>
-            <sparkle:version>6</sparkle:version>
-            <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[A safety audit of every module, and a reminder for the Trash. The audit's main change is that Nora now refuses to act, instead of guessing, when Mole's output or a file's state cannot be trusted: an incomplete or stale preview, an unreadable protection list or a failed save no longer leads to a removal or to a "done" screen.
-
-### Added
-- Trash reminders. While Nora is running it notices new files in your home Trash (`~/.Trash`; external disks are not looked at) and offers a review in a small panel. Settings has a switch for the reminders, and "Review home Trash…" in Nora's menu works with them off. The reminder never deletes anything: after the review, "Delete permanently" is a separate step with its own confirmation that says it cannot be undone, and its button stays inert for the first moments after it appears, so the second click of a double-click on "Empty Trash…" cannot reach it. Only the items you reviewed are removed; files that reach the Trash later are left alone, and if the Trash changed since the review you review it again. Stopping part-way leaves what was already deleted deleted. If an interruption leaves items set aside, deletion stays blocked until Nora has restored them. The result counts the entries removed, not freed space: the size shown is a logical size and can differ from the disk space returned. After a successful deletion the panel closes by itself after a few seconds; any other result (stopped, changed, failed, needs recovery) stays until you dismiss it.
-- The repository now runs the MoleKit and app tests on GitHub for every push to `main`.
-
-### Changed
-- Decorative glass animation is bounded: at most 24 frames a second, a smaller swing (up to 18°) and fewer layers on the busy hero, with a lighter shadow and a tinted edge. It stops completely while the window is inactive or hidden and when Reduce Motion is on.
-- The console opens on the last command of the current module, with a History picker, pause and "jump to latest"; scrolling by hand stops following the output, and a shortened log says so.
-- The README states the limits of the checks: Cleanup and Projects use Mole commands that rescan rather than run a fixed list of paths, so a file that appears after the check can still be affected. See `docs/audits/2026-10-17-remediation.uk.md`.
-
-### Fixed
-- Cleanup, Projects and Installers previews are rejected, not shown, when the list is incomplete, older than the last scan, has duplicate or ambiguous rows, or is empty without Mole saying so. An Installers scan that exits with an error no longer reads as "no installers". A file name with two spaces in a row is no longer cut short, and the final confirmation is sent only after the whole prompt has arrived and matches your selection exactly.
-- Cleanup no longer reports the size of a preview as space freed; without a report from Mole the result says it is unverified. Projects, Installers and Performance no longer promise space they did not measure.
-- Review shows every warning Mole gave, and the Full Disk Access explanation stays available.
-- If restoring the protection list fails, Nora shows it with a Retry button and blocks the next run. When something else changed the protection file meanwhile, both versions are kept and you are asked to reconcile them. If the defaults cannot be read, Protection cannot be edited over them, and a failed save is rolled back.
-- Smart Care and Cleanup no longer show a stale scan or results after Start over or a new scan, and Done returns to Smart Care when you came from there. Clean, Run and Remove stay visible but disabled with the reason, the found size is kept apart from the selected size, and error tiles have Retry. Opening the console no longer hides the action button.
-- Space Map no longer counts a folder and its contents twice, and refuses a stale or failed load. Tools checks Touch ID setup by its exit status and shows errors. Uninstall confirms the app and its helpers are gone, a malformed Homebrew reply is rejected, and updates that were blocked or stopped are not counted as done.
-- Security: a failed `launchctl` status check stops the action, and a quarantine that unloaded an agent but could not move it says so. Notices from manual database updates now show in Settings.
-- History shows a loading state and, when Mole fails, an error with Retry instead of an empty dashboard. Checking the latest Mole release shows the failure with Retry. Commands from Tools, Security, History and Space Map are logged under their own module, so "see console" no longer opens an empty log.
-- "Update Mole" is named for what it does, and a successful exit is no longer presented as proof that a new version is installed.
-- Space Map's Start over no longer takes Command-[ from Back, and Performance's Run is disabled when there is nothing to do.
-- Checkboxes in Space Map and Security, the external-drive picker and the selected sidebar item now have accessible names and traits.
-
-]]></description>
-            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.0/Nora-1.3.0.dmg" length="7870066" type="application/octet-stream" sparkle:edSignature="qSdjRx9RINltieSwcyhi6S5NcLb6Dz5mM+HK8IEm6iyL638ejHeZgHSc7e8icI6b9Dg+bBR7Ex8lzNXsrSxWAQ=="/>
         </item>
     </channel>
 </rss>
