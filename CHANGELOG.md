@@ -8,6 +8,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 - Installer review now shows every same-named copy as a separate row, without blank gaps, and each checkbox works independently. Previously, files sharing a name and source label reused the same row identity.
 - Installer confirmation now accepts repeated full filenames when they correspond to individually verified selected files. Changed counts, unexpected files, ambiguous truncated names and ambiguous menu rows still stop removal before confirmation.
 - Mole 1.64's explicit successful empty-installer result is now recognized instead of being reported as a failed scan.
+- App removal supports Mole 1.64's single confirmation as well as the earlier two-step flow. The matched app and full file plan are still checked before confirming; preview cancels without removing files.
 
 ### Changed
 - The verified official Mole installer is pinned to 1.64.0, with its SHA-256 checked against both official raw and API downloads. Files selected in Nora's Installers section continue to go to the Trash.
@@ -16,6 +17,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 - Перегляд інсталяторів показує кожну однойменну копію окремим рядком, без порожніх проміжків; кожна позначка вибору працює незалежно. Раніше файли з однаковими назвою та позначкою джерела отримували спільний номер рядка.
 - Підтвердження видалення інсталяторів приймає повторні повні назви, якщо вони відповідають окремо перевіреним вибраним файлам. Інша кількість, зайві файли, неоднозначні обрізані назви й неоднозначні рядки меню й далі зупиняють видалення до підтвердження.
 - Явне повідомлення Mole 1.64 про успішне сканування без інсталяторів тепер розпізнається, замість помилки сканування.
+- Видалення програм підтримує єдине підтвердження Mole 1.64 та попередній порядок із двома запитаннями. Назва програми й повний список файлів перевіряються до підтвердження; попередній перегляд завершується скасуванням без видалення.
 
 ### Змінено
 - Перевірений офіційний інсталятор Mole оновлено до 1.64.0; його SHA-256 звірено з обома офіційними способами отримання файлу. Вибрані в розділі «Інсталятори» файли й далі переміщуються до Кошика.

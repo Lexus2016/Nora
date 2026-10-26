@@ -3,6 +3,61 @@ import Testing
 @testable import MoleKit
 
 struct UninstallParsingTests {
+    private func directPlanSession(appName: String = "Fixture", expectsEnter: Bool) throws -> PTYSession {
+        let script = #"""
+        stty -echo
+        printf '◎ Matched 1 app(s):\n1. \#(appName)  1MB  |  Last: Today\n\nFiles to be removed:\n◎ Fixture , 1MB\n  ✓ /synthetic/Fixture.app , 1MB\n➤ Remove 1 app, 1MB  Enter confirm, ESC cancel: '
+        IFS= read -r -s -n1 -t 5 key || exit 80
+        if [ '\#(expectsEnter)' = true ]; then
+            [ -z "$key" ] || exit 81
+        else
+            [ "$key" = $'\e' ] || exit 82
+        fi
+        """#
+        return try PTYSession(executable: "/bin/bash", arguments: ["-c", script],
+                              environment: ["PATH": "/usr/bin:/bin", "TERM": "xterm-256color", "LANG": "en_US.UTF-8"])
+    }
+
+    @Test func directPlanConfirmsOnlyAfterExactReview() throws {
+        let session = try directPlanSession(expectsEnter: true)
+        defer { session.close() }
+        var driver = UninstallDriver()
+        driver.scanTimeout = 4
+        try driver.uninstall(app: "Fixture", expectedEntries: ["/synthetic/Fixture.app"], in: session)
+        #expect(try session.waitForExit(timeout: 5) == .exited(0))
+    }
+
+    @Test func directPlanPreviewCancelsWithoutConfirmation() throws {
+        let session = try directPlanSession(expectsEnter: false)
+        defer { session.close() }
+        var driver = UninstallDriver()
+        driver.scanTimeout = 4
+        #expect(try driver.preview(app: "Fixture", in: session) == ["/synthetic/Fixture.app"])
+        #expect(try session.waitForExit(timeout: 5) == .exited(0))
+    }
+
+    @Test func directPlanRejectsAnotherMatchedApp() throws {
+        let session = try directPlanSession(appName: "Other", expectsEnter: false)
+        defer { session.close() }
+        var driver = UninstallDriver()
+        driver.scanTimeout = 4
+        #expect(throws: UninstallDriverError.matchMismatch(expected: "Fixture", onScreen: ["Other"])) {
+            try driver.uninstall(app: "Fixture", expectedEntries: ["/synthetic/Fixture.app"], in: session)
+        }
+        #expect(try session.waitForExit(timeout: 5) == .exited(0))
+    }
+
+    @Test func directPlanRejectsAnUnexpectedPath() throws {
+        let session = try directPlanSession(expectsEnter: false)
+        defer { session.close() }
+        var driver = UninstallDriver()
+        driver.scanTimeout = 4
+        #expect(throws: UninstallDriverError.planMismatch(unexpected: ["/synthetic/Fixture.app"], missing: ["/synthetic/Other.app"])) {
+            try driver.uninstall(app: "Fixture", expectedEntries: ["/synthetic/Other.app"], in: session)
+        }
+        #expect(try session.waitForExit(timeout: 5) == .exited(0))
+    }
+
     // Screens captured from `mo uninstall --dry-run NoraFixtureQ7` (Mole 1.59.1, sandbox home).
     @Test func parsesMatches() {
         let lines = [
@@ -69,6 +124,18 @@ struct UninstallParsingTests {
         #expect(RemovalList(lines.dropLast() + ["  ✓ ~/hidden , 1MB", lines.last!], allowingPersonalData: true) == nil)
     }
 
+    @Test func readsMole164SelectedPersonalDataHeading() throws {
+        let lines = ["Files to be removed:", "◎ Fixture , 2MB", "  ✓ /synthetic/Fixture.app , 1MB",
+                     "Personal data to remove:", "  ✓ ~/Library/Preferences/fixture.plist , 1MB",
+                     "D choose personal data", "➤ Remove 1 app, 2MB, including personal data  Enter confirm, ESC cancel:"]
+        let plan = try #require(RemovalList(lines, allowingPersonalData: true))
+        #expect(plan.entries == ["/synthetic/Fixture.app", "~/Library/Preferences/fixture.plist"])
+        #expect(plan.personalData.isEmpty)
+        #expect(RemovalList(lines) == nil)
+        #expect(RemovalList(lines.filter { !$0.contains("✓ ~/Library") }, allowingPersonalData: true) == nil)
+        #expect(RemovalList(lines + ["unexpected row"], allowingPersonalData: true) == nil)
+    }
+
     @Test func readsFullySelectedDataPlanWithChoiceControl() {
         let lines = ["Files to be removed:", "◎ App , 1MB", "  ✓ /Applications/App.app , 1MB",
                      "  ✓ ~/Library/Preferences/app.plist , 1KB", "D choose personal data",
@@ -83,6 +150,8 @@ struct UninstallParsingTests {
                      "  ○ ~/Library/Preferences/app.plist",
                      "↑↓ | Space Select | A All | Enter Save | Q Cancel", "/ Search | h/l Page"]
         #expect(UninstallDriver.personalDataMenu(lines, paths: paths, selected: false))
+        let singleLineControls = Array(lines.dropLast(2)) + [lines.suffix(2).joined(separator: " | ")]
+        #expect(UninstallDriver.personalDataMenu(singleLineControls, paths: paths, selected: false))
         #expect(!UninstallDriver.personalDataMenu(lines, paths: paths, selected: true))
         let selected = lines.map { $0.replacingOccurrences(of: "0/2", with: "2/2").replacingOccurrences(of: "○", with: "●") }
         #expect(UninstallDriver.personalDataMenu(selected, paths: paths, selected: true))

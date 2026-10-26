@@ -21,6 +21,12 @@ final class PurgeOverlayTests: XCTestCase {
         for dir in [alpha, beta, gamma] {
             try TestSandbox.writeRandom(bytes: 200_000, to: dir.appendingPathComponent("blob.bin"))
         }
+        // Mole 1.64 requires a lockfile and install record before dependencies can be rebuilt.
+        // Mole 1.64 вимагає файл фіксації версій і запис встановлення для відновлення залежностей.
+        for dir in [alpha, beta] {
+            try TestSandbox.write("{}", to: dir.deletingLastPathComponent().appendingPathComponent("package-lock.json"))
+            try TestSandbox.write("{}", to: dir.appendingPathComponent(".package-lock.json"))
+        }
         // Mole leaves recently active projects alone; age everything by 90 days.
         let old = Date().addingTimeInterval(-90 * 86_400)
         let paths = FileManager.default.subpaths(atPath: projects.path) ?? []

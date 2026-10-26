@@ -36,6 +36,8 @@ extension PTYSession {
 /// Strict on purpose: the list is accepted only when every non-empty line up to the `➤` prompt is
 /// a header or an entry and the prompt is on screen. A wrapped long path, an unexpected line or a
 /// list that scrolled off the top makes it nil, and the drivers then refuse to confirm.
+/// Mole 1.64 groups selected personal paths under `Personal data to remove:`; those are entries.
+/// Mole 1.64 групує вибрані особисті шляхи під `Personal data to remove:`; вони входять до списку видалення.
 struct RemovalList: Equatable {
     var groups: [String] = []
     var entries: [String] = []
@@ -55,9 +57,16 @@ struct RemovalList: Equatable {
         guard let prompt = rest.last, prompt.hasPrefix("➤"), rest.filter({ $0.hasPrefix("➤") }).count == 1 else { return nil }
         var inPersonalData = false
         var sawDataControl = false
+        var inSelectedData = false
+        var sawSelectedData = false
+        var selectedDataCount = 0
         for line in rest.dropLast() {
-            if allowingPersonalData && line == "Personal data kept:" && !inPersonalData && !sawDataControl {
+            if allowingPersonalData && line == "Personal data to remove:" && !sawSelectedData && !inPersonalData && !sawDataControl {
+                inSelectedData = true
+                sawSelectedData = true
+            } else if allowingPersonalData && line == "Personal data kept:" && !inPersonalData && !sawDataControl {
                 inPersonalData = true
+                inSelectedData = false
             } else if allowingPersonalData && line == "D choose personal data" && !sawDataControl {
                 sawDataControl = true
             } else if sawDataControl {
@@ -68,14 +77,17 @@ struct RemovalList: Equatable {
                 guard path.hasPrefix("/") || path.hasPrefix("~/") else { return nil }
                 personalData.append(path)
             } else if line.hasPrefix("◎ ") {
+                guard !sawSelectedData else { return nil }
                 groups.append(Self.stripSize(line.dropFirst(2)))
             } else if line.hasPrefix("✓ ") {
                 entries.append(Self.stripSize(line.dropFirst(2)))
+                if inSelectedData { selectedDataCount += 1 }
             } else {
                 return nil
             }
         }
         guard !inPersonalData || (!personalData.isEmpty && sawDataControl),
+              !sawSelectedData || (selectedDataCount > 0 && sawDataControl),
               Set(personalData).count == personalData.count,
               Set(entries).isDisjoint(with: personalData) else { return nil }
     }

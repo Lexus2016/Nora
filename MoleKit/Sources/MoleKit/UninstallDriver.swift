@@ -14,7 +14,8 @@ public enum UninstallDriverError: Error, Equatable {
 /// Drives `mo uninstall <name>` through its app match, data selection and final confirmation.
 /// Керує вибором програми, даних і остаточним підтвердженням у `mo uninstall <name>`.
 ///
-/// 1. "Matched N app(s)" must list exactly the requested app before it answers `y`.
+/// 1. "Matched N app(s)" must list exactly the requested app; answer `y` only to the legacy match prompt.
+/// 1. "Matched N app(s)" має містити лише потрібну програму; `y` надсилати лише на старе початкове запитання.
 /// 2. "Files to be removed:" must list exactly `expectedEntries` (as Mole prints them,
 ///    `~/…` for the home) before it presses Enter; otherwise it cancels with ESC.
 ///
@@ -57,13 +58,17 @@ public struct UninstallDriver {
     private func review(app name: String, in session: PTYSession) throws -> RemovalList {
         let matched = try session.awaitMoleScreen(timeout: scanTimeout, "app match") { lines in
             lines.contains { $0.hasPrefix("Proceed with uninstallation? [y/N]") }
+                || (lines.contains("Files to be removed:")
+                    && lines.contains { $0.hasPrefix("➤ Remove ") && $0.contains("Enter confirm, ESC cancel") })
         }
+        let hasMatchPrompt = matched.contains { $0.hasPrefix("Proceed with uninstallation? [y/N]") }
         let apps = Self.parseMatches(matched)
         guard apps == [name] else {
-            session.write("n\r")
+            if hasMatchPrompt { session.write("n\r") }
+            else { session.send(.escape) }
             throw UninstallDriverError.matchMismatch(expected: name, onScreen: apps)
         }
-        session.write("y\r")
+        if hasMatchPrompt { session.write("y\r") }
         var plan = try removalPlan(app: name, in: session)
         guard !plan.personalData.isEmpty else { return plan }
 
@@ -118,10 +123,11 @@ public struct UninstallDriver {
         let title = "Personal data to remove \(count)/\(paths.count) selected"
         guard let first = lines.first,
               first.split(whereSeparator: \.isWhitespace).joined(separator: " ") == title,
-              lines.suffix(2) == ["↑↓ | Space Select | A All | Enter Save | Q Cancel", "/ Search | h/l Page"] else { return false }
+              let controls = lines.firstIndex(where: { $0.hasPrefix("↑↓ | Space Select") }),
+              lines[controls...].joined(separator: " | ") == "↑↓ | Space Select | A All | Enter Save | Q Cancel | / Search | h/l Page" else { return false }
         var listed: [String] = []
         var cursors = 0
-        for var line in lines.dropFirst().dropLast(2) {
+        for var line in lines[1..<controls] {
             if line.hasPrefix("➤ ") { cursors += 1; line = String(line.dropFirst(2)) }
             guard line.hasPrefix(selected ? "● " : "○ ") else { return false }
             listed.append(String(line.dropFirst(2)))
