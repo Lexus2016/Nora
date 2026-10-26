@@ -8,10 +8,12 @@ import SwiftUI
 @MainActor @Observable
 final class InstallersModel {
     struct File: Identifiable, Hashable {
+        // One stable identity per scan entry; names and source labels can repeat.
+        // Кожен запис сканування має сталий номер; назви й джерела можуть повторюватися.
+        let id = UUID().uuidString
         let name: String
         let sizeText: String
         let source: String
-        var id: String { name + "|" + source }
         var size: Int64 { MoleSize.parse(sizeText) ?? 0 }
     }
 

@@ -109,6 +109,7 @@ public struct InstallerDriver {
         guard status == .exited(0) else { return false }
         let text = ANSIText.strip(output).lowercased()
         return text.contains("no installer files found") || text.contains("no installers found")
+            || text.contains("no installer files to clean")
     }
 
     /// - Parameters:
@@ -181,14 +182,18 @@ public struct InstallerDriver {
     }
 
     /// The review prints full names; every target (menu name, maybe cut) must account for exactly
-    /// one of them and no listed file may be left over.
+    /// one row and no listed file may be left over. Repeated basenames are valid: Mole can find
+    /// distinct files with the same name in different folders.
     static func review(_ listed: [String], matches targets: [InstallerTarget]) -> Bool {
-        guard listed.count == targets.count, Set(listed).count == listed.count else { return false }
-        var used = Set<String>()
+        guard listed.count == targets.count else { return false }
+        var used = Set<Int>()
         for target in targets {
-            let hits = listed.filter { !used.contains($0) && name(target.name, matches: $0) }
-            guard hits.count == 1 else { return false }
-            used.insert(hits[0])
+            let hits = listed.indices.filter {
+                !used.contains($0) && name(target.name, matches: listed[$0])
+            }
+            guard let hit = hits.first,
+                  hits.allSatisfy({ listed[$0] == listed[hit] }) else { return false }
+            used.insert(hit)
         }
         return used.count == listed.count
     }

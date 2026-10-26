@@ -96,6 +96,7 @@ struct InstallerE2ETests {
         let trash = home.appendingPathComponent("TestTrash")
         try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
         var env = MoleE2E.environment(home: home)
+        env["MOLE_TEST_NO_AUTH"] = "1"
         env["MOLE_DELETE_MODE"] = "trash"
         env["MOLE_TEST_TRASH_DIR"] = trash.path
 
@@ -109,6 +110,32 @@ struct InstallerE2ETests {
         // Mole's test Trash names the moved file "<name>.<pid>.<time>".
         #expect(trashed.contains { $0.hasPrefix("NoraQ7-2.dmg.") }, "trash folder: \(trashed)")
         #expect(log.contains("\ttrash\t") && log.contains("\tok\t"), "deletions.log: \(log)")
+    }
+
+    @Test func deletesOnlySelectedSameNamedCopies() throws {
+        let copies = (1...3).map { "Downloads/0\($0)/Example.dmg" }
+        let home = try makeHome(extra: copies)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let mo = try #require(MoleE2E.executable)
+        let env = MoleE2E.environment(home: home, noAuth: true)
+
+        let listing = try PTYSession(executable: mo.path, arguments: ["installer", "--dry-run"],
+                                     environment: env, currentDirectory: home.path)
+        defer { listing.close() }
+        let rows = try InstallerDriver().list(in: listing).filter { $0.name == "Example.dmg" }
+        _ = try listing.waitForExit(timeout: 30)
+        #expect(rows.count == 3)
+        let targets = rows.prefix(2).map { InstallerTarget(name: $0.name, sources: [$0.source], size: $0.size) }
+
+        let session = try PTYSession(executable: mo.path, arguments: ["installer"],
+                                     environment: env, currentDirectory: home.path)
+        defer { session.close() }
+        try InstallerDriver().delete(targets, in: session)
+        #expect(try session.waitForExit(timeout: 60) == .exited(0))
+        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent(copies[0]).path))
+        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent(copies[1]).path))
+        #expect(FileManager.default.fileExists(atPath: home.appendingPathComponent(copies[2]).path))
+        #expect(remaining(in: home).count == fixtures.count)
     }
 
     @Test func listsTheMenuOfADryRun() throws {
@@ -202,6 +229,22 @@ struct InstallerE2ETests {
 }
 
 struct InstallerReviewMatchTests {
+    @Test func repeatedBasenamesMatchDistinctSelectedFiles() {
+        let download = InstallerTarget(name: "Example.dmg", sources: ["Downloads"], size: "1MB")
+        let desktop = InstallerTarget(name: "Example.dmg", sources: ["Desktop"], size: "2MB")
+        #expect(InstallerDriver.review(["Example.dmg", "Example.dmg"], matches: [download, desktop]))
+        #expect(!InstallerDriver.review(["Example.dmg"], matches: [download, desktop]))
+        #expect(!InstallerDriver.review(["Example.dmg", "Other.dmg"], matches: [download, desktop]))
+        let other = InstallerTarget(name: "Other.dmg", sources: ["Downloads"])
+        #expect(!InstallerDriver.review(["Example.dmg", "Other.dmg", "Other.dmg"], matches: [download, desktop, other]))
+    }
+
+    @Test func cutNamesStillRefuseDifferentMatchingFullNames() {
+        let download = InstallerTarget(name: "Example...", sources: ["Downloads"], size: "1MB")
+        let desktop = InstallerTarget(name: "Example...", sources: ["Desktop"], size: "2MB")
+        #expect(!InstallerDriver.review(["Example-1.dmg", "Example-2.dmg"], matches: [download, desktop]))
+    }
+
     /// The menu cuts long names; the review prints them in full. One to one, nothing left over.
     @Test func reviewMatchesCutMenuNamesOneToOne() {
         let long = "Some-Very-Long-Installer-Name-For-Testing-1.2.3-universal.dmg"

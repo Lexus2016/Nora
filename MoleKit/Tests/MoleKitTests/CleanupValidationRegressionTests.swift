@@ -66,5 +66,8 @@ final class CleanupValidationRegressionTests: XCTestCase {
         XCTAssertFalse(InstallerDriver.isEmptyScan(status: .exited(1), output: "No installers found"))
         XCTAssertFalse(InstallerDriver.isEmptyScan(status: .exited(0), output: "unexpected output"))
         XCTAssertTrue(InstallerDriver.isEmptyScan(status: .exited(0), output: "No installer files found."))
+        XCTAssertTrue(InstallerDriver.isEmptyScan(status: .exited(0), output: "✓ Great! No installer files to clean"))
+        XCTAssertFalse(InstallerDriver.isEmptyScan(status: .exited(1), output: "✓ Great! No installer files to clean"))
+        XCTAssertFalse(InstallerDriver.isEmptyScan(status: .exited(0), output: "DRY RUN MODE, No installer files will be removed"))
     }
 }

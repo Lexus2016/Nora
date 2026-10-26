@@ -42,11 +42,11 @@ public enum MoleSetup {
     }
 
     /// The Mole release a script install brings in. Newer releases arrive through `mo update`.
-    public static let pinnedVersion = "1.61.0"
+    public static let pinnedVersion = "1.64.0"
     public static let installScriptURL = URL(string: "https://raw.githubusercontent.com/tw93/Mole/V\(pinnedVersion)/install.sh")!
-    /// SHA-256 of install.sh at tag V1.61.0, verified against official raw and API bytes.
-    /// SHA-256 install.sh з позначки V1.61.0, звірений з офіційними файлами та API.
-    public static let installScriptSHA256 = "b389c3cf20cdb707b570b7d52ecc6b2e035d13ddf59aef103eca24426753ddb1"
+    /// SHA-256 of install.sh at tag V1.64.0, verified against official raw and API bytes.
+    /// SHA-256 install.sh з позначки V1.64.0, звірений з офіційними файлами та API.
+    public static let installScriptSHA256 = "f60bed00d120f758190998dd25083cdc834dd968e1ff24e525dee287f5b12137"
 
     /// Updates through the channel Mole was installed with.
     public static func updateCommand(for mole: Mole) -> ShellCommand {

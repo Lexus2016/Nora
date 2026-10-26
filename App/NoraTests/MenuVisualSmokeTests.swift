@@ -53,6 +53,26 @@ final class MenuVisualSmokeTests: XCTestCase {
         }
     }
 
+    func testInstallersWithRepeatedNamesKeepAllRows() throws {
+        let app = fixture(.installers)
+        app.installers.stage = .review
+        app.installers.files = [
+            .init(name: "Relay.dmg", sizeText: "21.6MB", source: "Downloads"),
+            .init(name: "Example-1.0-arm64-mac.zip", sizeText: "156.3MB", source: "Downloads"),
+            .init(name: "Example-1.0-arm64.dmg", sizeText: "157.5MB", source: "Downloads"),
+            .init(name: "Example-1.1-arm64-mac.zip", sizeText: "156.4MB", source: "Downloads"),
+            .init(name: "Example-1.1-arm64.dmg", sizeText: "157.6MB", source: "Downloads"),
+            .init(name: "Example-1.0-arm64-mac.zip", sizeText: "156.5MB", source: "Downloads"),
+            .init(name: "Example-1.0-arm64.dmg", sizeText: "157.7MB", source: "Downloads"),
+            .init(name: "Beta.dmg", sizeText: "162.1MB", source: "Downloads"),
+            .init(name: "Other.dmg", sizeText: "26.7MB", source: "Downloads"),
+            .init(name: "Long-Installer-Name-5.3.0-beta-arm64-release.dmg", sizeText: "358.3MB", source: "Downloads"),
+        ]
+        app.installers.selected = Set(app.installers.files.map(\.id))
+        try snapshot(app, name: "installers-repeated-names-uk", locale: "uk",
+                     size: CGSize(width: 1240, height: 800))
+    }
+
     func testReviewEmptyAndErrorStates() throws {
         for module in Module.available {
             for state in ["review", "empty", "error"] {

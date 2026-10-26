@@ -4,6 +4,24 @@ import MoleKit
 
 @MainActor
 final class NavigationConsistencyRegressionTests: XCTestCase {
+    func testSameNamedInstallersRemainIndividuallySelectable() {
+        let model = InstallersModel()
+        model.files = [
+            .init(name: "Example.dmg", sizeText: "1MB", source: "Downloads"),
+            .init(name: "Example.dmg", sizeText: "2MB", source: "Downloads"),
+            .init(name: "Example.dmg", sizeText: "1MB", source: "Downloads"),
+        ]
+        let ids = model.files.map(\.id)
+        XCTAssertEqual(Set(ids).count, 3)
+        model.selected = Set(ids)
+        XCTAssertEqual(model.selected.count, 3)
+        XCTAssertEqual(model.selectedSize, model.files.reduce(0) { $0 + $1.size })
+
+        model.selected.remove(ids[0])
+        XCTAssertEqual(model.files.filter { model.selected.contains($0.id) }.count, 2)
+        XCTAssertEqual(model.selectedSize, model.files[1].size + model.files[2].size)
+    }
+
     func testReviewResetsCategoryAndConsoleButPreservesReturnRoute() {
         let app = AppModel()
         app.cleanup.showList = true

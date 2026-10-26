@@ -10,6 +10,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD="$ROOT/build/release"
 DIST="$ROOT/dist"
+TEST_DERIVED_DATA="${NORA_TEST_DERIVED_DATA:-$ROOT/build/DerivedData-test}"
 PROFILE="${NOTARY_PROFILE:-nora-notary}"
 NOTARIZE="${NOTARIZE:-1}"
 IDENTITY="Developer ID Application"
@@ -32,7 +33,7 @@ rm -rf "$BUILD" && mkdir -p "$BUILD" "$DIST"
 step "Generating the Xcode project"
 (cd "$ROOT/App" && xcodegen generate --spec project.yml --quiet)
 xcodebuild -project "$ROOT/App/Nora.xcodeproj" -scheme Nora -destination 'platform=macOS' \
-    -derivedDataPath "$ROOT/build/DerivedData-test" test -quiet
+    -derivedDataPath "$TEST_DERIVED_DATA" test -quiet
 echo "Gate passed for $(git -C "$ROOT" rev-parse --short HEAD)"
 
 step "Archiving Nora $VERSION"
