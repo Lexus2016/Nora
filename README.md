@@ -101,7 +101,7 @@ The screenshots use demo data.
 
 ## Install
 
-1. Download `Nora-1.2.1.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
+1. Download `Nora-<version>.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
 2. Open it and drag **Nora** to **Applications**.
 3. Start Nora. If Mole is missing, Nora installs it for you.
 
@@ -135,6 +135,10 @@ Known limits: Cleanup and Projects use Mole commands that rescan rather than exe
 - **Building and releasing:** [docs/BUILD.md](docs/BUILD.md)
 - **Early design concept:** the [interactive browser prototype](https://lexus2016.github.io/Nora/prototype/) that the app grew from
 
+## Contributing and support
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for bug reports, feature requests and development checks. Do not include passwords, private file lists or unredacted logs in public issues.
+
 ## Roadmap
 
 - [x] Research, design and interactive prototype
@@ -161,4 +165,4 @@ You may use, copy, modify and share Nora's code for any noncommercial purpose: p
 
 Mole is a separate GPL-3.0 project. Nora runs it as an external program and does not include its code, so Mole's license is unaffected.
 
-Compatibility: the minimum accepted Mole version remains 1.55.0. The official installer is pinned to 1.61.0 with a verified checksum; parser fixtures cover 1.59.x and the 1.61.0 uninstall format. Mole 1.61.0 was checked with isolated-home end-to-end tests and read-only live probes. See [the compatibility audit](docs/audits/2026-10-18-mole-1.61-compat.md) for evidence and untested cases. Accepting a version does not prove compatibility with every future release; guarded previews reject unknown or incomplete output.
+Compatibility: the minimum accepted Mole version remains 1.55.0. The official installer is pinned to 1.64.0 with a verified checksum. See the [Mole 1.64 compatibility audit](docs/audits/2026-10-26-mole-1.64-installers.md) for installer and app-removal changes, isolated-home tests and untested cases. The [earlier 1.61 audit](docs/audits/2026-10-18-mole-1.61-compat.md) remains available. Accepting a version does not prove compatibility with every future release; guarded previews reject unknown or incomplete output.
