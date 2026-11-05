@@ -65,6 +65,14 @@ final class CleanupLifecycleRegressionTests: XCTestCase {
         XCTAssertEqual(model.resultHeadline, String(localized: "Cleanup stopped"))
     }
 
+    /// Mole 1.67 and newer print "Removed: X · N items" where older versions printed "Tracked cleanup:".
+    func testMole169RemovedLineConfirmsACompletedCleanup() {
+        let model = reviewed()
+        model.finish(text: "=====\nCleanup complete\nRemoved: 898.0MB · 179 items\nFree space: 300.1GB (+898.0MB)\n=====", ok: true)
+        XCTAssertFalse(model.failed)
+        XCTAssertEqual(model.resultHeadline, String(localized: "Cleanup command completed"))
+    }
+
     func testReportedBytesWithoutCompletionRemainUnverified() {
         let model = reviewed()
         model.finish(text: "=====\nTracked cleanup: 2MB | Items cleaned: 1\n=====", ok: true)

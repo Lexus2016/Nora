@@ -162,6 +162,11 @@ public struct CleanPreview: Sendable {
             }
             if let range = line.range(of: "Potential space: ") {
                 potential = MoleSize.parse(String(line[range.upperBound...].prefix { $0 != " " && $0 != "|" }))
+                // Mole 1.67 and newer: "Potential space: 898.0MB · 179 items" instead of
+                // "Potential space: 898.0MB | Items: 179 | Categories: 6".
+                if counted == nil, let match = line[range.upperBound...].range(of: #" · [0-9]+ items?"#, options: .regularExpression) {
+                    counted = Int(line[match].filter(\.isNumber))
+                }
             }
         }
         return CleanPreview(items: items, notes: notes, potentialSize: potential, needsSudoForSystem: needsSudo,

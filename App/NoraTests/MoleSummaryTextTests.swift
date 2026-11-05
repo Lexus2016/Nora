@@ -20,6 +20,15 @@ final class MoleSummaryTextTests: XCTestCase {
         XCTAssertNotEqual(MoleSummaryText.localize("Free space: 512.3GB (+2.1GB)"), "Free space: 512.3GB (+2.1GB)")
     }
 
+    /// Mole 1.67+ wording: "Removed: X · N items" and "Potential space: X · N items".
+    func testMole169CleanLinesAreShownInNorasLanguageWithTheirNumbers() {
+        for line in ["Removed: 898.0MB · 179 items", "Potential space: 898.0MB · 179 items"] {
+            let text = MoleSummaryText.localize(line)
+            XCTAssertNotEqual(text, line, line)
+            XCTAssertTrue(text.contains("179"), text)
+        }
+    }
+
     func testNorasOwnAndUnknownLinesPassThrough() {
         XCTAssertEqual(MoleSummaryText.localize("✓ Example App"), "✓ Example App")
         XCTAssertEqual(MoleSummaryText.localize("Something a later Mole prints"), "Something a later Mole prints")

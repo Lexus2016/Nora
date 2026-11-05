@@ -24,6 +24,11 @@ enum MoleSummaryText {
             let freed = String(localized: "Cleaned: \(size(m.1))")
             return m.2.map { freed + " · " + String(localized: "Items: \(String($0))") } ?? freed
         }
+        // Mole 1.67 and newer: "Removed: 898.0MB · 179 items" in place of "Tracked cleanup: ...".
+        if let m = line.firstMatch(of: #/^Removed: (.+?)(?: · (\d+) items?)?$/#) {
+            let freed = String(localized: "Cleaned: \(size(m.1))")
+            return m.2.map { freed + " · " + String(localized: "Items: \(String($0))") } ?? freed
+        }
         if let m = line.firstMatch(of: #/^Free space: (\S+)(?: \((.+)\))?$/#) {
             let free = String(localized: "Free on disk: \(size(m.1))")
             return m.2.map { "\(free) (\(signedSize($0)))" } ?? free
@@ -35,9 +40,10 @@ enum MoleSummaryText {
             if let free = m.5 { parts.append(String(localized: "Free on disk: \(size(free))")) }
             return parts.joined(separator: " · ")
         }
-        if let m = line.firstMatch(of: #/^Potential space: (.+?)(?: \| Items: (\d+))?(?: \| Categories: (\d+))?$/#) {
+        // Older: "Potential space: X | Items: N | Categories: M". Mole 1.67 and newer: "Potential space: X · N items".
+        if let m = line.firstMatch(of: #/^Potential space: (.+?)(?: \| Items: (\d+))?(?: \| Categories: (\d+))?(?: · (\d+) items?)?$/#) {
             var parts = [String(localized: "Can be freed: \(size(m.1))")]
-            if let items = m.2 { parts.append(String(localized: "Items: \(String(items))")) }
+            if let items = m.2 ?? m.4 { parts.append(String(localized: "Items: \(String(items))")) }
             if let categories = m.3 { parts.append(String(localized: "Categories: \(String(categories))")) }
             return parts.joined(separator: " · ")
         }

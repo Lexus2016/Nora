@@ -7,6 +7,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 ### Fixed
 - Result cards no longer display Mole's terminal separator lines made of equals signs, which could wrap into an untidy extra row. The original command log is preserved.
 - Cleanup no longer silently loses Homebrew and large project folders when they are slow to scan. Mole's limits (20 s for Homebrew, 6 s per project folder) are raised for the cleanup preview and run, so the preview and the run see the same folders.
+- Cleanup works with Mole 1.67 and newer. Mole reworded the closing lines of `mo clean` ("Potential space: X · N items" and "Removed: X · N items" instead of "Items: N" and "Tracked cleanup:"). Nora read the old wording only, so every scan on Mole 1.67 or newer was refused as incomplete, and a successful cleanup would have been reported as unverified. Both wordings are read now; the new lines are shown in Nora's language.
 - Projects: the artifact preview could end as "incomplete" because `~/_Projects` took longer than Mole's 60 s scan limit, and Nora refuses to clean an incomplete preview. The scan limits are raised (measured: the same folder now reads "complete", 4.89 GB in 382 artifacts), and the run uses the same limits.
 
 ### Changed
@@ -15,6 +16,7 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 ### Виправлено
 - Підсумкові картки більше не показують службові смуги Mole зі знаків рівності, які переносилися в зайвий рядок. Оригінальний журнал команди збережений.
 - Очищення більше не губить мовчки Homebrew і великі теки проєктів, коли їх повільно сканувати. Ліміти Mole (20 с для Homebrew, 6 с на теку проєктів) збільшено для перегляду й запуску очищення, тож вони бачать однакові теки.
+- Очищення працює з Mole 1.67 і новішими. Mole змінив завершальні рядки `mo clean` («Potential space: X · N items» і «Removed: X · N items» замість «Items: N» і «Tracked cleanup:»). Nora читала лише старий запис, тому кожне сканування на Mole 1.67 і новіших відхилялося як неповне, а успішне очищення було б показано як непідтверджене. Тепер читаються обидва записи; нові рядки показуються мовою Nora.
 - Проєкти: перегляд артефактів міг завершуватися як «неповний», бо `~/_Projects` сканувалась довше за ліміт Mole 60 с, а Nora відмовляється чистити неповний перегляд. Ліміти сканування збільшено (виміряно: та сама тека тепер «повна», 4,89 ГБ у 382 артефактах), запуск використовує ті самі ліміти.
 
 ### Змінено

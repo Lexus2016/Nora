@@ -221,7 +221,8 @@ final class CleanupModel {
 
     func finish(text: String, ok: Bool) {
         let summary = MoleSummary.lines(text)
-        let report = summary.first { $0.contains("Tracked cleanup:") || $0.contains("Space freed") }
+        // Mole 1.67 and newer print "Removed: X · N items"; older versions "Tracked cleanup:".
+        let report = summary.first { $0.contains("Tracked cleanup:") || $0.contains("Space freed") || $0.hasPrefix("Removed:") }
         // A backend report is not a measured filesystem delta. Never substitute preview bytes.
         let confirmed = summary.contains("Cleanup complete") && report != nil
         failed = !ok || !confirmed
