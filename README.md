@@ -5,7 +5,7 @@
 <h1 align="center">Nora</h1>
 
 <p align="center">
-  <b>A native macOS app for the <a href="https://github.com/tw93/Mole">Mole</a> command-line tool.</b><br>
+  <b>A native macOS app for the <a href="https://github.com/tw93/Mole">Mole</a> command-line tool and the <a href="https://www.clamav.net">ClamAV</a> antivirus.</b><br>
   Clean your Mac, remove apps with their leftovers, speed it up, see what fills your disk, watch system health live and scan for malware. All from one glass window and your menu bar.
 </p>
 
@@ -35,7 +35,7 @@
 
 ## Why Nora
 
-[Mole](https://github.com/tw93/Mole) is a free, open-source toolkit that does what CleanMyMac, AppCleaner, DaisyDisk and iStat Menus do, but you run it in Terminal. Nora gives Mole a native Mac window and keeps everything it does in plain sight.
+[Mole](https://github.com/tw93/Mole) is a free, open-source toolkit that does what CleanMyMac, AppCleaner, DaisyDisk and iStat Menus do, but you run it in Terminal. Nora gives Mole a native Mac window and keeps everything it does in plain sight. For malware, the same window runs the open-source [ClamAV](https://www.clamav.net) antivirus.
 
 - **Review before removal.** Cleaning modules show a preview and require your action before removal starts. Preview checks reduce risk but are not an atomic filesystem plan.
 - **Selection is checked.** Nora protects known unticked paths for the run. Installers also require an exact match with Mole’s confirmation before approval. A rejected check cancels the run; a later failure can leave a partial result, which Nora reports.
@@ -43,6 +43,7 @@
 - **Antivirus built in.** ClamAV and Apple's own XProtect rules check your apps, downloads and launch items. One click installs ClamAV, and Nora updates its virus database every day while it runs.
 - **Installs Mole for you.** No Terminal needed. Nora uses Homebrew if you have it, otherwise Mole's official installer with a pinned version and a verified checksum. No admin password.
 - **Menu bar quick menu.** Health, four stats of your choice, what loads your Mac most, space to free and quick jumps to every section (<kbd>⌥⌘N</kbd>). The Processor tile shows the CPU temperature with a coloured dot for how hot it runs; the icon can show it too, or you can hide the icon from the menu bar.
+- **Trash reminders.** While Nora runs, it notices new files in your home Trash and offers a review in a small panel. *Empty Trash* permanently removes only the items the panel listed; files that reach the Trash later are left alone. The Trash of external drives is not watched. Settings has a switch for the reminders, and *Review home Trash…* in Nora's menu works with them off.
 - **Native and light.** SwiftUI and AppKit, a universal app for Apple silicon and Intel. Nora runs the Mole you have and does not bundle its own engine.
 - **Multilingual.** Nora speaks your Mac's language when it knows it and falls back to English otherwise. More languages are on the way.
 
@@ -101,7 +102,7 @@ The screenshots use demo data.
 
 ## Install
 
-1. Download `Nora-1.2.1.dmg` from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
+1. Download the DMG from the [latest release](https://github.com/Lexus2016/Nora/releases/latest).
 2. Open it and drag **Nora** to **Applications**.
 3. Start Nora. If Mole is missing, Nora installs it for you.
 
@@ -122,7 +123,7 @@ To build Nora yourself, see [docs/BUILD.md](docs/BUILD.md).
 ## Safety
 
 - Nora never deletes on its own. Removal always follows a review and your click.
-- Caches, logs and build folders are deleted permanently, as Mole does; Mole checks every path again first. Apps and installers go to the Trash. Deleting an app permanently asks once more. When Homebrew takes over an app you downloaded, the old copy is set aside first and goes to the Trash only after Nora has checked the new version; if the install fails, it goes back.
+- Caches, logs and build folders are deleted permanently, as Mole does; Mole checks every path again first. Apps and installers go to the Trash. Deleting an app permanently asks once more. Space Map will not move protected folders to the Trash: iCloud Drive's own folders (moving one removes it from every device on the account), the data of Docker Desktop and OrbStack, system folders and your home folder. When Homebrew takes over an app you downloaded, the old copy is set aside first and goes to the Trash only after Nora has checked the new version; if the install fails, it goes back.
 - When Nora edits Mole's protection list, Mole's own default protections and safety rules stay in place.
 - Your password goes straight to `sudo` through the system dialog or Touch ID. Nora never sees or stores it.
 - No telemetry. Nora goes online only to check for updates to Nora, Mole and your apps (Homebrew's public app list and each app's own update feed), to update the ClamAV database if you installed ClamAV, and to download what you ask it to install: Mole, ClamAV and yara, and app updates through Homebrew.
@@ -161,4 +162,4 @@ You may use, copy, modify and share Nora's code for any noncommercial purpose: p
 
 Mole is a separate GPL-3.0 project. Nora runs it as an external program and does not include its code, so Mole's license is unaffected.
 
-Compatibility: the minimum accepted Mole version remains 1.55.0. The official installer is pinned to 1.61.0 with a verified checksum; parser fixtures cover 1.59.x and the 1.61.0 uninstall format. Mole 1.61.0 was checked with isolated-home end-to-end tests and read-only live probes. See [the compatibility audit](docs/audits/2026-10-18-mole-1.61-compat.md) for evidence and untested cases. Accepting a version does not prove compatibility with every future release; guarded previews reject unknown or incomplete output.
+Compatibility: the minimum accepted Mole version remains 1.55.0. The official installer is pinned to 1.64.0 with a verified checksum; parser fixtures cover 1.59.x and the 1.61.0 uninstall format. Mole 1.67 reworded the closing lines of `mo clean`, and Nora 1.3.4 and newer read both wordings (older Nora versions refuse Cleanup previews from Mole 1.67 or newer). Mole 1.69.0 was checked with isolated-home end-to-end tests and read-only live scans. See the [1.61 compatibility audit](docs/audits/2026-10-18-mole-1.61-compat.md) and the [1.64 installer audit](docs/audits/2026-10-26-mole-1.64-installers.md) for evidence and untested cases. Accepting a version does not prove compatibility with every future release; guarded previews reject unknown or incomplete output.

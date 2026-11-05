@@ -11,6 +11,9 @@ The UI-free core of Nora: it drives the [Mole](https://github.com/tw93/Mole) CLI
 | `WhitelistOverlay` | Protects unchecked clean items by appending a marked block to `~/.config/mole/whitelist`. It journals the original state with fsync before writing and restores it byte for byte, including after SIGKILL. If the file was absent, it materializes Mole's own defaults first and deletes the file on restore. |
 | `MoleInstallation` | Finds Mole's `lib/`, reads `mo --version`, and asks Mole's own code for its whitelist defaults and its `is_path_whitelisted` verdict. |
 | `PrivilegeBroker` | `sudo -A -v && exec mo …` in the same PTY. sudo caches credentials per tty, and Mole's `adopt_sudo_session` only sees that session. |
+| `Mole.scanLimits(for:)` | The time limits Nora passes to `mo clean` and `mo purge` as environment variables, so a slow Homebrew or project-folder scan finishes instead of ending as an incomplete preview. |
+| `SpaceProtection` | The paths Space Map refuses to move to the Trash: iCloud Drive's own folders, the state of Docker Desktop and OrbStack, system roots and the home folder. It follows the rules of Mole's own `analyze` (Mole 1.65 and 1.68) and ignores letter case, as APFS does. |
+| `HomeTrashService` | Empties the current user's home Trash from a reviewed snapshot. It has no arbitrary-path executor, stages items on the same filesystem and checks owner, device, mode and ACLs first. See [TRASH_SAFETY.md](TRASH_SAFETY.md). |
 
 ## Tests
 
@@ -19,6 +22,7 @@ swift test                                   # unit tests, no Mole needed
 NORA_MOLE_E2E=1 swift test                   # also runs the real `mo`, only against a sandbox $HOME, never with sudo;
                                              # uninstall tests set Mole's MOLE_TEST_NO_AUTH=1 (no sudo, no System Events prompt)
 NORA_MOLE_E2E=1 NORA_RECORD_FIXTURES=1 swift test   # re-records Tests/MoleKitTests/Fixtures/<mole version>/
+NORA_MOLE_SUDO=1 swift test --filter GatedSudoLiveTests   # live: one password dialog, then `mo clean --dry-run` only (about 3 minutes)
 swift run molekit-spike sudo-check           # interactive: shows a password dialog, checks Mole adopts the session
 swift run molekit-spike sudo-check --no-auth # the same script without a password; expects NORA_NOT_ADOPTED
 ```
