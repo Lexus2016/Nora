@@ -2,6 +2,14 @@
 
 Changes to the Nora app, newest first. Work that is merged but not released yet goes under **Unreleased**; at release time it becomes the next version's section and its release notes.
 
+## Unreleased
+
+### Fixed
+- Result cards no longer display Mole's terminal separator lines made of equals signs, which could wrap into an untidy extra row. The original command log is preserved.
+
+### Виправлено
+- Підсумкові картки більше не показують службові смуги Mole зі знаків рівності, які переносилися в зайвий рядок. Оригінальний журнал команди збережений.
+
 ## 1.3.3 (2026-10-26)
 
 ### Fixed

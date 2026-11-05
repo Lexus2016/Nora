@@ -130,10 +130,15 @@ public enum MoleSummary {
         let lines = output.split(separator: "\n", omittingEmptySubsequences: false)
             .map { ANSIText.strip(String($0)).trimmingCharacters(in: .whitespaces) }
         let rulers = lines.indices.filter { lines[$0].hasPrefix("=====") }
+        // Rulers are decoration. Drop them before taking the last four lines, or a trailing
+        // ruler uses up one of them.
+        func content(_ block: ArraySlice<String>) -> [String] {
+            block.filter { !$0.isEmpty && !$0.allSatisfy { $0 == "=" } }
+        }
         if rulers.count >= 2 {
             let a = rulers[rulers.count - 2], b = rulers[rulers.count - 1]
-            return lines[(a + 1)..<b].filter { !$0.isEmpty }
+            return content(lines[(a + 1)..<b])
         }
-        return Array(lines.filter { !$0.isEmpty }.suffix(4))
+        return Array(content(lines[...]).suffix(4))
     }
 }
