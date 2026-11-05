@@ -3,6 +3,37 @@
     <channel>
         <title>Nora</title>
         <item>
+            <title>1.3.4</title>
+            <pubDate>Thu, 05 Nov 2026 21:54:11 +0100</pubDate>
+            <link>https://github.com/Lexus2016/Nora</link>
+            <sparkle:version>10</sparkle:version>
+            <sparkle:shortVersionString>1.3.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[### Fixed
+- Cleanup works with Mole 1.67 and newer. Mole reworded the closing lines of `mo clean` ("Potential space: X · N items" and "Removed: X · N items" instead of "Items: N" and "Tracked cleanup:"). Nora read the old wording only, so every scan on Mole 1.67 or newer was refused as incomplete, and a successful cleanup would have been reported as unverified. Both wordings are read now; the new lines are shown in Nora's language.
+- Result cards no longer display Mole's terminal separator lines made of equals signs, which could wrap into an untidy extra row. The original command log is preserved.
+- A cleanup run that found nothing left to remove ("System was already clean") is shown as finished instead of "Cleanup result is unverified". Partial totals from Mole (a trailing `+`) keep that mark in result cards, and the item count is read from the footer line instead of any earlier "Items:" text.
+- Cleanup no longer silently loses Homebrew and large project folders when they are slow to scan. Mole's limits (20 s for Homebrew, 6 s per project folder) are raised for the cleanup preview and run, so the preview and the run see the same folders.
+- Space Map no longer lets you move protected folders to the Trash: iCloud Drive's own folders (moving one removes it from every device on the account), the data of Docker Desktop and OrbStack, system folders and your home folder. Mole's own Analyze refuses the same paths since 1.65 and 1.68, but Nora moves items itself and had no such check. A protected row shows a lock and has no checkbox; files and folders inside iCloud Drive stay yours to remove. The same rules apply to other spellings of a protected path (APFS ignores case, so `/system` is `/System`) and to iCloud Drive's Desktop folder. A link that merely points to a protected folder can still be moved: the Trash moves the link, not its target.
+- Projects: the artifact preview could end as "incomplete" because `~/_Projects` took longer than Mole's 60 s scan limit, and Nora refuses to clean an incomplete preview. The scan limits are raised (measured: the same folder now reads "complete", 4.89 GB in 382 artifacts), and the run uses the same limits.
+
+### Changed
+- Cleanup shows only what you can act on. Mole's raw notes, which were worded for a terminal ("run brew cleanup --dry-run manually") and listed folders Nora never cleans (Docker, Lima, Time Machine snapshots, Android emulators), are gone from the screen; they remain in the console. A missing Full Disk Access shows one clear message with a button to open Settings, and places Mole could not check show one message with a "Scan again" button. When a rescan skips the same places again, the "Scan again" button is replaced by a plain note that those places cannot be checked on this Mac, so the button never promises a fix that cannot come. Only notes about time or availability ("timed out", "unavailable") offer a rescan; other Mole warnings stay in the console.
+
+### Виправлено
+- Очищення працює з Mole 1.67 і новішими. Mole змінив завершальні рядки `mo clean` («Potential space: X · N items» і «Removed: X · N items» замість «Items: N» і «Tracked cleanup:»). Nora читала лише старий запис, тому кожне сканування на Mole 1.67 і новіших відхилялося як неповне, а успішне очищення було б показано як непідтверджене. Тепер читаються обидва записи; нові рядки показуються мовою Nora.
+- Підсумкові картки більше не показують службові смуги Mole зі знаків рівності, які переносилися в зайвий рядок. Оригінальний журнал команди збережений.
+- Запуск очищення, у якому вже нічого було видаляти («System was already clean»), показується як завершений, а не як «Результат очищення не підтверджено». Неповні підсумки Mole (знак `+` в кінці) зберігають цей знак у підсумкових картках, а кількість елементів береться з підсумкового рядка, а не з будь-якого раніше надрукованого «Items:».
+- Очищення більше не губить мовчки Homebrew і великі теки проєктів, коли їх повільно сканувати. Ліміти Mole (20 с для Homebrew, 6 с на теку проєктів) збільшено для перегляду й запуску очищення, тож вони бачать однакові теки.
+- Карта простору більше не дозволяє перемістити в Кошик захищені теки: власні теки iCloud Drive (переміщення прибирає їх з усіх пристроїв облікового запису), дані Docker Desktop і OrbStack, системні теки та домашню теку. Власний Analyze в Mole відмовляє для тих самих шляхів з версій 1.65 і 1.68, але Nora переміщує елементи сама й такої перевірки не мала. Захищений рядок має замок і не має прапорця; файли й теки всередині iCloud Drive можна прибирати як і раніше. Ті самі правила діють для інших написань захищеного шляху (APFS не розрізняє регістр, тож `/system` це `/System`) і для теки Desktop в iCloud Drive. Посилання, що лише вказує на захищену теку, перемістити можна: до Кошика йде саме посилання, а не те, на що воно вказує.
+- Проєкти: перегляд артефактів міг завершуватися як «неповний», бо `~/_Projects` сканувалась довше за ліміт Mole 60 с, а Nora відмовляється чистити неповний перегляд. Ліміти сканування збільшено (виміряно: та сама тека тепер «повна», 4,89 ГБ у 382 артефактах), запуск використовує ті самі ліміти.
+
+### Змінено
+- Очищення показує лише те, з чим можна щось зробити. Сирі примітки Mole, написані для термінала («run brew cleanup --dry-run manually») і про теки, яких Nora не чистить (Docker, Lima, знімки Time Machine, емулятори Android), прибрано з екрана; вони лишаються в консолі. Відсутній повний доступ до диска показується одним зрозумілим повідомленням із кнопкою відкрити налаштування, а місця, які Mole не зміг перевірити, — одним повідомленням із кнопкою «Сканувати ще раз». Якщо повторне сканування знову пропускає ті самі місця, кнопку «Сканувати ще раз» замінює спокійне пояснення, що ці місця на цьому Mac перевірити не вдається, тож кнопка не обіцяє виправлення, якого не буде. Повторне сканування пропонується лише для приміток про час або доступність («timed out», «unavailable»); інші попередження Mole лишаються в консолі.
+]]></description>
+            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.4/Nora-1.3.4.dmg" length="7942559" type="application/octet-stream" sparkle:edSignature="K//cgtVqkfJmeDYbEpYUsTV+lWRabegmkPx7oEQrRYRB6KP2o4W40HMyfVOuSTtchGp3BM7Av26E3R5aizMGDQ=="/>
+        </item>
+        <item>
             <title>1.3.3</title>
             <pubDate>Mon, 26 Oct 2026 09:25:38 +0100</pubDate>
             <link>https://github.com/Lexus2016/Nora</link>
@@ -53,35 +84,6 @@
 - Якщо під час очищення виявляється, що кошик змінився після перегляду, Nora знову показує актуальний список, а не лишає залишок без вікна. Те, що потрапило в кошик під час очищення, пропонується, коли воно завершиться.
 ]]></description>
             <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.2/Nora-1.3.2.dmg" length="7931479" type="application/octet-stream" sparkle:edSignature="cXITCGNjXi3YeZL7Otz6CaEYSCx/GlNBHfQ8/urKPzxmDK3l4n9J4UHXFtoxI85tsntqW9RR2PssBKQ5UYZQBg=="/>
-        </item>
-        <item>
-            <title>1.3.1</title>
-            <pubDate>Sun, 18 Oct 2026 12:29:43 +0200</pubDate>
-            <link>https://github.com/Lexus2016/Nora</link>
-            <sparkle:version>7</sparkle:version>
-            <sparkle:shortVersionString>1.3.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[### Changed
-- Clicking "Empty Trash" now starts cleanup and closes the reminder immediately. The extra scan, separate confirmation, button delay and wait for a result are removed. Cleanup continues in the background using the reviewed items, with the existing filesystem checks and protection against duplicate runs.
-- Applications now has a prominent "All apps" entry on its start screen and results, with the total app count. Opening it clears an old search and the unused-app filter without losing your selection.
-- Before removing selected apps that are open, Nora lists them and asks permission to quit. Apps can ask you to save your work; an app that stays open or opens after confirmation is skipped.
-- The verified official Mole installer is pinned to 1.61.0. The compatibility audit and its limits are recorded in `docs/audits/2026-10-18-mole-1.61-compat.md`.
-
-### Fixed
-- Uninstall uses the application's name rather than its Homebrew package token, reads Mole 1.61's personal-data selection and `[Brew]` groups, and authenticates Homebrew removals when required. Settings and personal data are included in the visible review; execution still requires the exact reviewed app and file list. Unknown, truncated or changed output is rejected before removal.
-- History no longer counts dry-run estimates as space freed or completed actions. Performance recognizes Mole 1.61's disk-verification skip message.
-
-### Змінено
-- Натискання «Очистити кошик» одразу запускає очищення й закриває нагадування. Прибрано повторне сканування, окреме підтвердження, затримку кнопки та очікування результату. Очищення триває у фоні за вже показаним списком, зі збереженням перевірок файлової системи й захисту від повторного запуску.
-- На початковому екрані «Програми» та в результатах з'явився помітний перехід «Всі програми» із загальною кількістю. Перехід очищає попередній пошук і фільтр невикористовуваних програм, зберігаючи ваш вибір.
-- Перед видаленням відкритих програм Nora показує їхній список і просить дозволити завершення. Програми можуть запропонувати зберегти роботу; програма, яка залишилася відкритою або відкрилася після підтвердження, пропускається.
-- Перевірений офіційний інсталятор Mole оновлено до 1.61.0. Результати та межі перевірки сумісності описано в `docs/audits/2026-10-18-mole-1.61-compat.md`.
-
-### Виправлено
-- Видалення використовує назву програми замість назви пакета Homebrew, розуміє новий вибір особистих даних і групи `[Brew]` у Mole 1.61, а за потреби отримує права адміністратора для видалення через Homebrew. Налаштування й особисті дані включені до видимого перегляду; виконання потребує точного збігу програми та списку файлів. Невідомий, обрізаний або змінений вивід зупиняє видалення.
-- Історія більше не зараховує оцінки попереднього перегляду до звільненого місця й виконаних дій. Обслуговування розпізнає нове повідомлення Mole 1.61 про пропущену перевірку диска.
-]]></description>
-            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.1/Nora-1.3.1.dmg" length="7908071" type="application/octet-stream" sparkle:edSignature="sgQ4VtwhRrpDYkR7nzEPvAINcOiwTXIozkxq7MeBvDCmd+ZPc3cixAjMzp9qgQBUFgTzUETe7hbdHm87wTmZCw=="/>
         </item>
     </channel>
 </rss>
