@@ -68,6 +68,50 @@ final class ParserTests: XCTestCase {
                                .informational, .informational, .informational, .informational])
     }
 
+    /// "Scan again" is for places a later scan may reach: slow, busy or unavailable ones. Everything else
+    /// Mole warns about is not something a rescan fixes, so it must not be offered as one (Mole's real
+    /// wordings, from `lib/clean` in 1.69).
+    func testOnlyTimeAndAvailabilityNotesAreIncomplete() {
+        let incomplete = [
+            "Project caches · skipped 2 slow/incomplete root scans",
+            "Homebrew cleanup preview timed out · run brew cleanup --dry-run manually",
+            "Xcode Simulator system cache · skipped (process state unknown)",
+            "Codex Desktop update staging · skipped (open-file check unavailable)",
+            "Time Machine backups · scan incomplete, skipped remaining cleanup",
+            "System cleanup · time limit reached, skipped remaining slow scans",
+        ]
+        let informational = [
+            "Build artifacts · scan skipped · mo purge",
+            "Xcode Simulator system cache · skipped (sudo denied)",
+            "Xcode Simulator system cache · could not remove 3 entries",
+            "Xcode documentation cache · skipped 3 protected items",
+            "Xcode documentation cache · no items removed",
+            "Cargo caches · stopped (cache path unsafe)",
+            "Stale login item · Foo · review before removing",
+        ]
+        func kind(_ text: String) -> CleanPreview.Note.Kind {
+            CleanPreview.parse(cleanList: "", stdout: "◎ " + text).notes[0].kind
+        }
+        for text in incomplete { XCTAssertEqual(kind(text), .incomplete, text) }
+        for text in informational { XCTAssertEqual(kind(text), .informational, text) }
+        XCTAssertEqual(kind("/Library/Caches · Operation not permitted"), .permission)
+    }
+
+    /// The item count comes from the footer line itself. An earlier line that happens to say "Items: 3"
+    /// must not replace it.
+    func testItemCountIsReadFromTheFooterLineNotFromAnEarlierDiagnostic() {
+        let stdout = """
+        ◎ Some diagnostic · Items: 3
+        Dry run complete - no changes made
+        Potential space: 898.0MB · 179 items
+        """
+        XCTAssertEqual(CleanPreview.parse(cleanList: "", stdout: stdout).reportedItemCount, 179)
+        let old = "Potential space: 2.48GB | Items: 967 | Categories: 6"
+        XCTAssertEqual(CleanPreview.parse(cleanList: "", stdout: old).reportedItemCount, 967)
+        XCTAssertEqual(CleanPreview.parse(cleanList: "", stdout: "Items: 12").reportedItemCount, 12,
+                       "a bare count line of an older Mole is still read")
+    }
+
     /// Mole 1.59 annotates rows: unknown sizes, item counts, rows counted under an ancestor.
     func testCleanPreviewAnnotatedRows() {
         let list = """

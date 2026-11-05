@@ -29,6 +29,22 @@ final class MoleSummaryTextTests: XCTestCase {
         }
     }
 
+    /// A trailing "+" on a size means Mole's total is partial: the real figure is at least that much.
+    func testPartialTotalsKeepTheirLowerBoundMark() {
+        for line in ["Potential space: 898.0MB+ · 179 items", "Removed: 898.0MB+ · 179 items"] {
+            let amount = MoleSummaryText.localize(line).components(separatedBy: " · ")[0]
+            XCTAssertTrue(amount.hasSuffix("+"), amount)
+        }
+    }
+
+    func testNothingRemovedLinesAreShownInNorasLanguage() {
+        for line in ["System was already clean; no additional space freed.", "No additional space freed.",
+                     "No significant reclaimable space detected, system already clean.",
+                     "No additional reclaimable space detected."] {
+            XCTAssertNotEqual(MoleSummaryText.localize(line), line, line)
+        }
+    }
+
     func testNorasOwnAndUnknownLinesPassThrough() {
         XCTAssertEqual(MoleSummaryText.localize("✓ Example App"), "✓ Example App")
         XCTAssertEqual(MoleSummaryText.localize("Something a later Mole prints"), "Something a later Mole prints")

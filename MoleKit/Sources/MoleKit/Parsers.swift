@@ -52,14 +52,21 @@ public struct CleanPreview: Sendable {
         public let kind: Kind
 
         /// `review` is Mole's ⊙ marker: a row it only reports and never cleans.
+        ///
+        /// Only a note that says a place could not be checked because of time or availability is
+        /// `.incomplete`, the one kind a rescan can fix. The rest of Mole's warnings (a guard that
+        /// stopped on purpose, items removed in part, "run mo purge", a refused password) are not
+        /// something scanning again changes, so they stay in the console and are never offered as a retry.
         static func kind(of text: String, review: Bool) -> Kind {
             if review { return .informational }
-            if text.localizedCaseInsensitiveContains("Full Disk Access") || text.localizedCaseInsensitiveContains("permission") {
-                return .permission
+            func says(_ phrases: String...) -> Bool { phrases.contains { text.localizedCaseInsensitiveContains($0) } }
+            if says("Full Disk Access", "permission", "not permitted") { return .permission }
+            if says("need sudo") { return .sudo }
+            if says("protected", "sudo denied") { return .informational }
+            if says("timed out", "time limit", "unavailable", "unknown", "slow/incomplete", "scan incomplete") {
+                return .incomplete
             }
-            if text.localizedCaseInsensitiveContains("need sudo") { return .sudo }
-            if text.localizedCaseInsensitiveContains("protected") { return .informational }
-            return .incomplete
+            return .informational
         }
     }
 
@@ -148,7 +155,11 @@ public struct CleanPreview: Sendable {
         var current = ""
         var potential: Int64?
         var needsSudo = false
-        var counted: Int?
+        // `footerCount` is the count on the "Potential space" line; `looseCount` is a bare "Items: N"
+        // anywhere else, which only an older Mole printed. A stray "Items: 3" earlier in the output
+        // must not replace the footer's count.
+        var footerCount: Int?
+        var looseCount: Int?
         for raw in stdout.split(separator: "\n") {
             let line = ANSIText.strip(String(raw)).trimmingCharacters(in: .whitespaces)
             if line.hasPrefix("➤ ") { current = String(line.dropFirst(2)); continue }
@@ -158,19 +169,22 @@ public struct CleanPreview: Sendable {
                 notes.append(Note(section: current, text: text, kind: Note.kind(of: text, review: line.hasPrefix("⊙ "))))
             }
             if let range = line.range(of: "Items: ") {
-                counted = Int(line[range.upperBound...].prefix(while: \.isNumber))
+                looseCount = Int(line[range.upperBound...].prefix(while: \.isNumber))
             }
             if let range = line.range(of: "Potential space: ") {
-                potential = MoleSize.parse(String(line[range.upperBound...].prefix { $0 != " " && $0 != "|" }))
-                // Mole 1.67 and newer: "Potential space: 898.0MB · 179 items" instead of
-                // "Potential space: 898.0MB | Items: 179 | Categories: 6".
-                if counted == nil, let match = line[range.upperBound...].range(of: #" · [0-9]+ items?"#, options: .regularExpression) {
-                    counted = Int(line[match].filter(\.isNumber))
+                let footer = line[range.upperBound...]
+                potential = MoleSize.parse(String(footer.prefix { $0 != " " && $0 != "|" }))
+                // The count comes from this line: Mole 1.67 and newer print "Potential space: 898.0MB ·
+                // 179 items", older ones "Potential space: 898.0MB | Items: 179 | Categories: 6".
+                if let match = footer.range(of: #" · [0-9]+ items?"#, options: .regularExpression) {
+                    footerCount = Int(footer[match].filter(\.isNumber))
+                } else if let old = footer.range(of: "Items: ") {
+                    footerCount = Int(footer[old.upperBound...].prefix(while: \.isNumber))
                 }
             }
         }
         return CleanPreview(items: items, notes: notes, potentialSize: potential, needsSudoForSystem: needsSudo,
-                            reportedItemCount: counted, unparsedRows: unparsed)
+                            reportedItemCount: footerCount ?? looseCount, unparsedRows: unparsed)
     }
 }
 

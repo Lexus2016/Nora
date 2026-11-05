@@ -12457,6 +12457,22 @@
         }
       }
     },
+    "Some places cannot be checked on this Mac. What is listed below can be cleaned now.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Часть мест на этом Mac проверить не удаётся. Найденное ниже можно чистить уже сейчас."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частину місць на цьому Mac перевірити не вдається. Знайдене нижче можна чистити вже зараз."
+          }
+        }
+      }
+    },
     "Some places could not be checked this time. What is listed below can be cleaned now.": {
       "localizations": {
         "ru": {

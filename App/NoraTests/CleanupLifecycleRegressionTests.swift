@@ -94,6 +94,75 @@ final class CleanupLifecycleRegressionTests: XCTestCase {
         XCTAssertTrue(model.hasSkippedChecks)
     }
 
+    /// A rescan that skips the same places again will skip them every time on this Mac: offering
+    /// "Scan again" then is a dead end, so the offer is withdrawn.
+    func testASkippedCheckThatRepeatsStopsOfferingAnotherScan() {
+        let slow = "◎ Project caches · skipped 2 slow/incomplete root scans"
+        let model = CleanupModel()
+        model.present(CleanPreview.parse(cleanList: "", stdout: slow))
+        XCTAssertTrue(model.hasSkippedChecks)
+        XCTAssertFalse(model.skippedChecksRepeated, "the first time, scanning again is a sensible suggestion")
+        model.present(CleanPreview.parse(cleanList: "", stdout: slow))
+        XCTAssertTrue(model.skippedChecksRepeated, "the same places again: another scan will not help")
+        model.present(CleanPreview.parse(cleanList: "", stdout: "◎ Homebrew cleanup preview timed out · run brew cleanup --dry-run manually"))
+        XCTAssertFalse(model.skippedChecksRepeated, "a different set of places is new information")
+        model.present(CleanPreview.parse(cleanList: "", stdout: ""))
+        XCTAssertFalse(model.hasSkippedChecks)
+        XCTAssertFalse(model.skippedChecksRepeated)
+    }
+
+    private let slowPlaces = "◎ Project caches · skipped 2 slow/incomplete root scans"
+
+    /// "Start over" begins a new session: what the previous scans skipped must not decide whether the
+    /// new one offers another scan.
+    func testStartingOverForgetsWhichPlacesWereSkipped() {
+        let model = CleanupModel()
+        model.present(CleanPreview.parse(cleanList: "", stdout: slowPlaces))
+        model.present(CleanPreview.parse(cleanList: "", stdout: slowPlaces))
+        XCTAssertTrue(model.skippedChecksRepeated)
+        model.reset()
+        model.present(CleanPreview.parse(cleanList: "", stdout: slowPlaces))
+        XCTAssertFalse(model.skippedChecksRepeated)
+    }
+
+    func testFinishingARunForgetsWhichPlacesWereSkipped() {
+        let model = CleanupModel()
+        model.present(CleanPreview.parse(cleanList: "", stdout: slowPlaces))
+        model.present(CleanPreview.parse(cleanList: "", stdout: slowPlaces))
+        XCTAssertTrue(model.skippedChecksRepeated)
+        model.finish(text: "=====\nCleanup complete\nRemoved: 1.0MB · 1 item\n=====", ok: true)
+        model.present(CleanPreview.parse(cleanList: "", stdout: slowPlaces))
+        XCTAssertFalse(model.skippedChecksRepeated, "days later the first scan is a first scan")
+    }
+
+    /// The counts in Mole's note change from run to run ("skipped 2" then "skipped 1"); the kind of skip does not.
+    func testASkippedPlaceIsTheSameWhateverTheCountsInItsNote() {
+        let model = CleanupModel()
+        model.present(CleanPreview.parse(cleanList: "", stdout: slowPlaces))
+        model.present(CleanPreview.parse(cleanList: "", stdout: "◎ Project caches · skipped 1 slow/incomplete root scans"))
+        XCTAssertTrue(model.skippedChecksRepeated)
+        model.present(CleanPreview.parse(cleanList: "", stdout: "◎ Project caches · preview timed out"))
+        XCTAssertFalse(model.skippedChecksRepeated, "a different reason is new information")
+    }
+
+    /// Mole prints "System was already clean; no additional space freed." instead of a "Removed:" line when
+    /// there was nothing left to remove. The command succeeded; that is not an unverified result.
+    func testACleanRunThatFoundNothingToRemoveIsNotAFailure() {
+        for line in ["System was already clean; no additional space freed.", "No additional space freed."] {
+            let model = reviewed()
+            model.finish(text: "=====\nCleanup complete\n\(line)\nFree space: 300.1GB\n=====", ok: true)
+            XCTAssertFalse(model.failed, line)
+            XCTAssertEqual(model.resultHeadline, String(localized: "Cleanup command completed"), line)
+            XCTAssertFalse(model.resultLines.contains(String(localized: "These are Mole's reported results, not a measurement of newly available disk space.")), line)
+        }
+    }
+
+    func testARemovedLineWithALeadingMarkStillConfirmsTheRun() {
+        let model = reviewed()
+        model.finish(text: "=====\nCleanup complete\n✓ Removed: 898.0MB · 179 items\n=====", ok: true)
+        XCTAssertFalse(model.failed)
+    }
+
     func testReviewOnlyRowsProtectedItemsAndSudoAreNotSurfacedAsProblems() {
         let model = CleanupModel()
         model.preview = CleanPreview.parse(cleanList: "", stdout:

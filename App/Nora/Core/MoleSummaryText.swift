@@ -93,6 +93,8 @@ enum MoleSummaryText {
         let value = String(text)
         if value == "Partially measured" { return String(localized: "partly measured") }
         if let at = value.firstMatch(of: #/^At least (\S+)$/#) { return String(localized: "at least \(size(at.1))") }
+        // A trailing "+" means Mole's total is partial: the real figure is at least this much.
+        if value.hasSuffix("+"), let measured = MoleSize.parse(String(value.dropLast())) { return Format.bytes(measured) + "+" }
         return MoleSize.parse(value).map { Format.bytes($0) } ?? value
     }
 

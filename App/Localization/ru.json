@@ -923,6 +923,7 @@
   "The protection file at %@ changed outside Nora. The edited file and recovery copy are preserved. Resolve the file conflict before retrying recovery.": "Файл защиты %@ изменён вне Nora. Изменённый файл и копия для восстановления сохранены. Устраните конфликт файлов перед повторным восстановлением.",
   "Full Disk Access is off, so some protected places, such as the Trash, were skipped.": "Полный доступ к диску выключен, поэтому некоторые защищённые места, например Корзина, пропущены.",
   "Some places could not be checked this time. What is listed below can be cleaned now.": "Часть мест в этот раз не удалось проверить. Найденное ниже можно чистить уже сейчас.",
+  "Some places cannot be checked on this Mac. What is listed below can be cleaned now.": "Часть мест на этом Mac проверить не удаётся. Найденное ниже можно чистить уже сейчас.",
   "Scan again": "Сканировать ещё раз",
   "Refresh": "Обновить",
   "Reading activity history…": "Чтение истории действий…",

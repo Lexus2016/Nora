@@ -123,9 +123,15 @@ private struct CleanupNotes: View {
                 }
                 if model.hasSkippedChecks {
                     HStack {
-                        Notice(text: String(localized: "Some places could not be checked this time. What is listed below can be cleaned now."),
-                               symbol: "exclamationmark.circle")
-                        Button("Scan again") { model.scan(app) }.buttonStyle(.link)
+                        if model.skippedChecksRepeated {
+                            // The same places were skipped again: scanning once more cannot help.
+                            Notice(text: String(localized: "Some places cannot be checked on this Mac. What is listed below can be cleaned now."),
+                                   symbol: "exclamationmark.circle")
+                        } else {
+                            Notice(text: String(localized: "Some places could not be checked this time. What is listed below can be cleaned now."),
+                                   symbol: "exclamationmark.circle")
+                            Button("Scan again") { model.scan(app) }.buttonStyle(.link)
+                        }
                     }
                 }
             }

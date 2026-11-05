@@ -5,6 +5,10 @@ import Foundation
 /// OrbStack state, and iCloud Drive's own folders. Trashing an iCloud Drive folder removes that
 /// store from every device on the account; trashing app state loses a running app's data. Nora moves
 /// items itself instead of asking Mole, so it must apply the same rules.
+///
+/// Names are compared without regard to case: APFS is case-insensitive by default, so `/SYSTEM` and
+/// `~/library/containers/COM.DOCKER.DOCKER` are the protected folders. On a case-sensitive volume
+/// this errs on the side of refusing, which loses nothing.
 public enum SpaceProtection {
     public enum Reason: Sendable, Equatable {
         /// A system root or tree, or another account's home folder.
@@ -17,13 +21,18 @@ public enum SpaceProtection {
         case iCloud
     }
 
-    /// Why `path` must not be moved to the Trash, or nil when it may be. Both the path as given and
-    /// the one it resolves to are checked, so a symlink cannot reach a protected folder.
+    /// Why `path` must not be moved to the Trash, or nil when it may be.
+    ///
+    /// The Trash moves the item itself: a symlink goes as a link, never as what it points to. So the
+    /// item's own name is judged as written, and the folders above it are resolved, which catches a
+    /// path that reaches a protected folder through a link.
     public static func reason(forTrashing path: String, home: URL) -> Reason? {
         let fileManager = FileManager.default
+        let url = URL(fileURLWithPath: path)
         var spellings = [normalized(path)]
-        let resolved = normalized(URL(fileURLWithPath: path).resolvingSymlinksInPath().path)
-        if resolved != spellings[0] { spellings.append(resolved) }
+        let throughParents = normalized(url.deletingLastPathComponent().resolvingSymlinksInPath()
+            .appendingPathComponent(url.lastPathComponent).path)
+        if throughParents != spellings[0] { spellings.append(throughParents) }
         var homes = [normalized(home.path)]
         let resolvedHome = normalized(home.resolvingSymlinksInPath().path)
         if resolvedHome != homes[0] { homes.append(resolvedHome) }
@@ -33,27 +42,28 @@ public enum SpaceProtection {
         return nil
     }
 
-    private static let criticalRoots: Set<String> = [
+    private static let criticalRoots: Set<String> = Set([
         "/", "/Applications", "/Applications/Finder.app", "/Applications/Safari.app", "/Library", "/Library/Apple",
         "/Library/Application Support", "/Library/Extensions", "/Library/Keychains", "/System", "/Users", "/Volumes",
         "/Network", "/cores", "/dev", "/etc", "/home", "/net", "/tmp", "/var", "/private", "/private/etc", "/private/tmp",
         "/private/var", "/private/var/audit", "/private/var/db", "/private/var/root", "/private/var/tmp",
         "/private/var/folders", "/bin", "/sbin", "/usr", "/opt", "/opt/homebrew",
-    ]
+    ].map { $0.lowercased() })
 
     private static let protectedTrees = [
         "/System", "/bin", "/sbin", "/usr", "/private/etc", "/private/var/audit", "/private/var/db", "/private/var/root",
         "/Library/Apple", "/Library/Extensions", "/Library/Keychains", "/Applications/Finder.app", "/Applications/Safari.app", "/dev",
-    ]
+    ].map { $0.lowercased() }
 
     private static func check(_ path: String, homes: [String], fileManager: FileManager) -> Reason? {
-        if homes.contains(path) { return .home }
-        if criticalRoots.contains(path) { return .system }
+        let folded = path.lowercased()
+        if homes.contains(where: { $0.lowercased() == folded }) { return .home }
+        if criticalRoots.contains(folded) { return .system }
         // A folder directly under /Users is another account's home. Its contents stay its owner's to remove.
-        if fileManager.fileExists(atPath: "/Users"), URL(fileURLWithPath: path).deletingLastPathComponent().path == "/Users" {
+        if fileManager.fileExists(atPath: "/Users"), URL(fileURLWithPath: folded).deletingLastPathComponent().path == "/users" {
             return .system
         }
-        if protectedTrees.contains(where: { path.hasPrefix($0 + "/") }) { return .system }
+        if protectedTrees.contains(where: { folded.hasPrefix($0 + "/") }) { return .system }
         for home in homes {
             let dockerDesktop = home + "/Library/Containers/com.docker.docker"
             let orbStack = home + "/.orbstack"
@@ -69,9 +79,10 @@ public enum SpaceProtection {
     /// `path` is `root`, lies inside it, or contains it. A root that does not exist protects only
     /// what lies inside its name: an absent runtime must not freeze an otherwise ordinary folder.
     private static func covers(_ path: String, root: String, fileManager: FileManager) -> Bool {
-        if path == root || path.hasPrefix(root + "/") { return true }
+        let p = path.lowercased(), r = root.lowercased()
+        if p == r || p.hasPrefix(r + "/") { return true }
         guard fileManager.fileExists(atPath: root) else { return false }
-        return root.hasPrefix(path == "/" ? "/" : path + "/")
+        return r.hasPrefix(p == "/" ? "/" : p + "/")
     }
 
     private static func holdsOrbStackGroupContainer(_ path: String, home: String, fileManager: FileManager) -> Bool {
@@ -83,24 +94,27 @@ public enum SpaceProtection {
         // Inside such a container by name alone, even when it is not listed.
         let prefix = groupContainers.lowercased() + "/"
         guard path.lowercased().hasPrefix(prefix) else { return false }
-        let container = path.dropFirst(prefix.count).split(separator: "/").first.map(String.init) ?? ""
-        return container.lowercased().hasSuffix("dev.orbstack")
+        let container = path.lowercased().dropFirst(prefix.count).split(separator: "/").first.map(String.init) ?? ""
+        return container.hasSuffix("dev.orbstack")
     }
 
     /// Mobile Documents, each app container in it (com~apple~CloudDocs is iCloud Drive itself) and a
-    /// container's Documents folder. Files and folders inside those stay the user's to remove.
+    /// container's Documents and Desktop folders, which iCloud syncs to every device. Files and folders
+    /// inside those stay the user's to remove.
     private static func isICloudStructure(_ path: String, home: String, fileManager: FileManager) -> Bool {
-        let mobileDocuments = home + "/Library/Mobile Documents"
-        if path == mobileDocuments { return true }
-        if fileManager.fileExists(atPath: mobileDocuments), mobileDocuments.hasPrefix(path == "/" ? "/" : path + "/") { return true }
+        let mobileDocuments = (home + "/Library/Mobile Documents").lowercased()
+        let folded = path.lowercased()
+        if folded == mobileDocuments { return true }
+        if fileManager.fileExists(atPath: home + "/Library/Mobile Documents"),
+           mobileDocuments.hasPrefix(folded == "/" ? "/" : folded + "/") { return true }
         var isDirectory: ObjCBool = false
         if fileManager.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue { return false }
-        let prefix = mobileDocuments.lowercased() + "/"
-        guard path.lowercased().hasPrefix(prefix) else { return false }
-        let parts = path.lowercased().dropFirst(prefix.count).split(separator: "/")
+        let prefix = mobileDocuments + "/"
+        guard folded.hasPrefix(prefix) else { return false }
+        let parts = folded.dropFirst(prefix.count).split(separator: "/")
         switch parts.count {
         case 1: return true
-        case 2: return parts[1] == "documents"
+        case 2: return parts[1] == "documents" || parts[1] == "desktop"
         default: return false
         }
     }
@@ -108,9 +122,10 @@ public enum SpaceProtection {
     /// The path without `.`/`..`, and without the firmlink prefix macOS gives the data volume.
     private static func normalized(_ path: String) -> String {
         let standard = URL(fileURLWithPath: path).standardizedFileURL.path
-        let firmlink = "/System/Volumes/Data"
-        if standard == firmlink { return "/" }
-        if standard.hasPrefix(firmlink + "/") { return String(standard.dropFirst(firmlink.count)) }
+        let firmlink = "/system/volumes/data"
+        let folded = standard.lowercased()
+        if folded == firmlink { return "/" }
+        if folded.hasPrefix(firmlink + "/") { return String(standard.dropFirst(firmlink.count)) }
         return standard
     }
 }

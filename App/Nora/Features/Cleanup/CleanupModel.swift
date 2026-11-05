@@ -38,6 +38,31 @@ final class CleanupModel {
     /// console.
     var needsFullDiskAccess: Bool { preview?.notes.contains { $0.kind == .permission } ?? false }
     var hasSkippedChecks: Bool { preview?.notes.contains { $0.kind == .incomplete } ?? false }
+    /// The last scan skipped the same places as the one before it. They will be skipped every time on
+    /// this Mac (an app that is always running, a folder that is always slow), so another scan cannot
+    /// help and the offer to scan again is withdrawn.
+    private(set) var skippedChecksRepeated = false
+    @ObservationIgnored private var lastSkippedPlaces: Set<String> = []
+
+    /// A new session (start over, or a finished run) starts from what its first scan says: places skipped
+    /// in an earlier session say nothing about this one.
+    private func forgetSkippedPlaces() {
+        lastSkippedPlaces = []
+        skippedChecksRepeated = false
+    }
+
+    /// Shows a finished scan: its items ticked, and a note of which places it skipped. A skipped place is
+    /// Mole's note with its numbers blanked, because the counts in it change from run to run ("skipped 2"
+    /// then "skipped 1") while the place and the reason do not.
+    func present(_ parsed: CleanPreview) {
+        let skipped = Set(parsed.notes.filter { $0.kind == .incomplete }
+            .map { $0.text.replacingOccurrences(of: #"\d+"#, with: "#", options: .regularExpression) })
+        skippedChecksRepeated = !skipped.isEmpty && skipped == lastSkippedPlaces
+        lastSkippedPlaces = skipped
+        preview = parsed
+        selected = Set(parsed.items.map(\.path))
+        stage = .review
+    }
 
     var protectedCount: Int { (preview?.items.count ?? 0) - selected.count }
 
@@ -71,9 +96,7 @@ final class CleanupModel {
                     }
                     try Task.checkCancellation()
                     guard generation == request else { return }
-                    preview = parsed
-                    selected = Set(parsed.items.map(\.path))
-                    stage = .review
+                    present(parsed)
                     return
                 }
                 #endif
@@ -94,9 +117,7 @@ final class CleanupModel {
                 }
                 try Task.checkCancellation()
                 guard generation == request else { return }
-                preview = parsed
-                selected = Set(parsed.items.map(\.path))
-                stage = .review
+                present(parsed)
             } catch is CancellationError {
                 guard generation == request else { return }
                 stage = .start
@@ -220,11 +241,17 @@ final class CleanupModel {
     }
 
     func finish(text: String, ok: Bool) {
+        forgetSkippedPlaces()
         let summary = MoleSummary.lines(text)
         // Mole 1.67 and newer print "Removed: X · N items"; older versions "Tracked cleanup:".
-        let report = summary.first { $0.contains("Tracked cleanup:") || $0.contains("Space freed") || $0.hasPrefix("Removed:") }
+        let report = summary.first { $0.contains("Tracked cleanup:") || $0.contains("Space freed") || $0.contains("Removed: ") }
+        // When nothing was left to remove Mole prints one of these instead of a report. The command
+        // succeeded, so that is a finished run, not an unverified one.
+        let nothingToRemove = summary.contains {
+            $0.hasPrefix("System was already clean") || $0 == "No additional space freed."
+        }
         // A backend report is not a measured filesystem delta. Never substitute preview bytes.
-        let confirmed = summary.contains("Cleanup complete") && report != nil
+        let confirmed = summary.contains("Cleanup complete") && (report != nil || nothingToRemove)
         failed = !ok || !confirmed
         resultHeadline = !ok ? String(localized: "Cleanup stopped")
             : !confirmed ? String(localized: "Cleanup result is unverified")
@@ -268,6 +295,7 @@ final class CleanupModel {
         failed = false
         showList = false
         listSection = nil
+        forgetSkippedPlaces()
         stage = .start
         preview = nil
         selected = []

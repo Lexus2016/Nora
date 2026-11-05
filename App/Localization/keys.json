@@ -680,6 +680,7 @@
  "Some folders could not be checked: %@",
  "Some folders could not be read fully; their sizes are at least what is shown.",
  "Some items stayed",
+ "Some places cannot be checked on this Mac. What is listed below can be cleaned now.",
  "Some places could not be checked this time. What is listed below can be cleaned now.",
  "Some project folders could not be checked completely (%@ skipped).",
  "Some project folders could not be scanned completely, so nothing was removed. Scan again, or limit the folders in Protection.",
