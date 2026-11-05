@@ -44,6 +44,30 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(p.notes.last?.section, "Large files")
     }
 
+    /// A note is sorted by what the user can do about it, not by Mole's wording: a missing
+    /// permission, a place Mole could not check (scanning again may help), or information the app
+    /// cannot act on (review-only rows, items the user's own protection skipped).
+    func testNotesAreClassifiedByWhatTheUserCanDoAboutThem() {
+        let stdout = """
+        ➤ User essentials
+          ◎ Trash · skipped, grant Full Disk Access to your terminal
+          ◎ Skipped: No permission to access Library folders
+        ◎ System caches need sudo, run sudo -v && mo clean --dry-run for full preview
+        ➤ Developer tools
+          ◎ Project caches · skipped 3 slow/incomplete root scans
+          ◎ Homebrew cleanup preview timed out · run brew cleanup --dry-run manually
+          ◎ Xcode Simulator system cache · skipped (process state unknown)
+          ◎ Xcode documentation cache · skipped 3 protected items
+        ➤ Large files
+          ⊙ Time Machine local snapshots · 21 · macOS removes them when space runs low
+          ⊙ Docker Desktop data · 56.71GB · ~/Library/Containers/com.docker.docker/Data
+          ⊙ Lima data · 106.50GB · ~/.lima
+        """
+        let kinds = CleanPreview.parse(cleanList: "", stdout: stdout).notes.map(\.kind)
+        XCTAssertEqual(kinds, [.permission, .permission, .sudo, .incomplete, .incomplete, .incomplete,
+                               .informational, .informational, .informational, .informational])
+    }
+
     /// Mole 1.59 annotates rows: unknown sizes, item counts, rows counted under an ancestor.
     func testCleanPreviewAnnotatedRows() {
         let list = """

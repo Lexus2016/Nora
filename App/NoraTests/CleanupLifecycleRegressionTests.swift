@@ -74,13 +74,27 @@ final class CleanupLifecycleRegressionTests: XCTestCase {
         XCTAssertEqual(model.resultHeadline, String(localized: "Cleanup command completed"))
     }
 
-    func testAllWarningsRemainAvailableAndPermissionsComeFirst() {
+    /// Mole's notes are worded for a terminal and list folders the app never cleans; showing them
+    /// raw left people unsure what to do. Only a missing permission and places Mole could not check
+    /// are surfaced. The full output stays in the console.
+    func testOnlyWhatTheUserCanActOnIsSurfaced() {
         let model = CleanupModel()
         model.preview = CleanPreview.parse(cleanList: "", stdout:
-            "◎ First note\n⊙ Second note\n◎ Third note\n◎ Fourth note\n◎ Trash: Full Disk Access required")
-        XCTAssertEqual(model.reviewNotes.count, 5)
-        XCTAssertTrue(model.reviewNotes[0].text.contains("Full Disk Access"))
-        XCTAssertEqual(model.reviewNotes[1].text, "First note")
+            "◎ Trash · skipped, grant Full Disk Access to your terminal\n⊙ Lima data · 106.50GB · ~/.lima\n"
+            + "◎ Homebrew cleanup preview timed out · run brew cleanup --dry-run manually")
+        XCTAssertTrue(model.needsFullDiskAccess)
+        XCTAssertTrue(model.hasSkippedChecks)
+    }
+
+    func testReviewOnlyRowsProtectedItemsAndSudoAreNotSurfacedAsProblems() {
+        let model = CleanupModel()
+        model.preview = CleanPreview.parse(cleanList: "", stdout:
+            "⊙ Docker Desktop data · 56.71GB · ~/Library/Containers/com.docker.docker/Data\n⊙ Lima data · 106.50GB · ~/.lima\n"
+            + "◎ Xcode documentation cache · skipped 3 protected items\n"
+            + "◎ System caches need sudo, run sudo -v && mo clean --dry-run for full preview")
+        XCTAssertFalse(model.needsFullDiskAccess)
+        XCTAssertFalse(model.hasSkippedChecks)
+        XCTAssertTrue(model.preview?.needsSudoForSystem ?? false, "the sudo control has its own notice")
     }
 
     func testRecoveryErrorIsNotDescribedAsActiveTask() {

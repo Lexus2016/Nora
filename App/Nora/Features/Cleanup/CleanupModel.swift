@@ -32,16 +32,12 @@ final class CleanupModel {
         preview?.items.reduce(0) { selected.contains($1.path) ? $0 + $1.addedSize : $0 } ?? 0
     }
 
-    var reviewNotes: [CleanPreview.Note] {
-        (preview?.notes ?? []).enumerated().sorted { left, right in
-            func priority(_ text: String) -> Int {
-                text.localizedCaseInsensitiveContains("Full Disk Access")
-                    || text.localizedCaseInsensitiveContains("permission") ? 0 : 1
-            }
-            let a = priority(left.element.text), b = priority(right.element.text)
-            return a == b ? left.offset < right.offset : a < b
-        }.map(\.element)
-    }
+    /// Mole words its notes for a terminal ("run brew cleanup --dry-run manually") and lists folders
+    /// the app never cleans, which left people unsure what to do. Only two things are worth showing:
+    /// a missing permission, and places Mole could not check this time. The full output stays in the
+    /// console.
+    var needsFullDiskAccess: Bool { preview?.notes.contains { $0.kind == .permission } ?? false }
+    var hasSkippedChecks: Bool { preview?.notes.contains { $0.kind == .incomplete } ?? false }
 
     var protectedCount: Int { (preview?.items.count ?? 0) - selected.count }
 

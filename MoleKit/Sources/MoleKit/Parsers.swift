@@ -34,13 +34,38 @@ public struct CleanPreview: Sendable {
     }
 
     public struct Note: Sendable, Hashable {
+        /// What the user can do about a note. Mole words its notes for a terminal ("run brew
+        /// cleanup --dry-run manually"), so the app sorts them by meaning instead.
+        public enum Kind: Sendable, Hashable {
+            /// A permission is missing (Full Disk Access): System Settings fixes it.
+            case permission
+            /// System caches need the administrator password; the app has its own control for it.
+            case sudo
+            /// Mole could not check a place this time (slow, busy, unavailable): scanning again may help.
+            case incomplete
+            /// Nothing to act on here: review-only rows, or items the user's own protection skipped.
+            case informational
+        }
+
         public let section: String
         public let text: String
+        public let kind: Kind
+
+        /// `review` is Mole's ⊙ marker: a row it only reports and never cleans.
+        static func kind(of text: String, review: Bool) -> Kind {
+            if review { return .informational }
+            if text.localizedCaseInsensitiveContains("Full Disk Access") || text.localizedCaseInsensitiveContains("permission") {
+                return .permission
+            }
+            if text.localizedCaseInsensitiveContains("need sudo") { return .sudo }
+            if text.localizedCaseInsensitiveContains("protected") { return .informational }
+            return .incomplete
+        }
     }
 
     public var items: [Item]
-    /// Lines Mole marks as needing attention (◎) or informational (⊙): skipped Trash,
-    /// sudo needed for system caches, large files to review.
+    /// Lines Mole marks as a warning (◎) or a review-only row (⊙): skipped Trash, sudo needed for
+    /// system caches, places it could not check, large folders it never cleans.
     public var notes: [Note]
     public var potentialSize: Int64?
     public var needsSudoForSystem: Bool
@@ -130,7 +155,7 @@ public struct CleanPreview: Sendable {
             if line.hasPrefix("◎ ") || line.hasPrefix("⊙ ") {
                 let text = String(line.dropFirst(2))
                 if text.localizedCaseInsensitiveContains("need sudo") { needsSudo = true }
-                notes.append(Note(section: current, text: text))
+                notes.append(Note(section: current, text: text, kind: Note.kind(of: text, review: line.hasPrefix("⊙ "))))
             }
             if let range = line.range(of: "Items: ") {
                 counted = Int(line[range.upperBound...].prefix(while: \.isNumber))

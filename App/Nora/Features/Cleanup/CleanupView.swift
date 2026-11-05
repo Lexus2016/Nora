@@ -99,14 +99,14 @@ private struct CleanupResults: View {
     }
 }
 
-/// Permission and sudo notes under the results headline.
+/// What the user can act on under the results headline: the password for system caches, a missing
+/// permission, and a scan that skipped places. Mole's raw notes are not shown.
 private struct CleanupNotes: View {
     @Bindable var model: CleanupModel
     @Environment(AppModel.self) private var app
 
     var body: some View {
         if let preview = model.preview {
-            let shown = model.reviewNotes
             VStack(alignment: .leading, spacing: 6) {
                 if preview.needsSudoForSystem && !model.includeSystem {
                     HStack {
@@ -114,34 +114,24 @@ private struct CleanupNotes: View {
                         Button("Include them") { model.includeSystem = true; model.scan(app) }.buttonStyle(.link)
                     }
                 }
-                ForEach(Array(shown.prefix(3).enumerated()), id: \.offset) { _, note in
-                    noteRow(note)
+                if model.needsFullDiskAccess {
+                    HStack {
+                        Notice(text: String(localized: "Full Disk Access is off, so some protected places, such as the Trash, were skipped."),
+                               symbol: "lock")
+                        Button("Open settings") { Permissions.openFullDiskAccess() }.buttonStyle(.link)
+                    }
                 }
-                if shown.count > 3 {
-                    DisclosureGroup("More scan notes") {
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 6) {
-                                ForEach(Array(shown.dropFirst(3).enumerated()), id: \.offset) { _, note in
-                                    noteRow(note)
-                                }
-                            }
-                        }.frame(maxHeight: 160)
+                if model.hasSkippedChecks {
+                    HStack {
+                        Notice(text: String(localized: "Some places could not be checked this time. What is listed below can be cleaned now."),
+                               symbol: "exclamationmark.circle")
+                        Button("Scan again") { model.scan(app) }.buttonStyle(.link)
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .center)
         }
     }
-
-    private func noteRow(_ note: CleanPreview.Note) -> some View {
-        HStack {
-            Notice(text: note.text, symbol: "exclamationmark.circle")
-            if note.text.localizedCaseInsensitiveContains("Full Disk Access") {
-                Button("Open settings") { Permissions.openFullDiskAccess() }.buttonStyle(.link)
-            }
-        }
-    }
-
 }
 
 /// The detailed list: every path with a checkbox, for one section or all of them.

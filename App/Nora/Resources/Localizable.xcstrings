@@ -5641,6 +5641,22 @@
         }
       }
     },
+    "Full Disk Access is off, so some protected places, such as the Trash, were skipped.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Полный доступ к диску выключен, поэтому некоторые защищённые места, например Корзина, пропущены."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повний доступ до диска вимкнено, тому деякі захищені місця, наприклад Кошик, пропущено."
+          }
+        }
+      }
+    },
     "Full list: %@": {
       "localizations": {
         "ru": {
@@ -7997,22 +8013,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ще"
-          }
-        }
-      }
-    },
-    "More scan notes": {
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Другие примечания сканирования"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Інші примітки сканування"
           }
         }
       }
@@ -11541,6 +11541,22 @@
         }
       }
     },
+    "Scan again": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сканировать ещё раз"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сканувати ще раз"
+          }
+        }
+      }
+    },
     "Scan again: the preview is incomplete": {
       "localizations": {
         "ru": {
@@ -12437,6 +12453,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Частину позицій залишено"
+          }
+        }
+      }
+    },
+    "Some places could not be checked this time. What is listed below can be cleaned now.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Часть мест в этот раз не удалось проверить. Найденное ниже можно чистить уже сейчас."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частину місць цього разу не вдалося перевірити. Знайдене нижче можна чистити вже зараз."
           }
         }
       }

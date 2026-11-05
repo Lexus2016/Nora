@@ -6,9 +6,19 @@ Changes to the Nora app, newest first. Work that is merged but not released yet 
 
 ### Fixed
 - Result cards no longer display Mole's terminal separator lines made of equals signs, which could wrap into an untidy extra row. The original command log is preserved.
+- Cleanup no longer silently loses Homebrew and large project folders when they are slow to scan. Mole's limits (20 s for Homebrew, 6 s per project folder) are raised for the cleanup preview and run, so the preview and the run see the same folders.
+- Projects: the artifact preview could end as "incomplete" because `~/_Projects` took longer than Mole's 60 s scan limit, and Nora refuses to clean an incomplete preview. The scan limits are raised (measured: the same folder now reads "complete", 4.89 GB in 382 artifacts), and the run uses the same limits.
+
+### Changed
+- Cleanup shows only what you can act on. Mole's raw notes, which were worded for a terminal ("run brew cleanup --dry-run manually") and listed folders Nora never cleans (Docker, Lima, Time Machine snapshots, Android emulators), are gone from the screen; they remain in the console. A missing Full Disk Access shows one clear message with a button to open Settings, and places Mole could not check show one message with a "Scan again" button.
 
 ### Виправлено
 - Підсумкові картки більше не показують службові смуги Mole зі знаків рівності, які переносилися в зайвий рядок. Оригінальний журнал команди збережений.
+- Очищення більше не губить мовчки Homebrew і великі теки проєктів, коли їх повільно сканувати. Ліміти Mole (20 с для Homebrew, 6 с на теку проєктів) збільшено для перегляду й запуску очищення, тож вони бачать однакові теки.
+- Проєкти: перегляд артефактів міг завершуватися як «неповний», бо `~/_Projects` сканувалась довше за ліміт Mole 60 с, а Nora відмовляється чистити неповний перегляд. Ліміти сканування збільшено (виміряно: та сама тека тепер «повна», 4,89 ГБ у 382 артефактах), запуск використовує ті самі ліміти.
+
+### Змінено
+- Очищення показує лише те, з чим можна щось зробити. Сирі примітки Mole, написані для термінала («run brew cleanup --dry-run manually») і про теки, яких Nora не чистить (Docker, Lima, знімки Time Machine, емулятори Android), прибрано з екрана; вони лишаються в консолі. Відсутній повний доступ до диска показується одним зрозумілим повідомленням із кнопкою відкрити налаштування, а місця, які Mole не зміг перевірити, — одним повідомленням із кнопкою «Сканувати ще раз».
 
 ## 1.3.3 (2026-10-26)
 

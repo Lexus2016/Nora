@@ -43,12 +43,44 @@ public struct Mole: Sendable {
         return env
     }
 
+    /// Mole's own time limits suit a terminal user who can simply run a slow step again. A preview
+    /// shown for review must not silently lose Homebrew or a large projects folder because it took
+    /// longer than a few seconds:
+    /// - `clean`: `brew cleanup --dry-run` took 23-24 s against a 20 s limit, and a project scan
+    ///   22-28 s against 6 s.
+    /// - `purge`: with Mole's 60 s and 15 s, `~/_Projects` ended with status 124 and the preview
+    ///   read "Dry run incomplete", which Nora refuses to run, so its artifacts could never be
+    ///   cleaned. With 240 s and 60 s it read "Dry run complete" (4.89GB, 382 artifacts, 296 s).
+    /// A run uses the same limits as the preview it follows, so the two see the same folders. Only
+    /// these commands are widened: others share the probes and keep Mole's defaults.
+    public static func scanLimits(for arguments: [String]) -> [String: String] {
+        switch arguments.first {
+        case "clean":
+            return [
+                "MOLE_PROJECT_CACHE_SCAN_TIMEOUT": "60",
+                "MOLE_TIMEOUT_PKG_CLEANUP_SEC": "60",
+            ]
+        case "purge":
+            return [
+                "MO_PURGE_SCAN_TIMEOUT_SEC": "240",
+                "MO_PURGE_SIZE_TIMEOUT_SEC": "60",
+            ]
+        default:
+            return [:]
+        }
+    }
+
+    /// `environment` plus the limits `arguments` need.
+    public func environment(for arguments: [String]) -> [String: String] {
+        environment.merging(Self.scanLimits(for: arguments)) { $1 }
+    }
+
     public func command(_ arguments: [String], environment extra: [String: String] = [:]) -> ShellCommand {
         ShellCommand(executable.path, arguments, environment: extra)
     }
 
     public func run(_ arguments: [String], environment extra: [String: String] = [:]) async throws -> CommandResult {
-        try await ProcessRunner.run(executable, arguments, environment: environment.merging(extra) { $1 })
+        try await ProcessRunner.run(executable, arguments, environment: environment(for: arguments).merging(extra) { $1 })
     }
 
     /// Compares dotted versions numerically ("1.59.1" > "1.9").

@@ -325,7 +325,7 @@ final class AppModel {
     func runPTY(_ arguments: [String], sudo: Bool = false, environment: [String: String] = [:]) async throws -> PTYRun.Result {
         guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
-        var env = mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }
+        var env = mole.environment(for: arguments).merging(userEnvironment) { $1 }.merging(environment) { $1 }
         if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
         let shown = mole.command(arguments, environment: environment)
         let id = console.begin(shown, prefix: sudo ? "sudo -A -v && " : "")
@@ -354,7 +354,7 @@ final class AppModel {
     ) async throws -> (value: T, result: PTYRun.Result) {
         guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
-        var env = mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 }
+        var env = mole.environment(for: arguments).merging(userEnvironment) { $1 }.merging(environment) { $1 }
         if sudo { env = PrivilegeBroker.environment(env, askpass: askpassURL) }
         let id = console.begin(mole.command(arguments, environment: environment), prefix: sudo ? "sudo -A -v && " : "")
         let console = self.console
@@ -381,7 +381,8 @@ final class AppModel {
                   decide: @escaping @Sendable (_ output: String, _ status: Int32) throws -> Void) async throws -> PTYRun.Result {
         guard !trash.blocksOtherMutations else { throw NoraError.commandFailed(Self.trashBusyMessage) }
         guard let mole else { throw NoraError.moleMissing }
-        let env = PrivilegeBroker.environment(mole.environment.merging(userEnvironment) { $1 }, askpass: askpassURL)
+        // The check and the run share one environment, so they get the same limits.
+        let env = PrivilegeBroker.environment(mole.environment(for: run).merging(userEnvironment) { $1 }, askpass: askpassURL)
         let (exe, args) = PrivilegeBroker.gated(executable: mole.executable.path, check: check, run: run)
         let id = console.begin(mole.command(run), prefix: "sudo -A -v && mo \(check.joined(separator: " ")) && ")
         let console = self.console
@@ -416,7 +417,7 @@ final class AppModel {
         do {
             // Unlike cancelling an AsyncStream iterator, this awaits process-group settlement.
             let result = try await ProcessRunner.run(mole.executable, arguments,
-                environment: mole.environment.merging(userEnvironment) { $1 }.merging(environment) { $1 },
+                environment: mole.environment(for: arguments).merging(userEnvironment) { $1 }.merging(environment) { $1 },
                 onOutput: { line in
                     Task { @MainActor in console.append(id, [ANSI.strip(line.text)]) }
                 })
