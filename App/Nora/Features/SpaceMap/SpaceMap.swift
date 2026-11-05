@@ -22,8 +22,12 @@ final class SpaceMapModel {
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var forward: [URL] = []
 
-    init() {
-        root = FileManager.default.homeDirectoryForCurrentUser
+    /// The folder whose own state is protected from the Trash (iCloud Drive, Docker, OrbStack).
+    let home: URL
+
+    init(home: URL = FileManager.default.homeDirectoryForCurrentUser) {
+        self.home = home
+        root = home
         #if DEBUG
         // Screenshots: `-NoraSpaceMapRoot /` starts on the disk instead of the home folder.
         if let path = UserDefaults.standard.string(forKey: "NoraSpaceMapRoot") { root = URL(fileURLWithPath: path) }
@@ -159,7 +163,22 @@ final class SpaceMapModel {
         }
     }
 
-    /// Moves the selection to the Trash. Reversible, so it needs no extra dialog.
+    /// Why the entry cannot go to the Trash, by Mole's own Analyze rules (1.65, 1.68), or nil.
+    func protection(of entry: DiskAnalysis.Entry) -> SpaceProtection.Reason? {
+        SpaceProtection.reason(forTrashing: entry.path, home: home)
+    }
+
+    static func message(for reason: SpaceProtection.Reason) -> String {
+        switch reason {
+        case .system: String(localized: "System folders cannot be moved to the Trash.")
+        case .home: String(localized: "Your home folder cannot be moved to the Trash.")
+        case .appState: String(localized: "This folder holds the data of Docker or OrbStack and is protected.")
+        case .iCloud: String(localized: "iCloud Drive's own folders are protected: moving one to the Trash removes it from all your devices.")
+        }
+    }
+
+    /// Moves the selection to the Trash. Reversible, so it needs no extra dialog. A protected path is
+    /// refused here even if something put it in the selection.
     func trashSelected(moveToTrash: (URL) throws -> Void = { url in
         try FileManager.default.trashItem(at: url, resultingItemURL: nil)
     }) {
@@ -171,6 +190,10 @@ final class SpaceMapModel {
         trashed = []
         trashFailures = []
         for entry in targets {
+            if let reason = protection(of: entry) {
+                trashFailures.append("\(entry.name): \(Self.message(for: reason))")
+                continue
+            }
             do {
                 try moveToTrash(URL(fileURLWithPath: entry.path).standardizedFileURL)
                 trashed.append(entry.name)
@@ -325,14 +348,20 @@ private struct SpaceLens: View {
     }
 
     private func row(_ entry: DiskAnalysis.Entry) -> some View {
-        HStack(spacing: 10) {
+        let protection = model.protection(of: entry)
+        return HStack(spacing: 10) {
             Toggle("", isOn: Binding(get: { model.selected.contains(entry.path) },
                                      set: { if $0 { model.selected.insert(entry.path) } else { model.selected.remove(entry.path) } }))
                 .toggleStyle(.checkbox).labelsHidden()
+                .disabled(protection != nil)
                 .accessibilityLabel(Text(entry.name))
-                .accessibilityHint(Text(entry.path))
+                .accessibilityHint(Text(protection.map(SpaceMapModel.message(for:)) ?? entry.path))
             Image(nsImage: NSWorkspace.shared.icon(forFile: entry.path)).resizable().frame(width: 26, height: 26)
             Text(entry.name).font(.system(size: 14, weight: .medium)).lineLimit(1).truncationMode(.middle)
+            if let protection {
+                Image(systemName: "lock.fill").font(.system(size: 11)).foregroundStyle(Palette.muted)
+                    .help(SpaceMapModel.message(for: protection))
+            }
             Spacer(minLength: 6)
             Text(Format.bytes(entry.size) + (entry.isPartial ? "+" : "")).font(.system(size: 13, design: .rounded)).monospacedDigit().foregroundStyle(Palette.fg2)
             if entry.isDirectory {

@@ -12949,6 +12949,22 @@
         }
       }
     },
+    "System folders cannot be moved to the Trash.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Системные папки нельзя перемещать в Корзину."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Системні теки не можна переміщувати в Кошик."
+          }
+        }
+      }
+    },
     "System power (Mole)": {
       "localizations": {
         "ru": {
@@ -13757,6 +13773,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ліцензії сторонніх компонентів"
+          }
+        }
+      }
+    },
+    "This folder holds the data of Docker or OrbStack and is protected.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В этой папке данные Docker или OrbStack, поэтому она защищена."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У цій теці дані Docker або OrbStack, тому вона захищена."
           }
         }
       }
@@ -15119,6 +15151,22 @@
         }
       }
     },
+    "Your home folder cannot be moved to the Trash.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Домашнюю папку нельзя перемещать в Корзину."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Домашню теку не можна переміщувати в Кошик."
+          }
+        }
+      }
+    },
     "Your home folder. iCloud folders are skipped.": {
       "localizations": {
         "ru": {
@@ -15387,6 +15435,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "freshclam завершив роботу, але вірусної бази Nora досі немає. Перегляньте консоль."
+          }
+        }
+      }
+    },
+    "iCloud Drive's own folders are protected: moving one to the Trash removes it from all your devices.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Собственные папки iCloud Drive защищены: перемещение такой папки в Корзину удалит её со всех ваших устройств."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Власні теки iCloud Drive захищені: переміщення такої теки в Кошик видаляє її з усіх ваших пристроїв."
           }
         }
       }

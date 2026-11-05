@@ -37,6 +37,33 @@ final class ToolsProtectionSpaceMapRegressionTests: XCTestCase {
         XCTAssertEqual(SpaceMapModel.topLevelSelection(entries, selected: ["/", "/A/b"]).map(\.path), ["/"])
     }
 
+    /// Mole's own Analyze refuses these (1.65, 1.68); the Space Map moves items itself, so it must too.
+    func testProtectedPathsNeverReachTheTrashAndSayWhy() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent("space-map-\(UUID().uuidString)")
+        let drive = home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
+        try FileManager.default.createDirectory(at: drive, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let model = SpaceMapModel(home: home)
+        model.cache[URL(fileURLWithPath: "/")] = try analysis([(drive.path, 500), ("/A", 100)])
+        model.selected = [drive.path, "/A"]
+        model.stage = .review
+        let driveEntry = try XCTUnwrap(model.cache[URL(fileURLWithPath: "/")]?.entries.first { $0.path == drive.path })
+        XCTAssertEqual(model.protection(of: driveEntry), .iCloud)
+        var moved: [String] = []
+        model.trashSelected { moved.append($0.path) }
+        XCTAssertEqual(moved, ["/A"], "iCloud Drive must never reach the Trash")
+        XCTAssertEqual(model.trashed.count, 1)
+        XCTAssertEqual(model.trashFailures.count, 1)
+        XCTAssertTrue(model.trashFailures[0].contains("iCloud"), model.trashFailures[0])
+    }
+
+    func testAnOrdinaryEntryHasNoProtection() throws {
+        let model = SpaceMapModel(home: FileManager.default.temporaryDirectory)
+        model.cache[URL(fileURLWithPath: "/")] = try analysis([("/A", 100)])
+        let entry = try XCTUnwrap(model.cache[URL(fileURLWithPath: "/")]?.entries.first)
+        XCTAssertNil(model.protection(of: entry))
+    }
+
     func testTrashFailureDoesNotClaimTargetMoved() throws {
         let model = SpaceMapModel()
         model.cache[URL(fileURLWithPath: "/")] = try analysis([("/A", 100), ("/A/b", 40)])
