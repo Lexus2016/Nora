@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Approved 520 × 260 pt horizontal reminder. All content and actions stay inside the panel.
@@ -52,7 +53,7 @@ struct TrashPromptView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .lineLimit(3).minimumScaleFactor(0.85)
                     }
-                    Text("Only ~/.Trash. External disks are excluded.")
+                    Text("Home Trash and connected disks are checked.")
                         .font(.system(size: 10))
                         .foregroundStyle(foreground.opacity(0.86))
                         .lineLimit(2).minimumScaleFactor(0.85)
@@ -121,9 +122,12 @@ struct TrashPromptView: View {
 
     private var title: LocalizedStringKey {
         switch model.phase {
-        case .idle, .scanning: return "Checking home Trash…"
+        case .idle, .scanning: return "Checking Trash…"
         case .review:
-            if model.snapshot?.topLevelItemCount == 0 { return "Home Trash is empty" }
+            if model.snapshot?.topLevelItemCount == 0 { return "Trash is empty" }
+            if let disk = model.finderOnlyLabels.first, model.snapshot?.deletableTopLevelItemCount == 0 {
+                return "Trash on \(disk)"
+            }
             // The Trash changed under the first list: this one is current and one click away from done.
             return model.changedDuringCleanup ? "Trash changed during cleanup" : "New files in your Trash"
         case .cleaning: return model.stopRequested ? "Stopping safely…" : "Emptying reviewed Trash…"
@@ -143,8 +147,14 @@ struct TrashPromptView: View {
         if let notice = model.notice { return Text(verbatim: notice) }
         switch model.phase {
         case .idle, .scanning: return Text("Reading a bounded snapshot. Nothing is deleted.")
-        case .review where model.snapshot?.topLevelItemCount == 0: return Text("No items were found in your home Trash.")
-        case .review: return Text("Files will be permanently deleted. This cannot be undone.")
+        case .review where model.snapshot?.topLevelItemCount == 0: return Text("No items were found in your Trash.")
+        case .review where model.snapshot?.deletableTopLevelItemCount == 0 && !model.finderOnlyLabels.isEmpty:
+            return Text("This disk's filesystem cannot back Nora's staged deletion. Empty its Trash in Finder.")
+        case .review:
+            if let disk = model.finderOnlyLabels.first {
+                return Text("Reviewed items on this Mac will be permanently deleted. The Trash on \(disk) must be emptied in Finder.")
+            }
+            return Text("Files will be permanently deleted. This cannot be undone.")
         case .cleaning: return Text("Only reviewed items are eligible. Stopping may leave some items already deleted.")
         case .unavailable: return Text("Size is unknown. Unreadable items are never treated as an empty Trash.")
         case .recoveryRequired: return Text("Preserved items need review. Permanent deletion is blocked.")
@@ -165,7 +175,9 @@ struct TrashPromptView: View {
     private var primaryTitle: LocalizedStringKey {
         switch model.phase {
         case .idle, .scanning: return "Checking…"
-        case .review: return model.snapshot?.topLevelItemCount == 0 ? "Check again" : "Empty Trash"
+        case .review:
+            if model.canEmptyTrash { return "Empty Trash" }
+            return model.canOpenTrashInFinder ? "Open Trash in Finder" : "Check again"
         case .cleaning: return "Cleaning…"
         case .recoveryRequired: return "Review recovery in Nora"
         case .unavailable, .finished: return "Review again"
@@ -177,8 +189,9 @@ struct TrashPromptView: View {
     }
 
     private var primaryHint: Text {
-        if model.canEmptyTrash { return Text("Permanently delete only the reviewed items from home Trash. This cannot be undone.") }
-        return Text("Review home Trash…")
+        if model.canEmptyTrash { return Text("Permanently delete only the reviewed items. This cannot be undone.") }
+        if model.canOpenTrashInFinder { return Text("Open this disk's Trash in Finder.") }
+        return Text("Review Trash…")
     }
 
     private var secondaryTitle: LocalizedStringKey {
@@ -189,6 +202,8 @@ struct TrashPromptView: View {
     private func primaryAction() {
         switch model.phase {
         case .review where model.canEmptyTrash: model.emptyTrash()
+        case .review where model.canOpenTrashInFinder:
+            if let url = model.finderRootURL { NSWorkspace.shared.open(url) }
         case .recoveryRequired: openNora()
         case .unavailable, .finished, .review: model.openReview()
         default: break
@@ -207,9 +222,9 @@ struct TrashReminderSettingsSection: View {
     var body: some View {
         Section {
             Toggle("Remind me about Trash", isOn: Binding(get: { model.remindersEnabled }, set: model.setRemindersEnabled))
-            Text("Reminders work while Nora is running. Only home Trash (~/.Trash) is checked; external disks are excluded.")
+            Text("Reminders work while Nora is running. Home Trash and the Trash of connected disks are checked.")
                 .font(.caption).foregroundStyle(.secondary)
-            Button("Review home Trash…", action: model.openReview)
+            Button("Review Trash…", action: model.openReview)
             if model.phase == .recoveryRequired {
                 Text("Finish the pending recovery in Nora before emptying Trash.")
                     .font(.caption).foregroundStyle(.orange)

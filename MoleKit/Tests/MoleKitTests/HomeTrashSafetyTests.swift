@@ -48,8 +48,8 @@ final class HomeTrashSafetyTests: XCTestCase {
             return recovery.appendingPathComponent(name, isDirectory: true)
         }
         func service(limits: TrashScanLimits = TrashScanLimits(),
-                     hook: @escaping (TrashTransition) throws -> Void = { _ in }) -> HomeTrashService {
-            HomeTrashService(fixtureHome: home, limits: limits, transition: hook)
+                     hook: @escaping (TrashTransition) throws -> Void = { _ in }) -> TrashService {
+            TrashService(fixtureHome: home, limits: limits, transition: hook)
         }
     }
 

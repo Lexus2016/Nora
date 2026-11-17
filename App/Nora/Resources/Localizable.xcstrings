@@ -3287,6 +3287,22 @@
         }
       }
     },
+    "Checking Trash…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проверка Корзины…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перевірка Кошика…"
+          }
+        }
+      }
+    },
     "Checking for updates": {
       "localizations": {
         "ru": {
@@ -3299,28 +3315,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевіряю оновлення"
-          }
-        }
-      }
-    },
-    "Checking home Trash…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Checking home Trash…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проверка домашней корзины…"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перевірка домашнього кошика…"
           }
         }
       }
@@ -5865,24 +5859,18 @@
         }
       }
     },
-    "Home Trash is empty": {
+    "Home Trash and connected disks are checked.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Home Trash is empty"
-          }
-        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Домашняя корзина пуста"
+            "value": "Проверяются домашняя Корзина и Корзина подключённых дисков."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Домашній кошик порожній"
+            "value": "Перевіряються домашній Кошик і Кошик підключених дисків."
           }
         }
       }
@@ -8575,24 +8563,18 @@
         }
       }
     },
-    "No items were found in your home Trash.": {
+    "No items were found in your Trash.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No items were found in your home Trash."
-          }
-        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "В домашней корзине объекты не найдены."
+            "value": "В вашей Корзине ничего не найдено."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У домашньому кошику об’єктів не знайдено."
+            "value": "У вашому Кошику нічого не знайдено."
           }
         }
       }
@@ -9535,28 +9517,6 @@
         }
       }
     },
-    "Only ~/.Trash. External disks are excluded.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Only ~/.Trash. External disks are excluded."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Только ~/.Trash. Внешние диски исключены."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Лише ~/.Trash. Зовнішні диски не включено."
-          }
-        }
-      }
-    },
     "Open": {
       "localizations": {
         "ru": {
@@ -9621,6 +9581,22 @@
         }
       }
     },
+    "Open Trash in Finder": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть Корзину в Finder"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відкрити Кошик у Finder"
+          }
+        }
+      }
+    },
     "Open now: %@. Nora quits them, updates them and opens them again. Each app can ask you to save your work first.": {
       "localizations": {
         "ru": {
@@ -9649,6 +9625,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Відкрити налаштування"
+          }
+        }
+      }
+    },
+    "Open this disk's Trash in Finder.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть Корзину этого диска в Finder."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відкрити Кошик цього диска у Finder."
           }
         }
       }
@@ -9797,24 +9789,18 @@
         }
       }
     },
-    "Permanently delete only the reviewed items from home Trash. This cannot be undone.": {
+    "Permanently delete only the reviewed items. This cannot be undone.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Permanently delete only the reviewed items from home Trash. This cannot be undone."
-          }
-        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Навсегда удалить только проверенные объекты из домашней корзины. Это действие невозможно отменить."
+            "value": "Окончательно удалить только просмотренные элементы. Отменить это невозможно."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Назавжди видалити лише перевірені об’єкти з домашнього кошика. Цю дію неможливо скасувати."
+            "value": "Остаточно видалити лише переглянуті елементи. Скасувати це неможливо."
           }
         }
       }
@@ -10645,24 +10631,18 @@
         }
       }
     },
-    "Reminders work while Nora is running. Only home Trash (~/.Trash) is checked; external disks are excluded.": {
+    "Reminders work while Nora is running. Home Trash and the Trash of connected disks are checked.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reminders work while Nora is running. Only home Trash (~/.Trash) is checked; external disks are excluded."
-          }
-        },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Напоминания работают, пока запущена Nora. Проверяется только домашняя корзина (~/.Trash), без внешних дисков."
+            "value": "Напоминания работают, пока запущена Nora. Проверяются домашняя Корзина и Корзина подключённых дисков."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нагадування працюють, поки запущено Nora. Перевіряється лише домашній кошик (~/.Trash), без зовнішніх дисків."
+            "value": "Нагадування працюють, поки запущена Nora. Перевіряються домашній Кошик і Кошик підключених дисків."
           }
         }
       }
@@ -11111,6 +11091,22 @@
         }
       }
     },
+    "Review Trash…": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотреть Корзину…"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переглянути Кошик…"
+          }
+        }
+      }
+    },
     "Review again": {
       "localizations": {
         "en": {
@@ -11209,28 +11205,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Переглянути очищення"
-          }
-        }
-      }
-    },
-    "Review home Trash…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Review home Trash…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проверить домашнюю корзину…"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перевірити домашній кошик…"
           }
         }
       }
@@ -11339,6 +11313,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перегляньте останній результат перед повторним скануванням"
+          }
+        }
+      }
+    },
+    "Reviewed items on this Mac will be permanently deleted. The Trash on %@ must be emptied in Finder.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Просмотренные элементы на этом Mac будут окончательно удалены. Корзину на %@ нужно очистить в Finder."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переглянуті елементи на цьому Mac буде остаточно видалено. Кошик на %@ потрібно очистити у Finder."
           }
         }
       }
@@ -13173,6 +13163,38 @@
         }
       }
     },
+    "The Trash on %@ must be emptied in Finder.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корзину на %@ нужно очистить в Finder."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кошик на %@ потрібно очистити у Finder."
+          }
+        }
+      }
+    },
+    "The Trash on a connected disk must be emptied in Finder.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корзину на подключённом диске нужно очистить в Finder."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кошик на підключеному диску потрібно очистити у Finder."
+          }
+        }
+      }
+    },
     "The active Downloads watch may still use its previously loaded definitions until ClamAV reloads them or you restart the watch.": {
       "localizations": {
         "ru": {
@@ -13793,6 +13815,22 @@
         }
       }
     },
+    "This disk's filesystem cannot back Nora's staged deletion. Empty its Trash in Finder.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файловая система этого диска не поддерживает безопасное поэтапное удаление Nora. Очистите его Корзину в Finder."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файлова система цього диска не підтримує безпечне поетапне видалення Nora. Очистіть його Кошик у Finder."
+          }
+        }
+      }
+    },
     "This folder holds the data of Docker or OrbStack and is protected.": {
       "localizations": {
         "ru": {
@@ -14095,6 +14133,22 @@
         }
       }
     },
+    "Trash is empty": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корзина пуста"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кошик порожній"
+          }
+        }
+      }
+    },
     "Trash logical size": {
       "localizations": {
         "en": {
@@ -14113,6 +14167,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Логічний обсяг кошика"
+          }
+        }
+      }
+    },
+    "Trash on %@": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Корзина на %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кошик на %@"
           }
         }
       }

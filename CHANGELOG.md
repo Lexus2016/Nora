@@ -2,6 +2,14 @@
 
 Changes to the Nora app, newest first. Work that is merged but not released yet goes under **Unreleased**; at release time it becomes the next version's section and its release notes.
 
+## Unreleased
+
+### Added
+- Trash reminders now watch the Trash of connected disks as well as the home Trash. A disk's per-user Trash (`/Volumes/<name>/.Trashes/<uid>`) is discovered when the disk is mounted, included in the same review, and watched while it stays connected. Empty Trash removes the reviewed items on APFS and HFS+ disks with the same staged, per-item checks as the home Trash, using private staging on that disk; nothing is copied across filesystems. exFAT and FAT drives are reviewed too, but their filesystem cannot back Nora's metadata checks, so the panel shows their items and opens that Trash in Finder instead of deleting. A disk whose Trash Nora cannot empty keeps its items on screen after the Mac's own items are removed, with the reason and the Finder hand-off.
+
+### Додано
+- Нагадування про Кошик тепер стежать і за Кошиком підключених дисків, а не лише за домашнім. Кошик кожного користувача на диску (`/Volumes/<назва>/.Trashes/<uid>`) знаходиться при підключенні, потрапляє в той самий перегляд і відстежується, поки диск підключений. «Очистити кошик» видаляє переглянуті елементи на дисках APFS і HFS+ з тими самими поетапними перевірками, що й для домашнього Кошика, використовуючи приватне сховище на тому самому диску; між файловими системами нічого не копіюється. Флешки з exFAT і FAT також переглядаються, але їхня файлова система не дає метаданих, на які спираються перевірки Nora, тому панель показує їхні елементи й відкриває цей Кошик у Finder замість видалення. Диск, Кошик якого Nora не може очистити, лишає свої елементи на екрані після видалення елементів Mac — із причиною та переходом у Finder.
+
 ## 1.3.4 (2026-11-05)
 
 ### Fixed

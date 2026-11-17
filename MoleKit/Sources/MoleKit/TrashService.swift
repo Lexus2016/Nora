@@ -2,8 +2,9 @@ import CPTYShim
 import Darwin
 import Foundation
 
-/// Snapshot-scoped deletion for the current user's home .Trash. Never invokes Mole, Finder,
-/// a shell, recursive removeItem, or a copy/delete fallback. Call off the main actor.
+/// Snapshot-scoped deletion for one user-writable Trash root: the home `.Trash` or a mounted
+/// disk's `.Trashes/<uid>`. Never invokes Mole, Finder, a shell, recursive removeItem, or a
+/// copy/delete fallback. Call off the main actor.
 ///
 /// The caller must present this snapshot and obtain explicit permanent-deletion confirmation
 /// before execute. A later scan does not silently replace that reviewed snapshot.
@@ -12,33 +13,40 @@ import Foundation
 /// has no atomic compare-and-unlink. Another process with the same UID, or an open writable file
 /// descriptor, can still mutate an object. This is metadata identity protection, not a content
 /// lock. The result deliberately reports entry counts, never exact reclaimed disk bytes.
-public final class HomeTrashService: @unchecked Sendable {
-    private let home: URL
+public final class TrashService: @unchecked Sendable {
+    private let location: TrashLocation
     private let owner: UInt32
     private let limits: TrashScanLimits
     private let transition: (TrashTransition) throws -> Void
     private let lock = NSLock()
     private let recoveryComponents = ["Library", "Application Support", "Nora", "TrashRecovery"]
 
-    public init() {
-        home = FileManager.default.homeDirectoryForCurrentUser
-        owner = UInt32(geteuid())
-        limits = TrashScanLimits()
-        transition = { _ in }
+    public convenience init() {
+        self.init(location: .home())
     }
 
-    /// Synthetic fixture homes only. Not public API, and never based on $HOME in tests.
-    init(fixtureHome: URL, limits: TrashScanLimits = TrashScanLimits(),
-         transition: @escaping (TrashTransition) throws -> Void = { _ in }) {
-        home = fixtureHome
+    public convenience init(location: TrashLocation) {
+        self.init(location: location, limits: TrashScanLimits(), transition: { _ in })
+    }
+
+    /// One review/execute engine per Trash root. The staging directory is always on the same
+    /// filesystem as the root, so every move is a rename and never a copy.
+    init(location: TrashLocation, limits: TrashScanLimits,
+         transition: @escaping (TrashTransition) throws -> Void) {
+        self.location = location
         owner = UInt32(geteuid())
         self.limits = limits
         self.transition = transition
     }
 
-    private var recoveryURL: URL {
-        recoveryComponents.reduce(home) { $0.appendingPathComponent($1, isDirectory: true) }
+    /// Synthetic fixture homes only. Not public API, and never based on $HOME in tests.
+    convenience init(fixtureHome: URL, limits: TrashScanLimits = TrashScanLimits(),
+                     transition: @escaping (TrashTransition) throws -> Void = { _ in }) {
+        self.init(location: .home(fixtureHome), limits: limits, transition: transition)
     }
+
+    private var recoveryURL: URL { location.stagingURL }
+    private var isHome: Bool { location.kind == .home }
 
     public func scan(cancellation: TrashCancellationToken = TrashCancellationToken()) throws -> TrashSnapshot {
         try lock.withLock { try scanUnlocked(cancellation) }
@@ -53,15 +61,15 @@ public final class HomeTrashService: @unchecked Sendable {
     public func recover() -> TrashRecoveryStatus {
         lock.withLock {
             do {
-                let homeFD = try openHome()
-                guard let recovery = try openRecovery(homeFD, create: false) else { return clearStatus }
+                let parentFD = try openParent()
+                guard let recovery = try openRecovery(parentFD, create: false) else { return clearStatus }
                 let heldLock = try TrashDirectory(nora_trash_lock(recovery.descriptor), operation: "lock recovery")
                 defer { withExtendedLifetime(heldLock) {} }
                 for name in try runNames(recovery) {
-                    let run = try openPrivate(name, in: recovery, device: try TrashFS.identity(homeFD).device)
+                    let run = try openPrivate(name, in: recovery, device: try TrashFS.identity(parentFD).device)
                     if try reconcileMetadataOnlyRun(name, run: run, recovery: recovery) { continue }
                     var journal = try loadJournal(run, name: name)
-                    try restore(&journal, run: run, homeFD: homeFD)
+                    try restore(&journal, run: run, parentFD: parentFD)
                     try finishRun(journal, run: run, recovery: recovery)
                 }
                 return clearStatus
@@ -82,13 +90,13 @@ public final class HomeTrashService: @unchecked Sendable {
     }
     private func statusUnlocked() -> TrashRecoveryStatus {
         do {
-            let homeFD = try openHome()
-            guard let recovery = try openRecovery(homeFD, create: false) else { return clearStatus }
+            let parentFD = try openParent()
+            guard let recovery = try openRecovery(parentFD, create: false) else { return clearStatus }
             let names = try runNames(recovery)
             guard !names.isEmpty else { return clearStatus }
             // Decode every journal; malformed, missing, or unreadable records still block new work.
             for name in names {
-                let run = try openPrivate(name, in: recovery, device: try TrashFS.identity(homeFD).device)
+                let run = try openPrivate(name, in: recovery, device: try TrashFS.identity(parentFD).device)
                 if try isMetadataOnlyRun(run) { continue }
                 _ = try loadJournal(run, name: name)
             }
@@ -96,28 +104,44 @@ public final class HomeTrashService: @unchecked Sendable {
         } catch { return blockedStatus(error.localizedDescription) }
     }
 
-    private func openHome() throws -> TrashDirectory {
-        let directory = try TrashFS.open(home)
+    private func openParent() throws -> TrashDirectory {
+        let directory = try TrashFS.open(location.parentURL)
         let identity = try TrashFS.identity(directory)
-        guard identity.type == .directory, identity.ownerID == owner, identity.mode & 0o022 == 0 else {
-            throw TrashSafetyError.unavailable("home directory ownership could not be verified")
+        switch location.kind {
+        case .home:
+            guard identity.type == .directory, identity.ownerID == owner, identity.mode & 0o022 == 0 else {
+                throw TrashSafetyError.unavailable("home directory ownership could not be verified")
+            }
+        case .volume:
+            // `.Trashes` belongs to the system (`root`) or to the user; shared volumes may expose it
+            // world-writable, and then only the sticky bit can keep one user's staging out of reach
+            // of another's deletions.
+            guard identity.type == .directory, identity.ownerID == owner || identity.ownerID == 0 else {
+                throw TrashSafetyError.unavailable("volume Trash ownership could not be verified")
+            }
+            if identity.mode & 0o002 != 0, identity.mode & UInt32(S_ISVTX) == 0 {
+                throw TrashSafetyError.unavailable("volume Trash is shared without the sticky bit")
+            }
         }
         try TrashFS.requireNoGrantACL(directory)
         return directory
     }
-    private func openTrash(_ homeFD: TrashDirectory) throws -> TrashDirectory {
-        let directory = try TrashFS.open(".Trash", in: homeFD)
+    private func openTrash(_ parent: TrashDirectory) throws -> TrashDirectory {
+        let directory = try TrashFS.open(location.rootName, in: parent)
         let identity = try TrashFS.identity(directory)
         guard identity.type == .directory, identity.ownerID == owner,
-              identity.device == (try TrashFS.identity(homeFD)).device else {
+              identity.device == (try TrashFS.identity(parent)).device else {
             throw TrashSafetyError.unavailable("Trash ownership or filesystem could not be verified")
+        }
+        if identity.mode & 0o022 != 0, identity.mode & UInt32(S_ISVTX) == 0 {
+            throw TrashSafetyError.unavailable("Trash is writable by other users without the sticky bit")
         }
         return directory
     }
-    private func verifyTrash(_ directory: TrashDirectory, homeFD: TrashDirectory,
+    private func verifyTrash(_ directory: TrashDirectory, parent: TrashDirectory,
                              expected: TrashFileIdentity) throws {
         guard expected.sameObject(as: try TrashFS.identity(directory)),
-              expected.sameObject(as: try TrashFS.identity(".Trash", in: homeFD)) else {
+              expected.sameObject(as: try TrashFS.identity(location.rootName, in: parent)) else {
             throw TrashSafetyError.changed("the Trash directory was replaced")
         }
     }
@@ -130,9 +154,25 @@ public final class HomeTrashService: @unchecked Sendable {
         try TrashFS.requireNoACL(directory)
         return directory
     }
-    private func openRecovery(_ homeFD: TrashDirectory, create: Bool) throws -> TrashDirectory? {
-        var parent = homeFD
-        let device = try TrashFS.identity(homeFD).device
+    private func openRecovery(_ parent: TrashDirectory, create: Bool) throws -> TrashDirectory? {
+        let device = try TrashFS.identity(parent).device
+        if location.kind == .volume {
+            let name = location.stagingURL.lastPathComponent
+            var directory: TrashDirectory
+            if try TrashFS.optionalIdentity(name, in: parent) == nil {
+                guard create else { return nil }
+                directory = try TrashFS.make(name, in: parent)
+            } else {
+                directory = try TrashFS.open(name, in: parent)
+            }
+            let identity = try TrashFS.identity(directory)
+            guard identity.ownerID == owner, identity.device == device, identity.mode & 0o077 == 0 else {
+                throw TrashSafetyError.recoveryRequired("private staging ownership, mode or filesystem changed")
+            }
+            try TrashFS.requireNoACL(directory)
+            return directory
+        }
+        var parent = parent
         for (index, name) in recoveryComponents.enumerated() {
             if try TrashFS.optionalIdentity(name, in: parent) == nil {
                 guard create else { return nil }
@@ -175,14 +215,14 @@ public final class HomeTrashService: @unchecked Sendable {
     }
     private func scanUnlocked(_ cancellation: TrashCancellationToken) throws -> TrashSnapshot {
         try cancellation.check()
-        let homeFD = try openHome()
-        let root = try openTrash(homeFD)
+        let parentFD = try openParent()
+        let root = try openTrash(parentFD)
         let identity = try TrashFS.identity(root)
         var budget = ScanBudget(deadline: ProcessInfo.processInfo.systemUptime + limits.timeout)
         var entries: [TrashSnapshotEntry] = []
         try scanDirectory(root, path: "", device: identity.device, depth: 0,
                           budget: &budget, entries: &entries, cancellation: cancellation)
-        try verifyTrash(root, homeFD: homeFD, expected: identity)
+        try verifyTrash(root, parent: parentFD, expected: identity)
         guard identity == (try TrashFS.identity(root)) else { throw TrashSafetyError.changed("during scan") }
         return TrashSnapshot(id: UUID(), scannedAt: Date(), rootIdentity: identity,
                              entries: entries.sorted { $0.relativePath < $1.relativePath },
@@ -306,15 +346,15 @@ public final class HomeTrashService: @unchecked Sendable {
     private func executeUnlocked(_ snapshot: TrashSnapshot, _ cancellation: TrashCancellationToken) -> TrashExecutionResult {
         var run: TrashDirectory?
         var recovery: TrashDirectory?
-        var homeFD: TrashDirectory?
+        var parentFD: TrashDirectory?
         var journal: Journal?
         var heldLock: TrashDirectory?
         var deletedCount = 0
         defer { withExtendedLifetime(heldLock) {} }
         do {
             try cancellation.check()
-            let openedHome = try openHome()
-            homeFD = openedHome
+            let openedHome = try openParent()
+            parentFD = openedHome
             guard let staging = try openRecovery(openedHome, create: true) else {
                 throw TrashSafetyError.recoveryRequired("staging unavailable")
             }
@@ -325,7 +365,7 @@ public final class HomeTrashService: @unchecked Sendable {
             guard snapshot.matchesContents(of: fresh) else { throw TrashSafetyError.changed("since review") }
             if snapshot.entries.isEmpty { return result(.completed, count: 0, "The reviewed Trash was empty.") }
             let root = try openTrash(openedHome)
-            try verifyTrash(root, homeFD: openedHome, expected: snapshot.rootIdentity)
+            try verifyTrash(root, parent: openedHome, expected: snapshot.rootIdentity)
             let name = "run-\(UUID().uuidString)"
             let batch = try TrashFS.make(name, in: staging)
             run = batch
@@ -349,7 +389,7 @@ public final class HomeTrashService: @unchecked Sendable {
                 try cancellation.check()
                 try save(current, run: batch) // write-ahead intent before every move
                 try transition(.beforeStage(index))
-                try verifyTrash(root, homeFD: openedHome, expected: snapshot.rootIdentity)
+                try verifyTrash(root, parent: openedHome, expected: snapshot.rootIdentity)
                 guard top.identity == (try TrashFS.identity(top.original, in: root)) else {
                     throw TrashSafetyError.changed(top.original)
                 }
@@ -429,7 +469,7 @@ public final class HomeTrashService: @unchecked Sendable {
         } catch {
             // A crash injection models abrupt process death: do not perform implicit recovery.
             if error is TrashInjectedFailure { return result(.recoveryRequired, count: deletedCount, "Interrupted operation preserved for recovery.", recovery: true) }
-            if var current = journal, let run, let recovery, let homeFD {
+            if var current = journal, let run, let recovery, let parentFD {
                 if current.phase == "finished" {
                     // Never recreate a journal after final metadata removal has begun. An
                     // empty/manifest-only orphan is reconciled by recover() without deletion.
@@ -437,7 +477,7 @@ public final class HomeTrashService: @unchecked Sendable {
                                   "Payload work finished; recovery metadata cleanup is pending: \(error.localizedDescription)", recovery: true)
                 }
                 do {
-                    try restore(&current, run: run, homeFD: homeFD)
+                    try restore(&current, run: run, parentFD: parentFD)
                     try finishRun(current, run: run, recovery: recovery)
                 } catch {
                     return result(.recoveryRequired, count: deletedCount,
@@ -511,9 +551,9 @@ public final class HomeTrashService: @unchecked Sendable {
         }
     }
 
-    private func restore(_ journal: inout Journal, run: TrashDirectory, homeFD: TrashDirectory) throws {
-        let root = try openTrash(homeFD)
-        try verifyTrash(root, homeFD: homeFD, expected: journal.root)
+    private func restore(_ journal: inout Journal, run: TrashDirectory, parentFD: TrashDirectory) throws {
+        let root = try openTrash(parentFD)
+        try verifyTrash(root, parent: parentFD, expected: journal.root)
         journal.phase = "restoring"
         try save(journal, run: run)
         // A crash may occur between journal creation and staging-directory creation.
@@ -555,7 +595,7 @@ public final class HomeTrashService: @unchecked Sendable {
                     throw TrashSafetyError.recoveryRequired("staged identity changed; preserved")
                 }
                 try transition(.beforeRestore(top.original))
-                try verifyTrash(root, homeFD: homeFD, expected: journal.root)
+                try verifyTrash(root, parent: parentFD, expected: journal.root)
                 if try TrashFS.optionalIdentity(top.original, in: root) != nil { collision = true; continue }
                 try save(journal, run: run)
                 try TrashFS.move(top.slot, from: items, to: root, as: top.original)

@@ -81,7 +81,13 @@ final class TrashReminderModel {
         return model
     }
 
-    var canEmptyTrash: Bool { !stopped && phase == .review && (snapshot?.topLevelItemCount ?? 0) > 0 && work == nil }
+    var canEmptyTrash: Bool { !stopped && phase == .review && (snapshot?.deletableTopLevelItemCount ?? 0) > 0 && work == nil }
+    /// The reviewed items live on disks whose filesystem cannot back Nora's staged deletion.
+    var finderOnlyLabels: [String] { snapshot?.finderOnlyLabels ?? [] }
+    var canOpenTrashInFinder: Bool {
+        !stopped && phase == .review && (snapshot?.deletableTopLevelItemCount ?? 0) == 0 && !finderOnlyLabels.isEmpty
+    }
+    var finderRootURL: URL? { snapshot?.finderRootURL }
     var isWorking: Bool { operationInProgress }
     /// Unknown startup status fails closed until the app awaits checkRecovery().
     var blocksOtherMutations: Bool { isWorking || !recoveryChecked || recoveryPending }
@@ -190,9 +196,19 @@ final class TrashReminderModel {
             self.dismissedSnapshot = reviewed
             switch result.status {
             case .completed:
-                // Events were ignored while the backend ran, so arrivals during cleanup are looked for here.
-                // `reviewed` is the dismissed batch: only what it did not cover is offered.
-                if self.isMonitoring { self.pendingScan = .automatic }
+                // A disk whose filesystem Nora cannot safely empty keeps its reviewed items on screen:
+                // the panel says where they are instead of closing as if the Trash were handled.
+                let remaining = TrashReminderSnapshot(parts: reviewed.parts.filter { !$0.isDeletable && $0.topLevelItemCount > 0 })
+                if !remaining.parts.isEmpty {
+                    self.snapshot = remaining
+                    self.phase = .review
+                    self.notice = String(localized: "The Trash on a connected disk must be emptied in Finder.")
+                    self.present(true)
+                } else if self.isMonitoring {
+                    // Events were ignored while the backend ran, so arrivals during cleanup are looked for here.
+                    // `reviewed` is the dismissed batch: only what it did not cover is offered.
+                    self.pendingScan = .automatic
+                }
             case .requiresNewReview:
                 // The Trash changed under the reviewed list and part of it may still be there. The user asked
                 // for it to be emptied, so show the current list again instead of leaving it silently half done.
