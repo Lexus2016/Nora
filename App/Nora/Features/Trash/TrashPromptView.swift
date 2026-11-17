@@ -53,7 +53,7 @@ struct TrashPromptView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .lineLimit(3).minimumScaleFactor(0.85)
                     }
-                    Text("Home Trash and connected disks are checked.")
+                    footnote
                         .font(.system(size: 10))
                         .foregroundStyle(foreground.opacity(0.86))
                         .lineLimit(2).minimumScaleFactor(0.85)
@@ -159,9 +159,23 @@ struct TrashPromptView: View {
         case .unavailable: return Text("Size is unknown. Unreadable items are never treated as an empty Trash.")
         case .recoveryRequired: return Text("Preserved items need review. Permanent deletion is blocked.")
         case .finished:
+            // A cleanup that failed has not "removed 0 entries": say it did not finish, so a closed
+            // panel that opens again later is not mistaken for a normal result.
+            if model.outcome?.status == .failed {
+                return Text("Nora could not finish emptying the Trash. Some items may already be gone. Review the Trash again.")
+            }
             let count = model.outcome?.deletedEntryCount ?? 0
             return Text("\(count) entries removed. Disk space reclaimed may differ from logical size.")
         }
+    }
+
+    /// A failed cleanup says why, in the backend's own words; every other state keeps the standing note.
+    private var footnote: Text {
+        if model.phase == .finished, model.outcome?.status == .failed,
+           let detail = model.diagnostic, !detail.isEmpty {
+            return Text(verbatim: detail)
+        }
+        return Text("Home Trash and connected disks are checked.")
     }
 
     private var warningSymbol: String {
@@ -236,6 +250,14 @@ struct TrashReminderSettingsSection: View {
                 if let diagnostic = model.diagnostic {
                     Text(diagnostic).font(.caption).textSelection(.enabled)
                 }
+                Text("If restoring does not work, move the recovery folder aside. Nothing is deleted: its contents stay in a folder next to Nora's data, and the Trash can be emptied again.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button("Move recovery data aside", action: model.moveRecoveryAside)
+                    .disabled(model.isWorking || model.externalBlocker() != nil)
+            }
+            if let folder = model.preservedFolder {
+                Text(verbatim: folder.path).font(.caption).textSelection(.enabled)
+                Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([folder]) }
             }
         } header: { Text("Trash reminders") }
     }

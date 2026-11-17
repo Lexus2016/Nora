@@ -6179,6 +6179,22 @@
         }
       }
     },
+    "If restoring does not work, move the recovery folder aside. Nothing is deleted: its contents stay in a folder next to Nora's data, and the Trash can be emptied again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если восстановление не удаётся, перенесите папку восстановления в сторону. Ничего не удаляется: её содержимое остаётся в папке рядом с данными Nora, а корзину снова можно очищать."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Якщо відновлення не вдається, перенесіть теку відновлення вбік. Нічого не видаляється: її вміст лишається в теці поруч із даними Nora, а кошик знову можна очищати."
+          }
+        }
+      }
+    },
     "If this is Docker Desktop, quitting it frees all of this memory: it keeps it even when idle.": {
       "localizations": {
         "ru": {
@@ -6639,6 +6655,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сміття: кеші, журнали та залишки"
+          }
+        }
+      }
+    },
+    "Keep Working": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продолжить работу"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Продовжити роботу"
           }
         }
       }
@@ -8053,6 +8085,22 @@
         }
       }
     },
+    "Move recovery data aside": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перенести данные восстановления в сторону"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перенести дані відновлення вбік"
+          }
+        }
+      }
+    },
     "Moved to the Trash": {
       "localizations": {
         "ru": {
@@ -8745,6 +8793,22 @@
         }
       }
     },
+    "Nora could not finish emptying the Trash. Some items may already be gone. Review the Trash again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora не смогла завершить очистку корзины. Часть объектов уже могла быть удалена. Проверьте корзину ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora не змогла завершити очищення кошика. Частину об’єктів уже могло бути видалено. Перевірте кошик ще раз."
+          }
+        }
+      }
+    },
     "Nora could not read Mole's full removal plan. Nothing was removed.": {
       "localizations": {
         "ru": {
@@ -8821,6 +8885,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nora це вікно для Mole, безкоштовного інструменту командного рядка, який очищає й налаштовує ваш Mac. Mole ще не встановлено. Nora встановить його за вас, пароль не потрібен."
+          }
+        }
+      }
+    },
+    "Nora is still working": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora ещё работает"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nora ще працює"
           }
         }
       }
@@ -10295,6 +10375,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Завершення програм…"
+          }
+        }
+      }
+    },
+    "Quitting now stops it half way. Files already changed stay changed, and no result is shown.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если выйти сейчас, работа остановится на полпути. Уже изменённые файлы так и останутся, а результата вы не увидите."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Якщо вийти зараз, робота зупиниться на півдорозі. Уже змінені файли такими й лишаться, а результату ви не побачите."
           }
         }
       }
@@ -12751,6 +12847,22 @@
         }
       }
     },
+    "Stop and Quit": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Остановить и выйти"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зупинити й вийти"
+          }
+        }
+      }
+    },
     "Stopped": {
       "localizations": {
         "ru": {
@@ -13645,6 +13757,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Файл захисту %@ змінено поза Nora. Змінений файл і копію для відновлення збережено. Усуньте конфлікт файлів перед повторним відновленням."
+          }
+        }
+      }
+    },
+    "The recovery data was moved aside and nothing was deleted. Review the Trash again.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Данные восстановления перенесены в сторону, ничего не удалено. Проверьте корзину ещё раз."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дані відновлення перенесено вбік, нічого не видалено. Перевірте кошик ще раз."
           }
         }
       }

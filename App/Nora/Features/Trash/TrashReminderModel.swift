@@ -26,6 +26,8 @@ final class TrashReminderModel {
     private(set) var recoveryPending = false
     /// The last cleanup found the Trash changed since the review, and this review is the fresh one.
     private(set) var changedDuringCleanup = false
+    /// Where Nora put a recovery folder it could not finish, so the user can open it. Nothing in it is deleted.
+    private(set) var preservedFolder: URL?
 
     /// Integration sets this to cover legacy app-handover recovery and concurrent app updates.
     @ObservationIgnored var externalBlocker: @MainActor () -> TrashReminderBlock? = { nil }
@@ -215,7 +217,13 @@ final class TrashReminderModel {
                 self.dismissedSnapshot = nil
                 self.changedDuringCleanup = true
                 self.pendingScan = .manual
-            case .cancelled, .failed, .recoveryRequired:
+            case .failed, .recoveryRequired:
+                // The panel closed when the cleanup began, so nothing else tells the user it did not
+                // finish. A failure nobody sees reads as an emptied Trash. A recovery that is still
+                // pending also blocks every other action until it is dealt with.
+                if !self.stopped { self.present(true) }
+            case .cancelled:
+                // The user pressed Cancel, in the panel, so they have already seen where it ended.
                 break
             }
             self.finishWork()
@@ -237,6 +245,20 @@ final class TrashReminderModel {
 
     /// Recovery only restores/preserves staged entries; it never resumes permanent deletion.
     func recoverPreservedItems() {
+        startRecovery(services.recover,
+                      finished: String(localized: "Trash recovery finished. Review the remaining items again."))
+    }
+
+    /// For a recovery that restoring cannot finish: the folder is renamed, never emptied or copied, so
+    /// every preserved item stays where it is and the Trash can be reviewed and emptied again.
+    func moveRecoveryAside() {
+        startRecovery(services.preserveRecovery,
+                      finished: String(localized: "The recovery data was moved aside and nothing was deleted. Review the Trash again."),
+                      keepsFolder: true)
+    }
+
+    private func startRecovery(_ operation: @escaping () async -> TrashReminderRecovery, finished: String,
+                               keepsFolder: Bool = false) {
         guard !stopped, phase == .recoveryRequired, work == nil else { return }
         guard externalBlocker() == nil else { return }
         workKind = .recovery
@@ -244,12 +266,13 @@ final class TrashReminderModel {
         canCancelOperation = false
         work = Task { @MainActor [weak self] in
             guard let self else { return }
-            let result = await self.services.recover()
+            let result = await operation()
             self.recoveryChecked = true
             self.recoveryPending = result.blocksNewRun
             self.diagnostic = result.detail
+            if keepsFolder, !result.blocksNewRun { self.preservedFolder = result.folder }
             self.phase = result.blocksNewRun ? .recoveryRequired : .unavailable
-            self.notice = result.blocksNewRun ? nil : String(localized: "Trash recovery finished. Review the remaining items again.")
+            self.notice = result.blocksNewRun ? nil : finished
             self.finishWork()
         }
     }

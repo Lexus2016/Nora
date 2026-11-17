@@ -307,6 +307,109 @@ final class HomeTrashSafetyTests: XCTestCase {
         XCTAssertEqual(try fixture.text("items/item-0", under: fixture.batch()), "fixture")
     }
 
+    /// Runs one cleanup that "crashes" after staging, so a recovery run with a preserved item exists.
+    private func leaveInterruptedRun(_ fixture: Fixture, item: String = "precious") throws {
+        try fixture.file("item", item)
+        let service = fixture.service { event in
+            if event == .afterStage(0) { throw TrashInjectedFailure.simulatedCrash }
+        }
+        XCTAssertEqual(service.execute(try service.scan()).status, .recoveryRequired)
+    }
+
+    func testFinderMetadataInTheRecoveryFolderDoesNotBlockTheTrash() throws {
+        let fixture = try Fixture()
+        try fixture.file("first")
+        let service = fixture.service()
+        XCTAssertEqual(service.execute(try service.scan()).status, .completed)
+        try fixture.file(".DS_Store", "finder", under: fixture.recovery)
+        let restarted = fixture.service()
+        XCTAssertFalse(restarted.recoveryStatus().blocksNewRun, "Finder's own file is not a recovery run")
+        XCTAssertFalse(restarted.recover().blocksNewRun)
+        try fixture.file("second")
+        XCTAssertEqual(restarted.execute(try restarted.scan()).status, .completed)
+        XCTAssertEqual(try fixture.text(".DS_Store", under: fixture.recovery), "finder", "Nora never touches it")
+    }
+
+    func testUnknownEntryInTheRecoveryFolderStillBlocksAndIsNamed() throws {
+        let fixture = try Fixture()
+        try fixture.file("first")
+        let service = fixture.service()
+        XCTAssertEqual(service.execute(try service.scan()).status, .completed)
+        try fixture.file("notes.txt", "someone's file", under: fixture.recovery)
+        let restarted = fixture.service()
+        let status = restarted.recoveryStatus()
+        XCTAssertTrue(status.blocksNewRun)
+        XCTAssertTrue(status.message.contains("\"notes.txt\""), status.message)
+        try fixture.file("second")
+        XCTAssertEqual(restarted.execute(try restarted.scan()).status, .recoveryRequired)
+        XCTAssertEqual(try fixture.text("notes.txt", under: fixture.recovery), "someone's file")
+    }
+
+    func testJournalOfAnotherVersionIsNamedAsSuch() throws {
+        let fixture = try Fixture()
+        try leaveInterruptedRun(fixture)
+        let manifest = try fixture.batch().appendingPathComponent("manifest.json")
+        let original = try String(contentsOf: manifest, encoding: .utf8)
+        let patched = original.replacingOccurrences(of: "\"version\":1", with: "\"version\":2")
+        XCTAssertNotEqual(original, patched, "the fixture must really change the version")
+        try Data(patched.utf8).write(to: manifest)
+        let status = fixture.service().recoveryStatus()
+        XCTAssertTrue(status.blocksNewRun)
+        XCTAssertTrue(status.message.contains("version 2/1"), status.message)
+    }
+
+    func testSetRecoveryAsideKeepsEveryPreservedItemAndUnblocksTheTrash() throws {
+        let fixture = try Fixture()
+        try leaveInterruptedRun(fixture)
+        let batchName = try fixture.batch().lastPathComponent
+        try Data("not a journal".utf8).write(to: fixture.batch().appendingPathComponent("journal.json"))
+        let service = fixture.service()
+        XCTAssertTrue(service.recoveryStatus().blocksNewRun)
+        XCTAssertTrue(service.recover().blocksNewRun, "recovery itself cannot get out of this")
+
+        let status = service.setRecoveryAside()
+        XCTAssertFalse(status.blocksNewRun, status.message)
+        let aside = try XCTUnwrap(status.recoveryDirectoryURL)
+        XCTAssertNotNil(aside.lastPathComponent.range(of: #"^TrashRecovery-preserved-\d{8}-\d{6}$"#, options: .regularExpression))
+        XCTAssertEqual(aside.deletingLastPathComponent().standardizedFileURL,
+                       fixture.recovery.deletingLastPathComponent().standardizedFileURL, "renamed in place, not copied elsewhere")
+        XCTAssertEqual(try fixture.text("items/item-0", under: aside.appendingPathComponent(batchName)), "precious")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.recovery.path))
+
+        let next = fixture.service()
+        XCTAssertFalse(next.recoveryStatus().blocksNewRun)
+        try fixture.file("next")
+        XCTAssertEqual(next.execute(try next.scan()).status, .completed)
+        XCTAssertEqual(try fixture.text("items/item-0", under: aside.appendingPathComponent(batchName)), "precious",
+                       "a later cleanup leaves the preserved items alone")
+    }
+
+    func testSetRecoveryAsideWithNothingPendingChangesNothing() throws {
+        let fixture = try Fixture()
+        let status = fixture.service().setRecoveryAside()
+        XCTAssertFalse(status.blocksNewRun)
+        XCTAssertNil(status.recoveryDirectoryURL)
+        let support = fixture.recovery.deletingLastPathComponent()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: support.path), "nothing is created to be moved")
+    }
+
+    func testSetRecoveryAsideNeverReplacesAnExistingFolder() throws {
+        let fixture = try Fixture()
+        try leaveInterruptedRun(fixture)
+        let moment = Date(timeIntervalSince1970: 1_700_000_000)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        let taken = fixture.recovery.deletingLastPathComponent()
+            .appendingPathComponent("TrashRecovery-preserved-\(formatter.string(from: moment))", isDirectory: true)
+        try FileManager.default.createDirectory(at: taken, withIntermediateDirectories: false)
+
+        let status = fixture.service().setRecoveryAside(now: moment)
+        XCTAssertTrue(status.blocksNewRun, "the name is taken, so nothing moved")
+        XCTAssertEqual(try fixture.text("items/item-0", under: fixture.batch()), "precious")
+        XCTAssertTrue(fixture.service().recoveryStatus().blocksNewRun)
+    }
+
     func testCandidateDirectoryWithNewChildCannotBeRecursivelyRemoved() throws {
         let fixture = try Fixture()
         try fixture.file("folder/leaf")

@@ -135,6 +135,8 @@ struct TrashReminderOutcome: Sendable {
 struct TrashReminderRecovery: Sendable {
     let blocksNewRun: Bool
     let detail: String
+    /// Where the recovery data was moved when it was set aside; nil otherwise.
+    var folder: URL?
 }
 
 /// Injected at the app boundary. Rendering and tests never instantiate a live filesystem service.
@@ -144,6 +146,10 @@ struct TrashReminderServices {
     var execute: (TrashReminderSnapshot, TrashCancellationToken) async -> TrashReminderOutcome
     var recoveryStatus: () async -> TrashReminderRecovery
     var recover: () async -> TrashReminderRecovery
+    /// Renames a recovery folder that cannot be finished, so the Trash is usable again. Deletes nothing.
+    var preserveRecovery: () async -> TrashReminderRecovery = {
+        TrashReminderRecovery(blocksNewRun: true, detail: "Recovery data cannot be moved aside in this fixture.")
+    }
 
     /// Test hosts and visual snapshots cannot reach the real user Trash, even through a manual action.
     static var disabled: Self {
@@ -222,6 +228,25 @@ struct TrashReminderServices {
                     detail += result.message
                 }
                 return TrashReminderRecovery(blocksNewRun: false, detail: detail)
+            }.value
+        }, preserveRecovery: {
+            return await Task.detached(priority: .utility) {
+                let locations = [TrashLocation.home()] + TrashLocations.mounted()
+                var moved: [String] = []
+                var folder: URL?
+                for location in locations {
+                    let service = TrashService(location: location)
+                    // Only a location that blocks has anything to set aside. This renames and nothing else:
+                    // restoring is the other button, and the screen says to try it first.
+                    guard service.recoveryStatus().blocksNewRun else { continue }
+                    let result = service.setRecoveryAside()
+                    if result.blocksNewRun {
+                        return TrashReminderRecovery(blocksNewRun: true, detail: "\(location.label): \(result.message)")
+                    }
+                    moved.append(result.message)
+                    folder = result.recoveryDirectoryURL
+                }
+                return TrashReminderRecovery(blocksNewRun: false, detail: moved.joined(separator: " "), folder: folder)
             }.value
         })
     }

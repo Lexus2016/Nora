@@ -77,6 +77,35 @@ public final class TrashService: @unchecked Sendable {
         }
     }
 
+    /// The way out of a recovery Nora cannot finish: a file it does not know, a journal of another
+    /// version, damage. The whole recovery folder is renamed where it stands, with the time in its
+    /// name. Nothing is read, copied or deleted, so every preserved item stays exactly as it is, now
+    /// under a name no later run looks at, and the Trash can be emptied again. Fails closed: when
+    /// another Nora holds the recovery lock, or the rename would replace something, nothing moves.
+    public func setRecoveryAside(now: Date = Date()) -> TrashRecoveryStatus {
+        lock.withLock {
+            do {
+                let parentFD = try openParent()
+                guard let folder = try openRecoveryFolder(parentFD, create: false) else { return clearStatus }
+                let heldLock = try TrashDirectory(nora_trash_lock(folder.directory.descriptor), operation: "lock recovery")
+                defer { withExtendedLifetime(heldLock) {} }
+                let aside = "\(folder.name)-preserved-\(Self.stamp(now))"
+                try TrashFS.move(folder.name, from: folder.container, to: folder.container, as: aside)
+                let url = recoveryURL.deletingLastPathComponent().appendingPathComponent(aside, isDirectory: true)
+                return TrashRecoveryStatus(blocksNewRun: false,
+                                           message: "The recovery data was moved to \(url.path). Nothing was deleted.",
+                                           recoveryDirectoryURL: url)
+            } catch { return blockedStatus(error.localizedDescription) }
+        }
+    }
+
+    private static func stamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return formatter.string(from: date)
+    }
+
     public func execute(_ snapshot: TrashSnapshot,
                         cancellation: TrashCancellationToken = TrashCancellationToken()) -> TrashExecutionResult {
         lock.withLock { executeUnlocked(snapshot, cancellation) }
@@ -154,7 +183,16 @@ public final class TrashService: @unchecked Sendable {
         try TrashFS.requireNoACL(directory)
         return directory
     }
+    /// The recovery folder together with the directory it sits in, so it can be renamed in place.
+    private struct RecoveryFolder {
+        let container: TrashDirectory
+        let name: String
+        let directory: TrashDirectory
+    }
     private func openRecovery(_ parent: TrashDirectory, create: Bool) throws -> TrashDirectory? {
+        try openRecoveryFolder(parent, create: create)?.directory
+    }
+    private func openRecoveryFolder(_ parent: TrashDirectory, create: Bool) throws -> RecoveryFolder? {
         let device = try TrashFS.identity(parent).device
         if location.kind == .volume {
             let name = location.stagingURL.lastPathComponent
@@ -170,10 +208,12 @@ public final class TrashService: @unchecked Sendable {
                 throw TrashSafetyError.recoveryRequired("private staging ownership, mode or filesystem changed")
             }
             try TrashFS.requireNoACL(directory)
-            return directory
+            return RecoveryFolder(container: parent, name: name, directory: directory)
         }
+        var container = parent
         var parent = parent
         for (index, name) in recoveryComponents.enumerated() {
+            if index == 3 { container = parent }
             if try TrashFS.optionalIdentity(name, in: parent) == nil {
                 guard create else { return nil }
                 parent = try TrashFS.make(name, in: parent)
@@ -188,16 +228,21 @@ public final class TrashService: @unchecked Sendable {
             if index == 3 { try TrashFS.requireNoACL(parent) }
             else { try TrashFS.requireNoGrantACL(parent) }
         }
-        return parent
+        return RecoveryFolder(container: container, name: recoveryComponents[3], directory: parent)
     }
     private func runNames(_ directory: TrashDirectory) throws -> [String] {
-        let names = try TrashFS.names(directory, maximum: 128)
-        return try names.filter { $0 != ".lock" }.map {
-            guard $0.hasPrefix("run-"), UUID(uuidString: String($0.dropFirst(4))) != nil else {
-                throw TrashSafetyError.recoveryRequired("unrecognized recovery entry")
+        var runs: [String] = []
+        for name in try TrashFS.names(directory, maximum: 128) {
+            // Nora's own lock file, and the view settings Finder writes into a folder it has been
+            // shown, are not recovery runs. Neither may keep the Trash locked for good.
+            if name == ".lock" || TrashSnapshot.systemMetadataNames.contains(name) { continue }
+            guard name.hasPrefix("run-"), UUID(uuidString: String(name.dropFirst(4))) != nil else {
+                // Name the entry: the user has to know what to look at before moving the folder aside.
+                throw TrashSafetyError.recoveryRequired("unrecognized recovery entry \"\(name)\"")
             }
-            return $0
+            runs.append(name)
         }
+        return runs
     }
 
     private struct ScanBudget {
@@ -319,7 +364,12 @@ public final class TrashService: @unchecked Sendable {
         let progress = try TrashFS.read(Progress.self, in: run)
         let journal = Journal(manifest: manifest, progress: progress)
         let paths = journal.snapshot.entries.map(\.relativePath)
-        guard manifest.version == 1, progress.version == 1, progress.name == name,
+        // A journal of another version is not damaged, only not this Nora's: say so, with its folder.
+        guard manifest.version == 1, progress.version == 1 else {
+            throw TrashSafetyError.recoveryRequired(
+                "recovery journal \(name) is version \(manifest.version)/\(progress.version); this Nora reads version 1")
+        }
+        guard progress.name == name,
               journal.name == name, journal.snapshot.rootIdentity == journal.root,
               journal.root.ownerID == owner, paths.count <= limits.maximumEntries,
               paths.allSatisfy(TrashFS.validPath), Set(paths).count == paths.count,

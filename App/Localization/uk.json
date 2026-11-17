@@ -1059,5 +1059,13 @@
   "These apps are open. Nora will ask them to quit so you can save your work. An app that stays open will not be removed.": "Ці програми зараз відкриті. Nora попросить їх завершитися, щоб ви могли зберегти роботу. Програму, яка залишиться відкритою, не буде видалено.",
   "Quit and remove": "Завершити й видалити",
   "Preview: %@": "Попередній перегляд: %@",
-  "Quitting apps…": "Завершення програм…"
+  "Quitting apps…": "Завершення програм…",
+  "Nora could not finish emptying the Trash. Some items may already be gone. Review the Trash again.": "Nora не змогла завершити очищення кошика. Частину об’єктів уже могло бути видалено. Перевірте кошик ще раз.",
+  "If restoring does not work, move the recovery folder aside. Nothing is deleted: its contents stay in a folder next to Nora's data, and the Trash can be emptied again.": "Якщо відновлення не вдається, перенесіть теку відновлення вбік. Нічого не видаляється: її вміст лишається в теці поруч із даними Nora, а кошик знову можна очищати.",
+  "Move recovery data aside": "Перенести дані відновлення вбік",
+  "The recovery data was moved aside and nothing was deleted. Review the Trash again.": "Дані відновлення перенесено вбік, нічого не видалено. Перевірте кошик ще раз.",
+  "Nora is still working": "Nora ще працює",
+  "Quitting now stops it half way. Files already changed stay changed, and no result is shown.": "Якщо вийти зараз, робота зупиниться на півдорозі. Уже змінені файли такими й лишаться, а результату ви не побачите.",
+  "Keep Working": "Продовжити роботу",
+  "Stop and Quit": "Зупинити й вийти"
 }

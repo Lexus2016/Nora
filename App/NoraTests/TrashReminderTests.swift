@@ -530,7 +530,9 @@ final class TrashReminderTests: XCTestCase {
         fixture.model.shutdown()
     }
 
-    func testFailedOrInterruptedBackgroundDeletionStaysDismissedAndPreservesOutcome() async {
+    /// Only a cancel the user asked for stays quiet; a failure or a pending recovery opens the panel again
+    /// (see "A failed cleanup is never silent"). Every unsuccessful result keeps its outcome on the model.
+    func testUnsuccessfulBackgroundDeletionKeepsItsOutcomeAndOnlyACancelStaysDismissed() async {
         for status in [TrashReminderOutcome.Status.failed, .cancelled, .recoveryRequired] {
             let fixture = Fixture()
             fixture.model.openReview()
@@ -540,7 +542,7 @@ final class TrashReminderTests: XCTestCase {
             await settle()
             fixture.service.releaseExecution(.init(status: status, deletedEntryCount: 0, detail: "Synthetic unsuccessful result."))
             await settle()
-            XCTAssertFalse(fixture.model.isPresented)
+            XCTAssertEqual(fixture.model.isPresented, status != .cancelled, "\(status)")
             XCTAssertEqual(fixture.model.outcome?.status, status)
             XCTAssertEqual(fixture.model.recoveryPending, status == .recoveryRequired)
             XCTAssertEqual(fixture.model.blocksOtherMutations, status == .recoveryRequired)
@@ -551,6 +553,99 @@ final class TrashReminderTests: XCTestCase {
     private func settle() async { for _ in 0..<30 { await Task.yield() } }
     private func sample(_ id: String, bytes: Int64 = 1_400_000_000) -> TrashReminderSnapshot {
         .init(contentIdentity: id, topLevelItemCount: 2, entryCount: 4, logicalBytes: bytes)
+    }
+
+    // MARK: - A failed cleanup is never silent
+
+    func testFailedCleanupReopensThePanelWithItsOutcome() async {
+        let fixture = Fixture()
+        fixture.model.openReview()
+        await settle()
+        fixture.service.holdExecution = true
+        fixture.model.emptyTrash()
+        await settle()
+        XCTAssertFalse(fixture.model.isPresented, "the panel closes when the cleanup starts")
+        fixture.service.releaseExecution(.init(status: .failed, deletedEntryCount: 1, detail: "Synthetic failure."))
+        await settle()
+        XCTAssertTrue(fixture.model.isPresented, "a cleanup that did not finish must not look like one that did")
+        XCTAssertEqual(fixture.model.phase, .finished)
+        XCTAssertEqual(fixture.model.outcome?.status, .failed)
+        XCTAssertEqual(fixture.model.diagnostic, "Synthetic failure.")
+        XCTAssertFalse(fixture.model.blocksOtherMutations)
+        fixture.model.shutdown()
+    }
+
+    func testRecoveryRequiredAfterCleanupReopensThePanelAndStillBlocks() async {
+        let fixture = Fixture()
+        fixture.model.openReview()
+        await settle()
+        fixture.service.holdExecution = true
+        fixture.model.emptyTrash()
+        await settle()
+        fixture.service.releaseExecution(.init(status: .recoveryRequired, deletedEntryCount: 0, detail: "Synthetic recovery."))
+        await settle()
+        XCTAssertTrue(fixture.model.isPresented)
+        XCTAssertEqual(fixture.model.phase, .recoveryRequired)
+        XCTAssertTrue(fixture.model.blocksOtherMutations, "the pending recovery still blocks the other actions")
+        fixture.model.shutdown()
+    }
+
+    func testFailureThatArrivesAfterShutdownDoesNotReopenThePanel() async {
+        let fixture = Fixture()
+        fixture.model.openReview()
+        await settle()
+        fixture.service.holdExecution = true
+        fixture.model.emptyTrash()
+        await settle()
+        fixture.model.shutdown()
+        fixture.service.releaseExecution(.init(status: .failed, deletedEntryCount: 0, detail: "Synthetic failure."))
+        await fixture.model.waitUntilSettled()
+        XCTAssertFalse(fixture.model.isPresented, "a quitting app shows nothing")
+    }
+
+    // MARK: - A recovery that cannot finish has a way out
+
+    func testMovingRecoveryAsideUnblocksTheTrashAndKeepsTheFolder() async {
+        let fixture = Fixture()
+        fixture.service.recovery = .init(blocksNewRun: true, detail: "Synthetic unknown entry.")
+        await fixture.model.checkRecovery()
+        XCTAssertEqual(fixture.model.phase, .recoveryRequired)
+        XCTAssertTrue(fixture.model.blocksOtherMutations)
+
+        fixture.model.moveRecoveryAside()
+        await settle()
+        XCTAssertEqual(fixture.service.preserveCount, 1)
+        XCTAssertEqual(fixture.service.recoveryCount, 0, "moving aside is not a restore")
+        XCTAssertFalse(fixture.model.blocksOtherMutations)
+        XCTAssertEqual(fixture.model.phase, .unavailable)
+        XCTAssertEqual(fixture.model.preservedFolder?.path, "/tmp/synthetic-preserved")
+        XCTAssertNotNil(fixture.model.notice)
+        fixture.model.shutdown()
+    }
+
+    func testMovingRecoveryAsideThatFailsKeepsEverythingBlocked() async {
+        let fixture = Fixture()
+        fixture.service.recovery = .init(blocksNewRun: true, detail: "Synthetic unknown entry.")
+        fixture.service.preserveResult = .init(blocksNewRun: true, detail: "Home: the name is taken.")
+        await fixture.model.checkRecovery()
+        fixture.model.moveRecoveryAside()
+        await settle()
+        XCTAssertEqual(fixture.service.preserveCount, 1)
+        XCTAssertTrue(fixture.model.blocksOtherMutations)
+        XCTAssertEqual(fixture.model.phase, .recoveryRequired)
+        XCTAssertEqual(fixture.model.diagnostic, "Home: the name is taken.")
+        XCTAssertNil(fixture.model.preservedFolder)
+        fixture.model.shutdown()
+    }
+
+    func testMovingRecoveryAsideDoesNothingWithoutAPendingRecovery() async {
+        let fixture = Fixture()
+        fixture.model.openReview()
+        await settle()
+        fixture.model.moveRecoveryAside()
+        await settle()
+        XCTAssertEqual(fixture.service.preserveCount, 0, "nothing is moved when no recovery is pending")
+        fixture.model.shutdown()
     }
 
     private enum FixtureError: Error { case unreadable }
@@ -579,6 +674,9 @@ final class TrashReminderTests: XCTestCase {
         var holdExecution = false
         var scanError: Error?
         var recovery = TrashReminderRecovery(blocksNewRun: false, detail: "")
+        var preserveCount = 0
+        var preserveResult = TrashReminderRecovery(blocksNewRun: false, detail: "Moved aside.",
+                                                   folder: URL(fileURLWithPath: "/tmp/synthetic-preserved", isDirectory: true))
         private var scanContinuation: CheckedContinuation<TrashReminderSnapshot, Never>?
         private var executionContinuation: CheckedContinuation<TrashReminderOutcome, Never>?
         var dependencies: TrashReminderServices {
@@ -595,7 +693,8 @@ final class TrashReminderTests: XCTestCase {
                 executedIdentity = snapshot.contentIdentity
                 if holdExecution { return await withCheckedContinuation { executionContinuation = $0 } }
                 return .init(status: .completed, deletedEntryCount: snapshot.entryCount, detail: "Synthetic result. No filesystem action.")
-            }, recoveryStatus: { [self] in recovery }, recover: { [self] in recoveryCount += 1; return recovery })
+            }, recoveryStatus: { [self] in recovery }, recover: { [self] in recoveryCount += 1; return recovery },
+               preserveRecovery: { [self] in preserveCount += 1; return preserveResult })
         }
         func releaseScan(_ snapshot: TrashReminderSnapshot) { scanContinuation?.resume(returning: snapshot); scanContinuation = nil }
         func releaseExecution(_ result: TrashReminderOutcome) { executionContinuation?.resume(returning: result); executionContinuation = nil }

@@ -169,10 +169,25 @@ final class AppModel {
 
     static let trashBusyMessage = String(localized: "A Trash operation or recovery check is in progress. Try again when it finishes.")
 
+    private var toolsBusy: Bool {
+        tools.touchIDBusy || tools.updateBusy || tools.externalBusy || tools.externalCleaning
+            || tools.completionBusy || tools.removeBusy
+    }
+
+    /// A scan or run in a module, a Tools command, or a command still open in the console.
+    private var anyWorkBusy: Bool {
+        Module.allCases.contains(where: { isBusy($0) }) || toolsBusy || console.entries.contains(where: { $0.isRunning })
+    }
+
+    /// Something Nora is doing that quitting now would cut off half way. A leftover protection journal
+    /// from an earlier crash is not work in progress: quitting puts it back, so it does not count here.
+    var hasRunningWork: Bool { exclusiveRun != nil || anyWorkBusy }
+
+    /// The exact command lines still running, for the quit warning.
+    var runningCommands: [String] { console.entries.filter(\.isRunning).map(\.command) }
+
     private var trashBlocker: TrashReminderBlock? {
-        if exclusiveRunActive || Module.allCases.contains(where: { isBusy($0) })
-            || tools.touchIDBusy || tools.updateBusy || tools.externalBusy || tools.externalCleaning
-            || tools.completionBusy || tools.removeBusy || console.entries.contains(where: { $0.isRunning }) {
+        if exclusiveRunActive || anyWorkBusy {
             return .busy(String(localized: "Another Nora operation is running. Try again when it finishes."))
         }
         do {
@@ -247,6 +262,14 @@ final class AppModel {
     /// Prepares the askpass helper and undoes what a crash left: a whitelist overlay, or an app
     /// waiting in the Trash for a Homebrew install that never finished.
     func prepare() {
+        if !isVisualSnapshot {
+            let journal = CommandJournal(url: supportDirectory.appendingPathComponent("commands.log"))
+            console.journal = journal
+            let info = Bundle.main.infoDictionary
+            let version = info?["CFBundleShortVersionString"] as? String ?? "?"
+            let build = info?["CFBundleVersion"] as? String ?? "?"
+            journal.session("Nora \(version) (\(build)) started")
+        }
         try? PrivilegeBroker.writeDialogAskpass(
             to: askpassURL,
             message: String(localized: "Nora needs your Mac password for this Mole command. Nora does not see or store it."),
@@ -291,6 +314,7 @@ final class AppModel {
         case .found(let mole):
             moleState = mole.isSupported ? .ready(mole) : .unsupported(mole)
             if mole.isSupported { status.attach(mole) }
+            console.journal?.session("Mole \(mole.version) at \(mole.executable.path)\(mole.isSupported ? "" : " (unsupported)")")
         case .missing:
             moleState = .missing
         case .broken(let path, let reason):
@@ -481,12 +505,23 @@ final class ConsoleLog {
 
     private(set) var entries: [Entry] = []
     private let maxLines = 4000
+    /// The record that outlives the app. Set once at launch; nil in tests and snapshots, which
+    /// must never write into the user's Application Support.
+    @ObservationIgnored var journal: CommandJournal?
 
     func begin(_ command: ShellCommand, prefix: String = "") -> UUID {
         let entry = Entry(command: prefix + command.description, owner: ConsoleOwner.module)
         entries.append(entry)
         if entries.count > 60 { entries.removeFirst(entries.count - 60) }
+        journal?.started(id: entry.id, command: entry.command)
         return entry.id
+    }
+
+    /// Writes the end of a command once, when it stops running.
+    private func settled(_ index: Int) {
+        let entry = entries[index]
+        journal?.finished(id: entry.id, command: entry.command, started: entry.startedAt, status: entry.status,
+                          failure: entry.failure, tail: Array(entry.output.suffix(CommandJournal.tailLines)))
     }
 
     /// The output of the module's latest command. Never another module's: two modules may run at once.
@@ -500,6 +535,7 @@ final class ConsoleLog {
         if let i = entries.firstIndex(where: { $0.id == id }), entries[i].isRunning {
             entries[i].failure = String(localized: "Stopped")
             entries[i].revision += 1
+            settled(i)
         }
         throw CancellationError()
     }
@@ -539,14 +575,18 @@ final class ConsoleLog {
 
     func finish(_ id: UUID, status: Int32) {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        let wasRunning = entries[i].isRunning
         entries[i].revision += 1
         entries[i].status = status
+        if wasRunning { settled(i) }
     }
 
     func fail(_ id: UUID, error: Error) {
         guard let i = entries.firstIndex(where: { $0.id == id }) else { return }
+        let wasRunning = entries[i].isRunning
         entries[i].revision += 1
         entries[i].failure = error.localizedDescription
+        if wasRunning { settled(i) }
     }
 }
 

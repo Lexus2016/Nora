@@ -55,6 +55,30 @@ final class TrashVolumeSafetyTests: XCTestCase {
         XCTAssertFalse(service.recoveryStatus().blocksNewRun)
     }
 
+    func testVolumeRecoveryFolderCanBeSetAsideInPlaceAndTheDiskIsUsableAgain() throws {
+        let fixture = try Fixture()
+        try fixture.file("clip.mov", "video")
+        let service = fixture.service()
+        XCTAssertEqual(service.execute(try service.scan()).status, .completed)
+        try Data("not a run".utf8).write(to: fixture.staging.appendingPathComponent("stray.txt"))
+        let blocked = service.recoveryStatus()
+        XCTAssertTrue(blocked.blocksNewRun)
+        XCTAssertTrue(blocked.message.contains("\"stray.txt\""), blocked.message)
+
+        let status = service.setRecoveryAside()
+        XCTAssertFalse(status.blocksNewRun, status.message)
+        let aside = try XCTUnwrap(status.recoveryDirectoryURL)
+        XCTAssertEqual(aside.deletingLastPathComponent().standardizedFileURL, fixture.trashes.standardizedFileURL,
+                       "the folder stays on the disk it protects")
+        XCTAssertTrue(aside.lastPathComponent.hasPrefix(".NoraTrash-\(geteuid())-preserved-"))
+        XCTAssertEqual(try String(contentsOf: aside.appendingPathComponent("stray.txt"), encoding: .utf8), "not a run")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: fixture.staging.path))
+
+        try fixture.file("again", "text")
+        XCTAssertEqual(service.execute(try service.scan()).status, .completed, "a fresh staging folder is made")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: fixture.staging.path))
+    }
+
     func testVolumeWithoutATrashIsUnavailableNotEmpty() throws {
         let fixture = try Fixture()
         try FileManager.default.removeItem(at: fixture.trash)

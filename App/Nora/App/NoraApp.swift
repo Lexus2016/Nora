@@ -50,6 +50,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBar: MenuBarController?
     private var trashPrompt: TrashPromptController?
     private var waitingForTrashTermination = false
+    /// SIGTERM comes from outside on purpose (kill, Activity Monitor): it quits without asking.
+    private var quitWithoutAsking = false
     private var scheduler: Timer?
     private var startupTask: Task<Void, Never>?
     private var terminationSignal: DispatchSourceSignal?
@@ -68,7 +70,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // applicationWillTerminate stops Nora's child processes instead of orphaning them.
         signal(SIGTERM, SIG_IGN)
         let term = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
-        term.setEventHandler { NSApp.terminate(nil) }
+        term.setEventHandler { [weak self] in
+            self?.quitWithoutAsking = true
+            NSApp.terminate(nil)
+        }
         term.resume()
         terminationSignal = term
         app.prepare()
@@ -126,6 +131,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !isUnitTestHost else { return .terminateNow }
         guard !waitingForTrashTermination else { return .terminateLater }
+        if QuitGuard.shouldAsk(hasRunningWork: app.hasRunningWork, unattended: quitWithoutAsking,
+                               reasons: QuitGuard.currentReasons()), !confirmQuitWhileWorking() {
+            // Closing the last window quits when the menu bar item is off: bring the window back.
+            app.showMain(nil)
+            return .terminateCancel
+        }
         startupTask?.cancel()
         let needsSettlement = app.trash.isWorking
         app.trash.shutdown()
@@ -136,6 +147,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             sender.reply(toApplicationShouldTerminate: true)
         }
         return .terminateLater
+    }
+
+    /// Quitting stops every command Nora started. Default button: keep working.
+    private func confirmQuitWhileWorking() -> Bool {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "Nora is still working")
+        var text = String(localized: "Quitting now stops it half way. Files already changed stay changed, and no result is shown.")
+        let commands = app.runningCommands
+        if !commands.isEmpty {
+            let shown = commands.prefix(3).map { $0.count > 120 ? String($0.prefix(120)) + "…" : $0 }
+            text += "\n\n" + shown.joined(separator: "\n") + (commands.count > shown.count ? "\n…" : "")
+        }
+        alert.informativeText = text
+        alert.addButton(withTitle: String(localized: "Keep Working"))
+        alert.addButton(withTitle: String(localized: "Stop and Quit"))
+        NSApp.activate()
+        return alert.runModal() == .alertSecondButtonReturn
     }
 
     func applicationWillTerminate(_ notification: Notification) {
