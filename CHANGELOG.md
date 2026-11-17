@@ -2,7 +2,7 @@
 
 Changes to the Nora app, newest first. Work that is merged but not released yet goes under **Unreleased**; at release time it becomes the next version's section and its release notes.
 
-## Unreleased
+## 1.4.0 (2026-11-17)
 
 ### Added
 - Trash reminders now watch the Trash of connected disks as well as the home Trash. A disk's per-user Trash (`/Volumes/<name>/.Trashes/<uid>`) is discovered when the disk is mounted, included in the same review, and watched while it stays connected. Empty Trash removes the reviewed items on APFS and HFS+ disks with the same staged, per-item checks as the home Trash, using private staging on that disk; nothing is copied across filesystems. exFAT and FAT drives are reviewed too, but their filesystem cannot back Nora's metadata checks, so the panel shows their items and opens that Trash in Finder instead of deleting. A disk whose Trash Nora cannot empty keeps its items on screen after the Mac's own items are removed, with the reason and the Finder hand-off.
