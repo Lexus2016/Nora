@@ -88,6 +88,24 @@ final class TrashVolumeBatchTests: XCTestCase {
         XCTAssertFalse(model.operationInProgress)
     }
 
+    /// The live backend used to turn a disk it could not empty into `.failed`, which made the panel say
+    /// "could not finish" after the Mac's own Trash had been emptied completely.
+    func testADiskNoraCannotEmptyNeverMakesTheCleanupFail() {
+        let skipped = TrashReminderServices.fold(.completed, eligible: false, result: nil)
+        XCTAssertEqual(skipped, .completed, "a part that was never eligible changes nothing")
+
+        var status = TrashReminderServices.fold(.completed, eligible: true, result: .completed)
+        status = TrashReminderServices.fold(status, eligible: false, result: nil)
+        XCTAssertEqual(status, .completed, "home emptied, then a FAT disk handed to Finder: a complete cleanup")
+
+        let failed = TrashReminderServices.fold(status, eligible: true, result: .failed)
+        XCTAssertEqual(failed, .failed, "a real failure on an eligible part still counts")
+        XCTAssertEqual(TrashReminderServices.fold(failed, eligible: false, result: nil), .failed,
+                       "and a skipped part does not hide it")
+        XCTAssertEqual(TrashReminderServices.fold(.completed, eligible: true, result: .recoveryRequired), .recoveryRequired)
+        XCTAssertEqual(TrashReminderServices.fold(.completed, eligible: true, result: .requiresNewReview), .requiresNewReview)
+    }
+
     private func waitUntil(_ condition: @escaping @MainActor () -> Bool) async {
         for _ in 0..<400 {
             if condition() { return }

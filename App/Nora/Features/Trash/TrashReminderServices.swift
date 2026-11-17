@@ -191,13 +191,14 @@ struct TrashReminderServices {
                     guard let manifest = part.manifest, let location = part.location else { continue }
                     guard location.supportsPermanentDeletion else {
                         details.append(String(localized: "The Trash on \(part.label) must be emptied in Finder."))
-                        if status == .completed { status = .failed }
+                        // The model keeps this part on screen with the Finder hand-off once the rest is done.
+                        status = Self.fold(status, eligible: false, result: nil)
                         continue
                     }
                     let result = TrashService(location: location).execute(manifest, cancellation: cancellation)
                     deleted += result.deletedEntryCount
                     details.append(result.message)
-                    status = Self.merge(status, result: result.status)
+                    status = Self.fold(status, eligible: true, result: result.status)
                     if status == .requiresNewReview || status == .recoveryRequired { break }
                 }
                 return TrashReminderOutcome(status: status, deletedEntryCount: deleted,
@@ -249,6 +250,14 @@ struct TrashReminderServices {
                 return TrashReminderRecovery(blocksNewRun: false, detail: moved.joined(separator: " "), folder: folder)
             }.value
         })
+    }
+
+    /// The batch's outcome after one more part. A part Nora cannot empty (exFAT, FAT) never was eligible:
+    /// it changes nothing, so a home Trash that was emptied completely is not reported as a failed cleanup.
+    nonisolated static func fold(_ status: TrashReminderOutcome.Status, eligible: Bool,
+                                 result: TrashExecutionStatus?) -> TrashReminderOutcome.Status {
+        guard eligible, let result else { return status }
+        return merge(status, result: result)
     }
 
     nonisolated private static func merge(_ status: TrashReminderOutcome.Status,

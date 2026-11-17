@@ -71,7 +71,9 @@ final class CommandJournal: Sendable {
     }
 
     private func write(_ text: String) {
-        logger.info("\(text.trimmingCharacters(in: .newlines), privacy: .public)")
+        // notice, not info: info lines are dropped from the log store unless something captures them,
+        // and the point of this record is to be there after a restart.
+        logger.notice("\(text.trimmingCharacters(in: .newlines), privacy: .public)")
         queue.async { [url, limit, older = olderURL] in
             let manager = FileManager.default
             func open() throws -> FileHandle {
