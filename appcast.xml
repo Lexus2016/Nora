@@ -3,6 +3,37 @@
     <channel>
         <title>Nora</title>
         <item>
+            <title>1.4.0</title>
+            <pubDate>Tue, 17 Nov 2026 21:07:08 +0100</pubDate>
+            <link>https://github.com/Lexus2016/Nora</link>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>1.4.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[### Added
+- Trash reminders now watch the Trash of connected disks as well as the home Trash. A disk's per-user Trash (`/Volumes/<name>/.Trashes/<uid>`) is discovered when the disk is mounted, included in the same review, and watched while it stays connected. Empty Trash removes the reviewed items on APFS and HFS+ disks with the same staged, per-item checks as the home Trash, using private staging on that disk; nothing is copied across filesystems. exFAT and FAT drives are reviewed too, but their filesystem cannot back Nora's metadata checks, so the panel shows their items and opens that Trash in Finder instead of deleting. A disk whose Trash Nora cannot empty keeps its items on screen after the Mac's own items are removed, with the reason and the Finder hand-off.
+- Nora keeps a short record of every command it ran in `~/Library/Application Support/Nora/commands.log`, and in the unified log (subsystem `io.github.lexus2016.nora`). A command is written when it starts and when it ends, with its result, how long it took and, if it did not succeed, the last lines it printed; the record also notes the Nora and Mole versions at launch. A start with no end means Nora was stopped while the command ran. The console shows commands only while Nora is open, so before this nothing was left to read after a restart. The file is readable by you only and never grows past about 512 KB.
+- Quitting Nora while it is working asks first. `⌘Q`, the menu and closing the last window now offer "Keep Working" (the default) or "Stop and Quit", and list the commands that are still running; before, a `mo clean`, `mo purge`, Homebrew update or virus scan was stopped without a word. A shutdown, restart or logout never asks, and neither does a `kill` sent on purpose.
+- When a Trash recovery cannot finish (a file Nora does not know in its recovery folder, a journal of another version, damage), Settings now offers "Move recovery data aside". It only renames the recovery folder next to where it was, so every preserved item stays where it is, and the Trash can be reviewed and emptied again. Before, the only way out was deleting that folder by hand, which would have destroyed the preserved items.
+
+### Fixed
+- Removing an app works with Mole 1.72 again. Mole 1.72 lists a diagnostic crash report as `Review only: <path>` and system leftovers as `System: <path>` inside "Files to be removed". Nora's strict plan reader took every such line for the start of a new app and refused with "could not read Mole's full removal plan" (seen with CapCut and any app that had crashed). Review-only paths now stay out of the plan, because Mole never removes them, and system leftovers are listed as real entries, removed with admin rights.
+- A Trash cleanup that failed, or left a recovery pending, is no longer silent. The review panel closes when you press Empty Trash, so when the cleanup then failed nothing said so and the Trash looked emptied. The panel now opens again with the reason. A pending recovery, which blocks every other action until it is dealt with, is shown the same way.
+- A `.DS_Store` file that Finder puts into Nora's Trash recovery folder no longer blocks Trash cleanup and every other action for good. An entry Nora does not know still blocks, but the message now names it, and a recovery journal of another version says which version it is.
+
+### Додано
+- Нагадування про Кошик тепер стежать і за Кошиком підключених дисків, а не лише за домашнім. Кошик кожного користувача на диску (`/Volumes/<назва>/.Trashes/<uid>`) знаходиться при підключенні, потрапляє в той самий перегляд і відстежується, поки диск підключений. «Очистити кошик» видаляє переглянуті елементи на дисках APFS і HFS+ з тими самими поетапними перевірками, що й для домашнього Кошика, використовуючи приватне сховище на тому самому диску; між файловими системами нічого не копіюється. Флешки з exFAT і FAT також переглядаються, але їхня файлова система не дає метаданих, на які спираються перевірки Nora, тому панель показує їхні елементи й відкриває цей Кошик у Finder замість видалення. Диск, Кошик якого Nora не може очистити, лишає свої елементи на екрані після видалення елементів Mac — із причиною та переходом у Finder.
+- Nora зберігає короткий запис кожної команди, яку виконала, у `~/Library/Application Support/Nora/commands.log` і в системному журналі (subsystem `io.github.lexus2016.nora`). Команда записується, коли починається і коли завершується: з результатом, тривалістю та, якщо вона не вдалася, останніми рядками її виводу; на початку запису також стоять версії Nora і Mole. Початок без кінця означає, що Nora зупинили, поки команда йшла. Консоль показує команди лише поки Nora відкрита, тож раніше після перезапуску не лишалося нічого, що можна прочитати. Файл читає лише ваш обліковий запис, а його розмір не перевищує приблизно 512 КБ.
+- Вихід із Nora під час роботи тепер питає підтвердження. `⌘Q`, меню та закриття останнього вікна пропонують «Продовжити роботу» (типово) або «Зупинити й вийти» і перелічують команди, що ще виконуються; раніше `mo clean`, `mo purge`, оновлення Homebrew чи перевірка на віруси зупинялися без жодного слова. Вимкнення, перезапуск чи вихід із системи не питають, як і `kill`, надісланий навмисно.
+- Коли відновлення Кошика не може завершитися (невідомий Nora файл у теці відновлення, журнал іншої версії, пошкодження), у Налаштуваннях з’явилася дія «Перенести дані відновлення вбік». Вона лише перейменовує теку відновлення на тому самому місці, тож усі збережені об’єкти лишаються там, де були, а Кошик можна знову переглянути й очистити. Раніше єдиним виходом було видалити цю теку вручну, що знищило б збережені об’єкти.
+
+### Виправлено
+- Видалення програм знову працює з Mole 1.72. Mole 1.72 виводить звіт діагностики збою як `Review only: <шлях>`, а системні залишки як `System: <шлях>` у списку «Files to be removed». Суворий читач плану Nora сприймав кожен такий рядок за початок нової програми й відмовляв: «could not read Mole's full removal plan» (так було з CapCut і будь-якою програмою, що колись завершувалась аварійно). Шляхи `Review only` тепер лишаються поза планом, бо Mole їх не видаляє, а системні залишки показуються як справжні записи й видаляються з правами адміністратора.
+- Невдале очищення Кошика, чи таке, що лишило незавершене відновлення, більше не мовчить. Панель перегляду закривається, щойно ви натиснули «Очистити кошик», тож якщо очищення зазнавало невдачі, ніщо про це не повідомляло, і Кошик здавався очищеним. Тепер панель відкривається знову з причиною. Незавершене відновлення, яке блокує всі інші дії, поки його не розв’язано, показується так само.
+- Файл `.DS_Store`, який Finder кладе в теку відновлення Кошика Nora, більше не блокує назавжди очищення Кошика й усі інші дії. Невідомий Nora запис, як і раніше, блокує, але повідомлення тепер називає його, а журнал відновлення іншої версії вказує, яка це версія.
+]]></description>
+            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.4.0/Nora-1.4.0.dmg" length="8026780" type="application/octet-stream" sparkle:edSignature="AxiGxd7bYP5A6zOe4BoOZlrGND1CzQLNeiP7rEiF63khRpOn9QGfJVeRlZ7ugBkK4Tk8k2xpwRCz/919xGa3Cg=="/>
+        </item>
+        <item>
             <title>1.3.4</title>
             <pubDate>Thu, 05 Nov 2026 21:54:11 +0100</pubDate>
             <link>https://github.com/Lexus2016/Nora</link>
@@ -59,31 +90,6 @@
 - Перевірений офіційний інсталятор Mole оновлено до 1.64.0; його SHA-256 звірено з обома офіційними способами отримання файлу. Вибрані в розділі «Інсталятори» файли й далі переміщуються до Кошика.
 ]]></description>
             <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.3/Nora-1.3.3.dmg" length="7931793" type="application/octet-stream" sparkle:edSignature="ek/RUqIclFQOSb4cVaBlKlyUj5me8lQPetCqPlqoTnKTKsTLkbKizUHgBtmUDRIP3R8Jdtlj8uQYPf09ZCzuAg=="/>
-        </item>
-        <item>
-            <title>1.3.2</title>
-            <pubDate>Wed, 21 Oct 2026 20:43:15 +0200</pubDate>
-            <link>https://github.com/Lexus2016/Nora</link>
-            <sparkle:version>8</sparkle:version>
-            <sparkle:shortVersionString>1.3.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[### Changed
-- Watch Downloads no longer keeps ClamAV's virus database in memory around the clock. After 5 minutes without a download to check, Nora stops ClamAV (about 1 GB, up to 2.4 GB during the daily reload) and loads it again when the next download arrives, which takes a few seconds. The watch itself stays on, so no download is skipped, and it is still off by default.
-
-### Fixed
-- The Trash reminder no longer goes silent for 30 minutes after "Not now" or an emptied Trash. Something new in the Trash is offered again as soon as it is measured; only items you already waved off or had emptied stay quiet, and so does Finder's own `.DS_Store`.
-- "Empty Trash" cannot be clicked on a list that is already out of date. When something lands in the Trash while the reminder is open, the button waits for the rescan, so it empties the current list instead of being refused and leaving the Trash half done.
-- When cleanup finds that the Trash changed since the review, Nora shows the current list again instead of leaving the rest with no window. Items thrown away while a cleanup runs are offered when it finishes.
-
-### Змінено
-- «Стежити за Завантаженнями» більше не тримає вірусну базу ClamAV у пам'яті постійно. Після 5 хвилин без файлу для перевірки Nora зупиняє ClamAV (близько 1 ГБ, до 2,4 ГБ під час щоденного оновлення) і завантажує його знову, коли надходить наступний файл, це займає кілька секунд. Саме стеження лишається ввімкненим, тож жоден файл не пропускається, і за замовчуванням воно, як і раніше, вимкнене.
-
-### Виправлено
-- Нагадування про кошик більше не мовчить 30 хвилин після «Не зараз» чи очищення. Нове в кошику пропонується знову, щойно його виміряно; тихими лишаються лише елементи, які ви вже відхилили або очистили, а також службовий `.DS_Store` від Finder.
-- Кнопку «Очистити кошик» не можна натиснути на списку, який уже застарів. Якщо в кошик щось потрапило, поки нагадування відкрите, кнопка чекає на повторну перевірку, тож очищає актуальний список, а не отримує відмову й не лишає кошик напівочищеним.
-- Якщо під час очищення виявляється, що кошик змінився після перегляду, Nora знову показує актуальний список, а не лишає залишок без вікна. Те, що потрапило в кошик під час очищення, пропонується, коли воно завершиться.
-]]></description>
-            <enclosure url="https://github.com/Lexus2016/Nora/releases/download/v1.3.2/Nora-1.3.2.dmg" length="7931479" type="application/octet-stream" sparkle:edSignature="cXITCGNjXi3YeZL7Otz6CaEYSCx/GlNBHfQ8/urKPzxmDK3l4n9J4UHXFtoxI85tsntqW9RR2PssBKQ5UYZQBg=="/>
         </item>
     </channel>
 </rss>
