@@ -144,6 +144,36 @@ struct UninstallParsingTests {
         #expect(RemovalList(lines, allowingPersonalData: true)?.personalData.isEmpty == true)
     }
 
+    /// Captured from `mo uninstall --dry-run CapCut` (Mole 1.72, sandbox home): a crash report
+    /// makes Mole print a `Review only:` row inside the plan. It is not a group and not a target.
+    /// Із `mo uninstall --dry-run CapCut` (Mole 1.72): звіт про збій додає рядок `Review only:`
+    /// всередині плану. Це не заголовок групи й не ціль видалення.
+    @Test func readsMole172ReviewOnlyAndSystemRows() throws {
+        let lines = [
+            "Files to be removed:",
+            "◎ CapCut , 8KB",
+            "  ✓ ~/Applications/CapCut.app , 8KB",
+            "  ✓ ~/Library/Caches/com.lemon.lvoverseas",
+            "  ◎ Review only: /Library/Logs/DiagnosticReports/CapCut_2026-11-17.diag , 29KB",
+            "  ◎ System: /Library/Application Support/CapCut/helper.plist , 4KB",
+            "",
+            "Personal data kept:",
+            "  ⊙ ~/Library/HTTPStorages/com.lemon.lvoverseas",
+            "D choose personal data",
+            "➤ Remove 1 app, 8KB  Enter confirm, ESC cancel:",
+        ]
+        let plan = try #require(RemovalList(lines, allowingPersonalData: true))
+        #expect(plan.groups == ["CapCut"])
+        #expect(plan.entries == ["~/Applications/CapCut.app", "~/Library/Caches/com.lemon.lvoverseas",
+                                 "/Library/Application Support/CapCut/helper.plist"])
+        #expect(plan.reviewOnly == ["/Library/Logs/DiagnosticReports/CapCut_2026-11-17.diag"])
+        #expect(plan.personalData == ["~/Library/HTTPStorages/com.lemon.lvoverseas"])
+        #expect(!plan.entries.contains { $0.contains("DiagnosticReports") })
+        var relative = lines
+        relative[4] = "  ◎ Review only: relative/path.diag , 1KB"
+        #expect(RemovalList(relative, allowingPersonalData: true) == nil)
+    }
+
     @Test func personalDataMenuRequiresExactVisiblePathsAndSelection() {
         let paths: Set<String> = ["~/Library/Application Support/App", "~/Library/Preferences/app.plist"]
         let lines = ["Personal data to remove  0/2 selected", "➤ ○ ~/Library/Application Support/App",

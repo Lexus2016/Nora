@@ -34,14 +34,23 @@ extension PTYSession {
 /// header per app, then `✓ entry , size` rows, ending at the `➤` prompt.
 ///
 /// Strict on purpose: the list is accepted only when every non-empty line up to the `➤` prompt is
-/// a header or an entry and the prompt is on screen. A wrapped long path, an unexpected line or a
-/// list that scrolled off the top makes it nil, and the drivers then refuse to confirm.
+/// a header, an entry, a `System:` target or a `Review only:` note, and the prompt is on screen.
+/// A wrapped long path, an unexpected line or a list that scrolled off the top makes it nil, and
+/// the drivers then refuse to confirm.
 /// Mole 1.64 groups selected personal paths under `Personal data to remove:`; those are entries.
 /// Mole 1.64 групує вибрані особисті шляхи під `Personal data to remove:`; вони входять до списку видалення.
+/// Mole 1.72 adds `System:` targets (removed with admin rights) and `Review only:` notes
+/// (diagnostic reports Mole names but never removes); the notes must not become group headers.
+/// Mole 1.72 додає цілі `System:` (видаляються з правами адміністратора) і примітки
+/// `Review only:` (звіти діагностики, які Mole називає, але не видаляє); примітки не мають
+/// ставати заголовками груп.
 struct RemovalList: Equatable {
     var groups: [String] = []
     var entries: [String] = []
     var personalData: [String] = []
+    /// Paths Mole prints under `Review only:`: shown, never removed, so never part of the plan.
+    /// Шляхи під `Review only:`: показані, але не видаляються, тому не входять до плану.
+    var reviewOnly: [String] = []
 
     init(groups: [String] = [], entries: [String] = []) {
         self.groups = groups
@@ -76,6 +85,16 @@ struct RemovalList: Equatable {
                 let path = String(line.dropFirst(2))
                 guard path.hasPrefix("/") || path.hasPrefix("~/") else { return nil }
                 personalData.append(path)
+            } else if line.hasPrefix(Self.reviewOnlyPrefix) {
+                // Mole names these but never removes them, so they stay out of the plan.
+                let path = Self.stripSize(line.dropFirst(Self.reviewOnlyPrefix.count))
+                guard path.hasPrefix("/") || path.hasPrefix("~/") else { return nil }
+                reviewOnly.append(path)
+            } else if line.hasPrefix(Self.systemPrefix) {
+                // Mole removes system-level leftovers with admin rights; they are real entries.
+                let path = Self.stripSize(line.dropFirst(Self.systemPrefix.count))
+                guard path.hasPrefix("/") || path.hasPrefix("~/") else { return nil }
+                entries.append(path)
             } else if line.hasPrefix("◎ ") {
                 guard !sawSelectedData else { return nil }
                 groups.append(Self.stripSize(line.dropFirst(2)))
@@ -91,6 +110,11 @@ struct RemovalList: Equatable {
               Set(personalData).count == personalData.count,
               Set(entries).isDisjoint(with: personalData) else { return nil }
     }
+
+    /// Mole 1.72 prefixes these rows with its warning icon (`◎` in 1.72).
+    /// Mole 1.72 позначає ці рядки іконкою попередження (`◎` у 1.72).
+    static let reviewOnlyPrefix = "◎ Review only: "
+    static let systemPrefix = "◎ System: "
 
     private static func stripSize(_ text: Substring) -> String {
         guard let comma = text.range(of: " , ", options: .backwards) ?? text.range(of: ", ", options: .backwards) else {
