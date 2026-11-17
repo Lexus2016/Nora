@@ -270,7 +270,7 @@ final class TrashReminderModel {
             self.recoveryChecked = true
             self.recoveryPending = result.blocksNewRun
             self.diagnostic = result.detail
-            if keepsFolder, !result.blocksNewRun { self.preservedFolder = result.folder }
+            if keepsFolder, let folder = result.folder { self.preservedFolder = folder }
             self.phase = result.blocksNewRun ? .recoveryRequired : .unavailable
             self.notice = result.blocksNewRun ? nil : finished
             self.finishWork()
@@ -428,7 +428,7 @@ final class TrashReminderModel {
     /// cannot start a scanner, executor, recovery operation, or watcher. No Task/token is created.
     func setSnapshotFixture(phase: Phase, snapshot: TrashReminderSnapshot?, notice: String? = nil,
                             outcome: TrashReminderOutcome? = nil, operation: SnapshotOperation? = nil,
-                            stopRequested: Bool = false) {
+                            stopRequested: Bool = false, diagnostic: String? = nil, preservedFolder: URL? = nil) {
         precondition(!permitsMonitoring && !isMonitoring && !snapshotFixtureHasScheduledWork)
         let operation = operation ?? (phase == .scanning ? .scanning : phase == .cleaning ? .cleaning : .idle)
         precondition(!stopRequested || operation == .scanning || operation == .cleaning)
@@ -437,6 +437,8 @@ final class TrashReminderModel {
         self.snapshot = snapshot
         self.notice = notice
         self.outcome = outcome
+        self.diagnostic = diagnostic
+        self.preservedFolder = preservedFolder
         self.stopRequested = stopRequested
         operationInProgress = operation != .idle
         canCancelOperation = operation == .scanning || operation == .cleaning

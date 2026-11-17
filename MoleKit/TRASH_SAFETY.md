@@ -56,6 +56,26 @@ does not repeat deletions. Malformed or unreadable journals/manifests block new 
 private, single-link, bounded regular temporary journal files and genuinely metadata-only
 orphan run directories can be cleaned without touching payload. Unknown recovery entries,
 symlinks, non-empty directories, and conflicting identities are preserved for manual recovery.
+Finder's own view-settings file in the recovery folder (`.DS_Store`) is not a recovery entry
+and never blocks a run; any other unrecognised name still does, and the error names it. A journal of another version is reported with its version.
+
+### Setting a recovery aside
+
+When a recovery cannot be finished, `TrashService.setRecoveryAside()` is the way out. It holds
+the same process-independent recovery lock, then renames the whole recovery folder where it
+stands (`Application Support/Nora/TrashRecovery`, or `.NoraTrash-<uid>` on a disk) to
+`<name>-preserved-<yyyyMMdd-HHmmss>` with an exclusive rename. It reads, copies, restores and
+deletes nothing, so every preserved item stays byte for byte where it was, under a name no later
+run examines, and the next cleanup starts with a fresh folder. It fails closed: when another
+Nora holds the lock, when the target name exists, or when the rename is unsupported, nothing
+moves and the Trash stays blocked. After taking the lock it checks that the name still resolves
+to the very folder it locked, because the lock file lives inside the folder being renamed. The
+recovery lock must be a private regular file of the user (`.lock`, mode 600, one link); a copy tool
+or a `chmod` can break that, and the error then says so. The fix is `chmod 600` on that file, after
+which restoring works again. A lock kept outside the recovery folder would also close the last
+microsecond between that check and the rename; it is not done, because it changes the lock in every
+execution path. Deleting the recovery folder by hand destroys the items preserved in it and is
+never the advice.
 
 ## Explicit residual boundary
 

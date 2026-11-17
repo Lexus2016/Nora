@@ -63,7 +63,7 @@ public final class TrashService: @unchecked Sendable {
             do {
                 let parentFD = try openParent()
                 guard let recovery = try openRecovery(parentFD, create: false) else { return clearStatus }
-                let heldLock = try TrashDirectory(nora_trash_lock(recovery.descriptor), operation: "lock recovery")
+                let heldLock = try Self.lockRecovery(recovery)
                 defer { withExtendedLifetime(heldLock) {} }
                 for name in try runNames(recovery) {
                     let run = try openPrivate(name, in: recovery, device: try TrashFS.identity(parentFD).device)
@@ -87,8 +87,16 @@ public final class TrashService: @unchecked Sendable {
             do {
                 let parentFD = try openParent()
                 guard let folder = try openRecoveryFolder(parentFD, create: false) else { return clearStatus }
-                let heldLock = try TrashDirectory(nora_trash_lock(folder.directory.descriptor), operation: "lock recovery")
+                let heldLock = try Self.lockRecovery(folder.directory)
                 defer { withExtendedLifetime(heldLock) {} }
+                // The lock lives inside the folder about to be renamed. If another Nora set this folder aside
+                // while this one waited for the lock, the name now belongs to a newer folder this lock does not
+                // cover: rename nothing.
+                try transition(.beforeSetAside)
+                guard let current = try TrashFS.optionalIdentity(folder.name, in: folder.container),
+                      current.sameObject(as: try TrashFS.identity(folder.directory)) else {
+                    throw TrashSafetyError.recoveryRequired("the recovery folder changed while it was being set aside; check again")
+                }
                 let aside = "\(folder.name)-preserved-\(Self.stamp(now))"
                 try TrashFS.move(folder.name, from: folder.container, to: folder.container, as: aside)
                 let url = recoveryURL.deletingLastPathComponent().appendingPathComponent(aside, isDirectory: true)
@@ -97,6 +105,17 @@ public final class TrashService: @unchecked Sendable {
                                            recoveryDirectoryURL: url)
             } catch { return blockedStatus(error.localizedDescription) }
         }
+    }
+
+    /// The recovery lock, with the one failure a person can fix said in words: `.lock` must be a private
+    /// regular file of this user (Nora creates it that way), and a copy tool or a `chmod` can change that.
+    private static func lockRecovery(_ directory: TrashDirectory) throws -> TrashDirectory {
+        let descriptor = nora_trash_lock(directory.descriptor)
+        if descriptor < 0, errno == EINVAL {
+            throw TrashSafetyError.recoveryRequired(
+                "the lock file in the recovery folder has unexpected permissions or ownership; it must be a private file (mode 600) owned by you")
+        }
+        return try TrashDirectory(descriptor, operation: "lock recovery")
     }
 
     private static func stamp(_ date: Date) -> String {

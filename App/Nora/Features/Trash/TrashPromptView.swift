@@ -57,6 +57,7 @@ struct TrashPromptView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(foreground.opacity(0.86))
                         .lineLimit(2).minimumScaleFactor(0.85)
+                        .help(failureDetail ?? "")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -169,12 +170,17 @@ struct TrashPromptView: View {
         }
     }
 
-    /// A failed cleanup says why, in the backend's own words; every other state keeps the standing note.
+    /// Why a cleanup failed, in the backend's own words; nil in every other state.
+    private var failureDetail: String? {
+        guard model.phase == .finished, model.outcome?.status == .failed,
+              let detail = model.diagnostic, !detail.isEmpty else { return nil }
+        return detail
+    }
+
+    /// A failed cleanup says why (the panel is small, so the full text is also the tooltip); every other
+    /// state keeps the standing note.
     private var footnote: Text {
-        if model.phase == .finished, model.outcome?.status == .failed,
-           let detail = model.diagnostic, !detail.isEmpty {
-            return Text(verbatim: detail)
-        }
+        if let detail = failureDetail { return Text(verbatim: detail) }
         return Text("Home Trash and connected disks are checked.")
     }
 
@@ -256,6 +262,7 @@ struct TrashReminderSettingsSection: View {
                     .disabled(model.isWorking || model.externalBlocker() != nil)
             }
             if let folder = model.preservedFolder {
+                if let notice = model.notice { Text(notice).font(.caption).foregroundStyle(.secondary) }
                 Text(verbatim: folder.path).font(.caption).textSelection(.enabled)
                 Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([folder]) }
             }

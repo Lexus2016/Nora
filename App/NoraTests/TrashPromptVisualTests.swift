@@ -67,6 +67,45 @@ final class TrashPromptVisualTests: XCTestCase {
         }
     }
 
+    /// The states added for audit items C1 and C2: a cleanup that did not finish, the way out of a recovery
+    /// Nora cannot finish, and the question before quitting. Written to NoraVisualSmoke as PNGs too.
+    func testFailureAndRecoveryWayOutPresentations() throws {
+        let snapshot = TrashReminderSnapshot(contentIdentity: "visual-failure-only", topLevelItemCount: 8,
+                                             entryCount: 31, logicalBytes: 1_400_000_000)
+        let failure = "Home Trash: Nora could not remove 3 items and left them where they were. The Trash on Backup must be emptied in Finder."
+        let folder = URL(fileURLWithPath: "/Users/someone/Library/Application Support/Nora/TrashRecovery-preserved-20261117-183045", isDirectory: true)
+        for locale in ["en", "uk", "ru"] {
+            let failed = TrashReminderModel(services: .disabled, monitor: InertTrashDirectoryMonitor(), permitsMonitoring: false)
+            failed.setSnapshotFixture(phase: .finished, snapshot: snapshot,
+                                      outcome: .init(status: .failed, deletedEntryCount: 3, detail: failure), diagnostic: failure)
+            try capture(TrashPromptView(model: failed, animationEnabled: false)
+                .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
+                name: "trash-panel-failed-\(locale)-520x260", size: CGSize(width: 520, height: 260))
+            XCTAssertTrue(failed.diagnostic?.hasPrefix("Home Trash") == true)
+
+            let stuck = TrashReminderModel(services: .disabled, monitor: InertTrashDirectoryMonitor(), permitsMonitoring: false)
+            stuck.setSnapshotFixture(phase: .recoveryRequired, snapshot: nil,
+                                     diagnostic: "Home: unrecognized recovery entry \"notes.txt\"")
+            try capture(Form { TrashReminderSettingsSection(model: stuck) }
+                .formStyle(.grouped).preferredColorScheme(.dark)
+                .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
+                name: "trash-settings-recovery-way-out-\(locale)-640x560", size: CGSize(width: 640, height: 560))
+
+            let moved = TrashReminderModel(services: .disabled, monitor: InertTrashDirectoryMonitor(), permitsMonitoring: false)
+            moved.setSnapshotFixture(phase: .unavailable, snapshot: nil,
+                                     notice: String(localized: "The recovery data was moved aside and nothing was deleted. Review the Trash again."),
+                                     diagnostic: "The recovery data was moved to \(folder.path). Nothing was deleted.", preservedFolder: folder)
+            try capture(Form { TrashReminderSettingsSection(model: moved) }
+                .formStyle(.grouped).preferredColorScheme(.dark)
+                .environment(\.locale, Locale(identifier: locale)).allowsHitTesting(false),
+                name: "trash-settings-recovery-moved-\(locale)-640x420", size: CGSize(width: 640, height: 420))
+            XCTAssertEqual(moved.preservedFolder, folder)
+            XCTAssertFalse(moved.blocksOtherMutations)
+        }
+        let running = ["/opt/homebrew/bin/mo clean --dry-run", "brew upgrade --cask visual-studio-code"]
+        assertAlertContent(QuitGuard.makeAlert(commands: running), lists: running)
+    }
+
     func testDecorativeMascotRestAndWaveFrames() throws {
         for angle in [0.0, 18.0, -18.0] {
             try capture(TrashMascot(size: 76, animationEnabled: false, snapshotWaveAngle: angle)
@@ -96,11 +135,40 @@ final class TrashPromptVisualTests: XCTestCase {
         host.layoutSubtreeIfNeeded()
         let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: bitmap)
+        try record(bitmap, name: name)
+    }
+
+    /// The system's own alert window cannot be drawn without being shown, so it is checked as words: the
+    /// message, the explanation and both buttons are really in the window, in the language of this run.
+    private func assertAlertContent(_ alert: NSAlert, lists commands: [String]) {
+        alert.layout()
+        let view = alert.window.contentView!
+        view.layoutSubtreeIfNeeded()
+        let words = Self.texts(in: view)
+        for expected in [String(localized: "Nora is still working"), String(localized: "Keep Working"),
+                         String(localized: "Stop and Quit")] {
+            XCTAssertTrue(words.contains(expected), "\(expected) is missing from \(words)")
+        }
+        XCTAssertTrue(words.contains { $0.contains(commands[0]) }, "the running command is named: \(words)")
+    }
+
+    private static func texts(in view: NSView) -> [String] {
+        var found: [String] = []
+        if let field = view as? NSTextField { found.append(field.stringValue) }
+        if let button = view as? NSButton { found.append(button.title) }
+        for sub in view.subviews { found += texts(in: sub) }
+        return found
+    }
+
+    private func record(_ bitmap: NSBitmapImageRep, name: String) throws {
         let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
         XCTAssertGreaterThan(png.count, 1_024)
         let attachment = XCTAttachment(data: png, uniformTypeIdentifier: "public.png")
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("NoraVisualSmoke", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try png.write(to: directory.appendingPathComponent(name + ".png"), options: .atomic)
     }
 }

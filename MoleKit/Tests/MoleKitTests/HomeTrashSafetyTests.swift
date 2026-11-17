@@ -384,6 +384,48 @@ final class HomeTrashSafetyTests: XCTestCase {
                        "a later cleanup leaves the preserved items alone")
     }
 
+    func testSetRecoveryAsideRefusesWhenTheFolderWasReplacedWhileItWaited() throws {
+        let fixture = try Fixture()
+        try leaveInterruptedRun(fixture)
+        let support = fixture.recovery.deletingLastPathComponent()
+        let elsewhere = support.appendingPathComponent("TrashRecovery-elsewhere", isDirectory: true)
+        // Between taking the lock and renaming, another Nora set this folder aside and a newer one took its name.
+        let service = fixture.service { event in
+            guard event == .beforeSetAside else { return }
+            try FileManager.default.moveItem(at: fixture.recovery, to: elsewhere)
+            try FileManager.default.createDirectory(at: fixture.recovery, withIntermediateDirectories: false,
+                                                    attributes: [.posixPermissions: 0o700])
+        }
+        let status = service.setRecoveryAside()
+        XCTAssertTrue(status.blocksNewRun, "the name no longer belongs to the folder that was locked")
+        XCTAssertTrue(status.message.contains("changed while it was being set aside"), status.message)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: fixture.recovery.path), "the newer folder was not renamed")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: fixture.recovery.path), [], "and it was not touched")
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: support.path)
+            .contains { $0.hasPrefix("TrashRecovery-preserved-") })
+    }
+
+    func testADamagedLockFileIsNamedAndTheManualFixWorks() throws {
+        let fixture = try Fixture()
+        try leaveInterruptedRun(fixture)
+        let lock = fixture.recovery.appendingPathComponent(".lock")
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: lock.path)
+
+        let service = fixture.service()
+        // The status check takes no lock: it only sees that a run is pending. The two actions that need the lock say why they cannot.
+        XCTAssertTrue(service.recoveryStatus().blocksNewRun)
+        for status in [service.recover(), service.setRecoveryAside()] {
+            XCTAssertTrue(status.blocksNewRun)
+            XCTAssertTrue(status.message.contains("unexpected permissions"), "it says what is wrong: \(status.message)")
+            XCTAssertTrue(status.message.contains("mode 600"), "and what it must be: \(status.message)")
+        }
+        XCTAssertEqual(try fixture.text("items/item-0", under: fixture.batch()), "precious", "nothing moved")
+
+        // The documented fix: make the lock private again.
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: lock.path)
+        XCTAssertFalse(fixture.service().recover().blocksNewRun, "restoring works again")
+    }
+
     func testSetRecoveryAsideWithNothingPendingChangesNothing() throws {
         let fixture = try Fixture()
         let status = fixture.service().setRecoveryAside()

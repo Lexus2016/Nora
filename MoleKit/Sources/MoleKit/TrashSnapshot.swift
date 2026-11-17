@@ -139,6 +139,7 @@ enum TrashTransition: Equatable {
     case beforeJournal(String), afterJournal(String)
     case beforeRestore(String), afterRestore(String)
     case beforeJournalRemoval, afterJournalRemoval
+    case beforeSetAside
 }
 
 enum TrashInjectedFailure: Error { case simulatedCrash }

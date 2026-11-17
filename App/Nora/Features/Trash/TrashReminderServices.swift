@@ -242,7 +242,10 @@ struct TrashReminderServices {
                     guard service.recoveryStatus().blocksNewRun else { continue }
                     let result = service.setRecoveryAside()
                     if result.blocksNewRun {
-                        return TrashReminderRecovery(blocksNewRun: true, detail: "\(location.label): \(result.message)")
+                        // What was already moved aside stays in the report, with its path: it is done.
+                        let failed = "\(location.label): \(result.message)"
+                        return TrashReminderRecovery(blocksNewRun: true, detail: (moved + [failed]).joined(separator: " "),
+                                                     folder: folder)
                     }
                     moved.append(result.message)
                     folder = result.recoveryDirectoryURL
