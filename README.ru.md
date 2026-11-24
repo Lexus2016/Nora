@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Lexus2016/Nora/releases/latest"><b>⬇ Скачать Nora для macOS</b></a>
+  <a href="https://github.com/Lexus2016/Nora/releases/latest"><b>⬇ Скачать Nora для macOS</b></a> · <a href="https://lexus2016.github.io/Nora/?lang=ru"><b>Сайт проекта</b></a>
 </p>
 
 ## Демо

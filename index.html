@@ -1,13 +1,572 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Nora</title>
-<meta http-equiv="refresh" content="0; url=prototype/">
-<link rel="canonical" href="prototype/">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nora — Clean up your Mac and see what takes up space</title>
+<meta name="description" content="See what fills your Mac. Review what Nora finds, free up disk space and uninstall apps with their leftovers. For macOS 14 and later.">
+<meta name="theme-color" content="#fff4e8">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="Nora">
+<meta property="og:url" content="https://lexus2016.github.io/Nora/">
+<meta property="og:title" content="Nora — Clean up your Mac and see what takes up space">
+<meta property="og:description" content="See what fills your Mac. Review what Nora finds, free up disk space and uninstall apps with their leftovers. For macOS 14 and later.">
+<meta property="og:image" content="https://lexus2016.github.io/Nora/docs/landing/social-en.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Nora for Mac. Give your Mac some room. Review the list before you clean. The picture shows Nora’s Cleanup window.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Nora — Clean up your Mac and see what takes up space">
+<meta name="twitter:description" content="See what fills your Mac. Review what Nora finds, free up disk space and uninstall apps with their leftovers. For macOS 14 and later.">
+<meta name="twitter:image" content="https://lexus2016.github.io/Nora/docs/landing/social-en.png">
+<meta name="twitter:image:alt" content="Nora for Mac. Give your Mac some room. Review the list before you clean. The picture shows Nora’s Cleanup window.">
+<link rel="canonical" href="https://lexus2016.github.io/Nora/">
+<link rel="icon" href="Design/AppIcon/AppIcon-256.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://lexus2016.github.io/Nora/#page",
+      "url": "https://lexus2016.github.io/Nora/",
+      "name": "Nora — Clean up your Mac and see what takes up space",
+      "description": "See what fills your Mac. Review what Nora finds, free up disk space and uninstall apps with their leftovers. For macOS 14 and later.",
+      "inLanguage": "en",
+      "primaryImageOfPage": "https://lexus2016.github.io/Nora/docs/landing/social-en.png",
+      "mainEntity": {
+        "@id": "https://lexus2016.github.io/Nora/#app"
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://lexus2016.github.io/Nora/#app",
+      "name": "Nora",
+      "description": "See what fills your Mac. Review what Nora finds, free up disk space and uninstall apps with their leftovers. For macOS 14 and later.",
+      "url": "https://lexus2016.github.io/Nora/",
+      "image": "https://lexus2016.github.io/Nora/docs/landing/social-en.png",
+      "operatingSystem": "macOS 14 or later",
+      "applicationCategory": "UtilitiesApplication",
+      "downloadUrl": "https://github.com/Lexus2016/Nora/releases/latest"
+    }
+  ]
+}
+</script>
+<style>
+@font-face{font-family:Unbounded;font-style:normal;font-weight:700;font-display:swap;src:url("docs/landing/fonts/unbounded-cyrillic-700.woff2") format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Unbounded;font-style:normal;font-weight:700;font-display:swap;src:url("docs/landing/fonts/unbounded-latin-ext-700.woff2") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Unbounded;font-style:normal;font-weight:700;font-display:swap;src:url("docs/landing/fonts/unbounded-latin-700.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Literata;font-style:normal;font-weight:400;font-display:swap;src:url("docs/landing/fonts/literata-cyrillic-400.woff2") format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Literata;font-style:normal;font-weight:400;font-display:swap;src:url("docs/landing/fonts/literata-latin-ext-400.woff2") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Literata;font-style:normal;font-weight:400;font-display:swap;src:url("docs/landing/fonts/literata-latin-400.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Literata;font-style:normal;font-weight:600;font-display:swap;src:url("docs/landing/fonts/literata-cyrillic-600.woff2") format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Literata;font-style:normal;font-weight:600;font-display:swap;src:url("docs/landing/fonts/literata-latin-ext-600.woff2") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Literata;font-style:normal;font-weight:600;font-display:swap;src:url("docs/landing/fonts/literata-latin-600.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+:root{color-scheme:light;--paper:#fff4e8;--ink:#1c140e;--muted:#5c4d3e;--surface:#fff;--rule:#1c140e;--board:#241c16;--cream:#fff6e4;--gold:#f0d7a2;--yellow:#ffe14a}
+:root[data-theme="dark"]{color-scheme:dark;--paper:#1c1612;--ink:#fff4e8;--muted:#e0cab5;--surface:#342820;--rule:#a88a72}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font:18px/1.55 Literata,Georgia,serif;margin:0}
+a{color:inherit;text-underline-offset:.18em}
+button,select,summary{font:inherit;color:inherit}
+button,select,summary{cursor:pointer}
+:focus-visible{outline:3px solid currentColor;outline-offset:4px}
+img{display:block;max-width:100%;height:auto}
+h1,h2,h3{font-family:Unbounded,Arial,sans-serif;line-height:1.1;letter-spacing:-.045em;margin:0;word-break:normal;overflow-wrap:normal;hyphens:none;text-wrap:balance}
+h1{font-size:clamp(2rem,4.25vw,3.45rem);max-width:15ch}
+h2{font-size:clamp(1.6rem,3.1vw,2.6rem)}
+h3{font-size:clamp(1.2rem,2.15vw,1.75rem);line-height:1.26}
+p{margin:0}
+[hidden]{display:none!important}
+.wrap{width:min(1120px,calc(100% - 32px));margin-inline:auto}
+.skip{position:absolute;left:12px;top:-90px;background:var(--yellow);color:#1c140e;z-index:30;padding:10px 14px}
+.skip:focus{top:12px}
+header{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:2px solid var(--rule)}
+.bar,.foot{display:flex;gap:12px;align-items:center;justify-content:space-between;min-height:68px}
+.brand{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-right:auto;text-decoration:none;font:700 15px/1.2 Unbounded,Arial,sans-serif}
+.brand img{width:34px;height:34px;border-radius:8px;flex:none}
+.links,.tools,.cta,.foot nav{display:flex;align-items:center;gap:12px}
+.links a,.foot a{display:inline-flex;align-items:center;min-height:44px;font-weight:600}
+.links a{text-decoration:none;white-space:nowrap}
+.links a:hover{text-decoration:underline}
+.control,.menu summary{background:var(--surface);border:2px solid var(--rule);border-radius:999px;min-height:44px;padding:0 10px}
+.control{font:700 12px Unbounded,Arial,sans-serif}
+.theme{min-width:44px;font-size:16px}
+.menu{display:none;position:relative}
+.menu summary{display:grid;place-items:center;list-style:none;min-width:44px}
+.menu summary::-webkit-details-marker{display:none}
+.menu-panel{position:absolute;right:0;top:calc(100% + 7px);background:var(--surface);border:2px solid var(--rule);border-radius:15px;padding:5px;min-width:min(210px,82vw)}
+.menu-panel a{display:block;padding:10px 14px;min-height:44px;text-decoration:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--rule);border-radius:999px;min-height:48px;padding:9px 15px;text-decoration:none;text-align:center;font:700 .78rem/1.3 Unbounded,Arial,sans-serif;background:var(--surface)}
+.btn:hover{box-shadow:inset 0 0 0 1px currentColor}
+.go{background:#1c140e;color:var(--yellow)}
+[data-theme="dark"] .go{background:var(--yellow);color:#1c140e}
+.hero{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);align-items:center;gap:36px;padding:48px 0 32px;position:relative;isolation:isolate}
+.hero::before{content:"";z-index:-1;position:absolute;inset:0 0 auto;height:290px;pointer-events:none;background:radial-gradient(ellipse at 5% 3%,#ff7e58bb,transparent 44%),radial-gradient(ellipse at 70% 1%,#ffe363bb,transparent 41%),radial-gradient(ellipse at 100% 42%,#55c8bcbc,transparent 39%)}
+[data-theme="dark"] .hero::before{opacity:.23}
+.hero p{margin-top:14px}
+.lead{font-size:20px;max-width:45ch}
+.sub{max-width:44ch}
+.note,.caption{font-size:14px;color:var(--muted)}
+.cta{flex-wrap:wrap;margin-top:19px}
+.board{background:var(--board);color:var(--cream);border-radius:26px;padding:16px 16px 12px;box-shadow:0 21px 44px #28120829;min-width:0}
+.stripes{height:12px;border-radius:8px;background:repeating-linear-gradient(to right,#ff4d3a 0 12.5%,#ffe14a 12.5% 25%,#14b8a6 25% 37.5%,#2f5bff 37.5% 50%)}
+.tiles{display:flex;justify-content:center;gap:6px;perspective:800px;margin-top:13px}
+.tile{position:relative;display:grid;place-items:center;width:58px;height:59px;border-radius:9px;background:linear-gradient(#3a3128,#2a231c);font:700 29px Unbounded,Arial,sans-serif}
+.tile::after{content:"";position:absolute;left:3px;right:3px;top:50%;border-top:1px solid #1c140e;pointer-events:none}
+.tile:last-child{color:var(--yellow)}
+.flip .tile{animation:flip .37s both}
+.flip .tile:nth-child(2){animation-delay:40ms}
+.flip .tile:nth-child(3){animation-delay:80ms}
+@keyframes flip{from{transform:rotateX(-90deg)}to{transform:rotateX(0)}}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-block:12px}
+.chip,.play{border:1px solid #907657;background:#3a3128;color:var(--cream);min-height:44px;border-radius:999px;padding:5px 13px;font-size:.88rem}
+.chip[aria-pressed="true"]{background:var(--yellow);color:#1c140e}
+.example{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
+.example div{background:#30261e;border:1px solid #907657;border-radius:12px;padding:12px}
+.example div+div{background:#3a3128}
+.example dt{color:var(--gold);font-size:14px;font-weight:600}
+.example dd{margin:4px 0 0;font-size:16px}
+.board .hint{text-align:center;color:var(--gold);font-size:13px;margin-top:10px}
+.ribbon{overflow:hidden;padding:10px 0;background:#1c140e;color:#fff6e4;font:700 14px Unbounded,Arial,sans-serif;white-space:nowrap}
+.ribbon span{display:block;width:max-content;min-width:100%;text-align:center;word-spacing:.14em}
+.ribbon b{color:#ffe14a}
+section[id],main[id]{scroll-margin-top:92px}
+.section{padding-block:49px}
+.section h2{margin-bottom:23px}
+.scenario{border-top:2px solid var(--rule);display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:32px;align-items:center;padding:26px 0}
+.scenario:nth-of-type(even){grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.scenario:nth-of-type(even) .copy{order:2}
+.scenario h3{margin-bottom:11px}
+figure{margin:0;min-width:0}
+.scenario img{width:100%;background:var(--board);border:2px solid #1c140e;border-radius:18px}
+figcaption{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.play{background:var(--surface);color:var(--ink);border:2px solid var(--rule)}
+.real{min-height:44px;display:inline-flex;align-items:center}
+.screens{margin-top:20px;border-block:1px solid var(--rule);padding:5px 0 10px}
+.screens summary{min-height:44px;align-content:center;font-weight:600}
+.screens img{display:block;width:min(100%,820px);max-height:580px;object-fit:contain;margin:10px auto 0;background:var(--board);border:2px solid var(--rule);border-radius:14px}
+.callout{margin-top:13px;padding:20px;border:2px solid #1c140e;border-radius:18px;background:#ffe14a;color:#1c140e}
+.callout h2{font-size:clamp(1.15rem,2vw,1.55rem);margin-bottom:8px}
+.callout p{max-width:70ch}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.step{border:2px solid var(--rule);border-radius:16px;padding:15px;background:var(--surface)}
+.step h3{font-size:1rem;margin-bottom:7px}
+.faq{margin-top:24px}
+.faq h2{font-size:clamp(1.35rem,2.4vw,1.8rem);margin-bottom:8px}
+.faq details{border-top:1px solid var(--rule);padding:5px 0 8px}
+.faq summary{min-height:44px;align-content:center;font-weight:600}
+footer{border-top:2px solid var(--rule)}
+.foot{flex-wrap:wrap;gap:8px;padding-block:8px}
+.foot nav{flex-wrap:wrap;gap:8px 14px;font-size:.88rem}
+@media(max-width:960px){.links,.bar>.btn{display:none}.menu{display:block}}
+@media(max-width:850px){
+ .hero,.scenario,.scenario:nth-of-type(even),.steps{grid-template-columns:1fr;gap:19px}
+ .hero{padding-top:28px}
+ .scenario:nth-of-type(even) .copy{order:0}
+ .section{padding-block:35px}
+}
+@media(max-width:455px){
+ .wrap{width:calc(100% - 22px)}
+ .bar{gap:6px;min-height:60px}
+ .tools{gap:5px}
+ .control{font-size:11px;padding:0 5px;max-width:102px}
+ .theme{font-size:15px;min-width:40px}
+ .brand{font-size:11px;gap:4px;text-wrap:balance}
+ .brand img{width:27px;height:27px}
+ .menu summary{position:relative;font-size:0;padding:0}
+ .menu summary::before{content:"";width:15px;height:2px;background:currentColor;box-shadow:0 5px 0 currentColor,0 -5px 0 currentColor}
+ h1{font-size:clamp(1.7rem,8vw,2.2rem)}
+ .lead{font-size:18px}
+ .example{grid-template-columns:1fr}
+ .section h2{margin-bottom:15px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.flip .tile{animation:none}}
+
+</style>
 </head>
-<body style="background:#17062f;color:#fff;font:15px -apple-system,system-ui,sans-serif">
-<p><a href="prototype/" style="color:#ff8ac6">Open the Nora interactive prototype →</a></p>
+<body id="top">
+<a data-copy="skip" class="skip" href="#main">Skip to content</a>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#top"><img src="Design/AppIcon/AppIcon-256.png" alt="" width="34" height="34">Nora</a>
+    <nav class="links" aria-label="Sections" data-label="sections"><a data-copy="features" class="" href="#features">What it solves</a><a data-copy="install" class="" href="#install">Get started</a></nav>
+    <div class="tools" data-nosnippet>
+      <select id="lang" class="control" aria-label="Site language" data-label="language"><option value="en" lang="en">English</option><option value="uk" lang="uk">Українська</option><option value="ru" lang="ru">Русский</option></select>
+      <button id="theme" type="button" class="control theme" aria-pressed="false" aria-label="Dark theme" data-label="theme">◐</button>
+      <details class="menu"><summary data-copy="menu">Menu</summary><div class="menu-panel"><a data-copy="features" class="" href="#features">What it solves</a><a data-copy="install" class="" href="#install">Get started</a></div></details>
+    </div>
+    <a data-copy="cta" class="btn go" href="https://github.com/Lexus2016/Nora/releases/latest">Download for Mac</a>
+  </div>
+</header>
+<main id="main">
+  <div class="wrap hero">
+    <div>
+      <h1 data-copy="headline">Give your Mac some room</h1>
+      <p data-copy="lead" class="lead">See what’s taking up space, review what can go, and clean up when you’re ready. Nora puts that whole job in one Mac window.</p>
+      <p data-copy="sub" class="sub">Already use Mole? Nora gives its tools a native Mac interface.</p>
+      <div class="cta"><a data-copy="cta" class="btn go" href="https://github.com/Lexus2016/Nora/releases/latest">Download for Mac</a><a data-copy="features" class="btn" href="#features">What it solves</a></div>
+      <p data-copy="meta" class="note">About 8 MB · macOS 14+ · Apple silicon and Intel</p>
+    </div>
+    <div class="board" data-nosnippet>
+      <div class="stripes" aria-hidden="true"></div>
+      <div class="tiles" aria-hidden="true"><span class="tile">✓</span><span class="tile">↗</span><span class="tile">−</span></div>
+      <div class="chips" role="group" aria-label="Try a scenario" data-label="tryIt" hidden>
+        <button data-copy="case0Label" class="chip" type="button" data-scenario="0" aria-pressed="true">Cleanup</button>
+        <button data-copy="case1Label" class="chip" type="button" data-scenario="1" aria-pressed="false">Disk space</button>
+        <button data-copy="case2Label" class="chip" type="button" data-scenario="2" aria-pressed="false">Apps</button>
+      </div>
+      <dl class="example" id="examples" aria-live="polite" aria-atomic="true">
+        <div><dt data-copy="before">The situation</dt><dd id="exampleBefore">The disk is nearly full.</dd></div>
+        <div><dt data-copy="after">What you can do</dt><dd id="exampleAfter">Scan first, then untick anything you want to keep.</dd></div>
+      </dl>
+      <p data-copy="sample" class="hint">Illustrated examples. The actions happen in the app.</p>
+    </div>
+  </div>
+  <div class="ribbon" data-nosnippet aria-hidden="true"><span>Nora <b>✶</b> English <b>✶</b> Українська <b>✶</b> Русский <b>✶</b> Nora</span></div>
+  <section id="features" class="wrap section">
+    <h2 data-copy="featureTitle">What’s getting in your way?</h2>
+      <article class="scenario">
+        <div class="copy">
+          <h3 data-copy="case0Problem">Your Mac says it’s running out of space.</h3>
+          <p data-copy="case0Body">Smart Care looks for material you may be able to clear. Nora shows the list before cleanup. Untick what you want to keep and start only when you’re ready.</p>
+        </div>
+        <figure data-nosnippet>
+          <img src="docs/landing/scenario-1.webp" loading="lazy" width="720" height="430" alt="" data-animation="docs/landing/scenario-1.gif">
+          <figcaption>
+            <span data-copy="animated" class="caption">Illustrated steps</span>
+            <button data-copy="play" class="play" type="button" aria-pressed="false" hidden>Play GIF</button>
+            <a data-copy="case0Shot" class="real caption" href="docs/screenshots/en/04-cleanup.webp">Nora Cleanup screen showing items grouped by category</a>
+          </figcaption>
+        </figure>
+      </article>
+      <article class="scenario">
+        <div class="copy">
+          <h3 data-copy="case1Problem">Which folder is taking up all that space?</h3>
+          <p data-copy="case1Body">Open Space Map to see the largest folders and files. Go one level deeper until you find what you were looking for.</p>
+        </div>
+        <figure data-nosnippet>
+          <img src="docs/landing/scenario-2.webp" loading="lazy" width="720" height="430" alt="" data-animation="docs/landing/scenario-2.gif">
+          <figcaption>
+            <span data-copy="animated" class="caption">Illustrated steps</span>
+            <button data-copy="play" class="play" type="button" aria-pressed="false" hidden>Play GIF</button>
+            <a data-copy="case1Shot" class="real caption" href="docs/screenshots/en/07-space-map.webp">Nora Space Map showing folder sizes</a>
+          </figcaption>
+        </figure>
+      </article>
+      <article class="scenario">
+        <div class="copy">
+          <h3 data-copy="case2Problem">Dragging an app to the Trash can leave files behind.</h3>
+          <p data-copy="case2Body">Open Applications to review the app and its related files before removing them. Nora also shows available updates and large or rarely used apps.</p>
+        </div>
+        <figure data-nosnippet>
+          <img src="docs/landing/scenario-3.webp" loading="lazy" width="720" height="430" alt="" data-animation="docs/landing/scenario-3.gif">
+          <figcaption>
+            <span data-copy="animated" class="caption">Illustrated steps</span>
+            <button data-copy="play" class="play" type="button" aria-pressed="false" hidden>Play GIF</button>
+            <a data-copy="case2Shot" class="real caption" href="docs/screenshots/en/05-applications.webp">Nora Applications screen with app categories</a>
+          </figcaption>
+        </figure>
+      </article>
+    <div class="callout"><h2 data-copy="extraTitle">Keep an eye on your Mac</h2><p data-copy="extra">See what’s using the processor or memory from the menu bar. Run a malware scan when you need one. ClamAV is an optional installation.</p></div>
+    <details class="screens">
+      <summary data-copy="screenshots">See the real interface</summary>
+      <img src="docs/screenshots/en/04-cleanup.webp" width="1600" height="1173" loading="lazy" alt="Nora Cleanup screen showing items grouped by category">
+    </details>
+  </section>
+  <section id="install" class="wrap section">
+    <h2 data-copy="install">Get started</h2>
+    <div class="steps">
+      <article class="step"><h3 data-copy="step0Title">Download and open</h3><p data-copy="step0Body">Open the downloaded disk image and drag Nora into Applications.</p></article>
+      <article class="step"><h3 data-copy="step1Title">Open Nora</h3><p data-copy="step1Body">Follow the prompt to install Mole if it’s missing.</p></article>
+      <article class="step"><h3 data-copy="step2Title">Start with a scan</h3><p data-copy="step2Body">Open Smart Care, scan and review the results before you run anything.</p></article>
+    </div>
+    <div class="cta"><a data-copy="cta" class="btn go" href="https://github.com/Lexus2016/Nora/releases/latest">Download for Mac</a><a data-copy="prototype" class="btn" href="prototype/">Open the early browser prototype</a></div>
+    <div class="faq">
+      <h2 data-copy="faq">Common questions</h2>
+      <details><summary data-copy="faq0Q">Will a scan delete anything?</summary><p data-copy="faq0A">A scan shows what Nora found. Cleanup starts after you act on the review. Some cleanup categories are removed permanently, so read the list before continuing.</p></details>
+      <details><summary data-copy="faq1Q">Does Nora replace my antivirus?</summary><p data-copy="faq1A">Nora can scan for known malware with ClamAV after you install it. It works alongside macOS protections.</p></details>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap foot">
+    <a href="#top" class="brand">Nora</a>
+    <nav aria-label="Project links" data-nosnippet>
+      <a data-copy="source" class="" href="https://github.com/Lexus2016/Nora">Source on GitHub</a> <a data-copy="releases" class="" href="https://github.com/Lexus2016/Nora/releases">Releases</a> <a href="https://github.com/Lexus2016/Nora/blob/main/README.md" lang="en">English</a> <a href="https://github.com/Lexus2016/Nora/blob/main/README.uk.md" lang="uk">Українська</a> <a href="https://github.com/Lexus2016/Nora/blob/main/README.ru.md" lang="ru">Русский</a>
+    </nav>
+  </div>
+</footer>
+<script>
+const COPY = {
+  "en": {
+    "skip": "Skip to content",
+    "sections": "Sections",
+    "language": "Site language",
+    "theme": "Dark theme",
+    "menu": "Menu",
+    "features": "What it solves",
+    "install": "Get started",
+    "tryIt": "Try a scenario",
+    "before": "The situation",
+    "after": "What you can do",
+    "sample": "Illustrated examples. The actions happen in the app.",
+    "play": "Play GIF",
+    "stop": "Stop GIF",
+    "animated": "Illustrated steps",
+    "screenshots": "See the real interface",
+    "faq": "Common questions",
+    "source": "Source on GitHub",
+    "releases": "Releases",
+    "headline": "Give your Mac some room",
+    "lead": "See what’s taking up space, review what can go, and clean up when you’re ready. Nora puts that whole job in one Mac window.",
+    "sub": "Already use Mole? Nora gives its tools a native Mac interface.",
+    "cta": "Download for Mac",
+    "meta": "About 8 MB · macOS 14+ · Apple silicon and Intel",
+    "featureTitle": "What’s getting in your way?",
+    "extraTitle": "Keep an eye on your Mac",
+    "extra": "See what’s using the processor or memory from the menu bar. Run a malware scan when you need one. ClamAV is an optional installation.",
+    "prototype": "Open the early browser prototype",
+    "case0Label": "Cleanup",
+    "case0Before": "The disk is nearly full.",
+    "case0After": "Scan first, then untick anything you want to keep.",
+    "case0Problem": "Your Mac says it’s running out of space.",
+    "case0Body": "Smart Care looks for material you may be able to clear. Nora shows the list before cleanup. Untick what you want to keep and start only when you’re ready.",
+    "case0Shot": "Nora Cleanup screen showing items grouped by category",
+    "case1Label": "Disk space",
+    "case1Before": "You don’t know what’s taking up space.",
+    "case1After": "Open the Space Map and follow the largest folders.",
+    "case1Problem": "Which folder is taking up all that space?",
+    "case1Body": "Open Space Map to see the largest folders and files. Go one level deeper until you find what you were looking for.",
+    "case1Shot": "Nora Space Map showing folder sizes",
+    "case2Label": "Apps",
+    "case2Before": "You no longer use an app.",
+    "case2After": "Review the app and the related files Nora found.",
+    "case2Problem": "Dragging an app to the Trash can leave files behind.",
+    "case2Body": "Open Applications to review the app and its related files before removing them. Nora also shows available updates and large or rarely used apps.",
+    "case2Shot": "Nora Applications screen with app categories",
+    "step0Title": "Download and open",
+    "step0Body": "Open the downloaded disk image and drag Nora into Applications.",
+    "step1Title": "Open Nora",
+    "step1Body": "Follow the prompt to install Mole if it’s missing.",
+    "step2Title": "Start with a scan",
+    "step2Body": "Open Smart Care, scan and review the results before you run anything.",
+    "faq0Q": "Will a scan delete anything?",
+    "faq0A": "A scan shows what Nora found. Cleanup starts after you act on the review. Some cleanup categories are removed permanently, so read the list before continuing.",
+    "faq1Q": "Does Nora replace my antivirus?",
+    "faq1A": "Nora can scan for known malware with ClamAV after you install it. It works alongside macOS protections.",
+    "webGuide": "Web setup guide"
+  },
+  "uk": {
+    "skip": "Перейти до вмісту",
+    "sections": "Розділи",
+    "language": "Мова сайту",
+    "theme": "Темна тема",
+    "menu": "Меню",
+    "features": "Як допомагає",
+    "install": "Як почати",
+    "tryIt": "Спробуйте сценарій",
+    "before": "Ситуація",
+    "after": "Що можна зробити",
+    "sample": "Це готові приклади. Дії виконуються в застосунку.",
+    "play": "Запустити GIF",
+    "stop": "Зупинити GIF",
+    "animated": "Приклад у дії",
+    "screenshots": "Як виглядає застосунок",
+    "faq": "Поширені запитання",
+    "source": "Код на GitHub",
+    "releases": "Випуски",
+    "headline": "Звільніть місце на Mac",
+    "lead": "Дізнайтеся, що займає диск, перегляньте, що можна прибрати, і запустіть очищення, коли будете готові. Усе в одному вікні Nora.",
+    "sub": "Уже користуєтеся Mole? У Nora ті самі інструменти доступні у вікні Mac.",
+    "cta": "Завантажити для Mac",
+    "meta": "Близько 8 МБ · macOS 14+ · чипи Apple та Intel",
+    "featureTitle": "З чим допомагає Nora",
+    "extraTitle": "Стежте за станом Mac",
+    "extra": "У рядку меню видно, що навантажує процесор і займає пам’ять. За потреби можна перевірити файли на шкідливе ПЗ, встановивши ClamAV.",
+    "prototype": "Відкрити ранній прототип",
+    "case0Label": "Очищення",
+    "case0Before": "На диску майже немає місця.",
+    "case0After": "Спочатку перевірте список і зніміть позначки з того, що хочете лишити.",
+    "case0Problem": "Mac повідомляє, що на диску мало місця.",
+    "case0Body": "Відкрийте Smart Care. Nora знайде те, що можна прибрати, й покаже список. Зніміть позначки з потрібних файлів і самі запустіть очищення.",
+    "case0Shot": "Екран очищення Nora зі списком категорій",
+    "case1Label": "Місце на диску",
+    "case1Before": "Незрозуміло, що займає диск.",
+    "case1After": "Відкрийте карту диска й перегляньте найбільші папки.",
+    "case1Problem": "Яка папка займає стільки місця?",
+    "case1Body": "На карті диска видно найбільші папки й файли. Відкривайте папки, доки не знайдете те, що шукали.",
+    "case1Shot": "Карта диска Nora з розмірами папок",
+    "case2Label": "Програми",
+    "case2Before": "Ви більше не користуєтеся програмою.",
+    "case2After": "Перегляньте програму й пов’язані файли, які знайшла Nora.",
+    "case2Problem": "Програму видалено, а її файли можуть залишитися.",
+    "case2Body": "У розділі програм можна переглянути застосунок і пов’язані файли перед видаленням. Там також видно оновлення, великі програми й ті, які ви рідко відкриваєте.",
+    "case2Shot": "Розділ програм у Nora",
+    "step0Title": "Завантажте й відкрийте",
+    "step0Body": "Відкрийте завантажений файл і перетягніть Nora до папки «Програми».",
+    "step1Title": "Відкрийте Nora",
+    "step1Body": "Якщо Mole ще немає, Nora запропонує його встановити.",
+    "step2Title": "Почніть зі сканування",
+    "step2Body": "Відкрийте Smart Care, запустіть сканування й перегляньте список.",
+    "faq0Q": "Сканування щось видаляє?",
+    "faq0A": "Сканування показує, що знайшла Nora. Очищення починається після вашої дії. Деякі категорії очищуються без перенесення до Кошика, тому спочатку перегляньте список.",
+    "faq1Q": "Чи замінює Nora антивірус?",
+    "faq1A": "Після встановлення ClamAV Nora може перевіряти файли на відомі загрози. Вона працює разом із засобами захисту macOS.",
+    "webGuide": "Запуск у браузері"
+  },
+  "ru": {
+    "skip": "К содержанию",
+    "sections": "Разделы",
+    "language": "Язык сайта",
+    "theme": "Тёмная тема",
+    "menu": "Меню",
+    "features": "Чем помогает",
+    "install": "Как начать",
+    "tryIt": "Попробуйте сценарий",
+    "before": "Ситуация",
+    "after": "Что можно сделать",
+    "sample": "Это готовые примеры. Действия выполняются в приложении.",
+    "play": "Запустить GIF",
+    "stop": "Остановить GIF",
+    "animated": "Пример в действии",
+    "screenshots": "Как выглядит приложение",
+    "faq": "Частые вопросы",
+    "source": "Код на GitHub",
+    "releases": "Выпуски",
+    "headline": "Освободите место на Mac",
+    "lead": "Узнайте, что занимает диск, проверьте, что можно убрать, и запустите очистку, когда будете готовы. Всё в одном окне Nora.",
+    "sub": "Уже пользуетесь Mole? В Nora те же инструменты доступны в окне Mac.",
+    "cta": "Скачать для Mac",
+    "meta": "Около 8 МБ · macOS 14+ · чипы Apple и Intel",
+    "featureTitle": "В чём помогает Nora",
+    "extraTitle": "Следите за состоянием Mac",
+    "extra": "В строке меню видно, что нагружает процессор и занимает память. При необходимости можно проверить файлы на вредоносные программы, установив ClamAV.",
+    "prototype": "Открыть ранний прототип",
+    "case0Label": "Очистка",
+    "case0Before": "На диске почти нет места.",
+    "case0After": "Сначала проверьте список и снимите отметки с нужных файлов.",
+    "case0Problem": "Mac сообщает, что на диске мало места.",
+    "case0Body": "Откройте Smart Care. Nora найдёт то, что можно убрать, и покажет список. Снимите отметки с нужных файлов и запустите очистку сами.",
+    "case0Shot": "Экран очистки Nora со списком категорий",
+    "case1Label": "Место на диске",
+    "case1Before": "Непонятно, что занимает диск.",
+    "case1After": "Откройте карту диска и проверьте самые большие папки.",
+    "case1Problem": "Какая папка занимает столько места?",
+    "case1Body": "На карте диска видны самые большие папки и файлы. Открывайте папки, пока не найдёте то, что искали.",
+    "case1Shot": "Карта диска Nora с размерами папок",
+    "case2Label": "Программы",
+    "case2Before": "Вы перестали пользоваться программой.",
+    "case2After": "Проверьте программу и связанные файлы, которые нашла Nora.",
+    "case2Problem": "Программу удалили, а её файлы могут остаться.",
+    "case2Body": "В разделе программ можно проверить приложение и связанные файлы перед удалением. Там же видны обновления, крупные и редко используемые программы.",
+    "case2Shot": "Раздел программ в Nora",
+    "step0Title": "Скачайте и откройте",
+    "step0Body": "Откройте скачанный файл и перетащите Nora в папку «Программы».",
+    "step1Title": "Откройте Nora",
+    "step1Body": "Если Mole ещё нет, Nora предложит установить его.",
+    "step2Title": "Начните со сканирования",
+    "step2Body": "Откройте Smart Care, запустите сканирование и просмотрите список.",
+    "faq0Q": "Сканирование что-нибудь удаляет?",
+    "faq0A": "Сканирование показывает, что нашла Nora. Очистка начинается после вашего действия. Некоторые категории очищаются без перемещения в Корзину, поэтому сначала проверьте список.",
+    "faq1Q": "Заменяет ли Nora антивирус?",
+    "faq1A": "После установки ClamAV Nora может проверять файлы на известные угрозы. Она работает вместе со средствами защиты macOS.",
+    "webGuide": "Запуск в браузере"
+  }
+};
+
+const params = new URLSearchParams(location.search);
+const langPicker = document.querySelector("#lang");
+const themeButton = document.querySelector("#theme");
+const tabs = [...document.querySelectorAll("[data-scenario]")];
+const example = document.querySelector("#examples");
+const tiles = document.querySelector(".tiles");
+const menu = document.querySelector(".menu");
+const text = [...document.querySelectorAll("[data-copy]")];
+const labels = [...document.querySelectorAll("[data-label]")];
+const altText = document.querySelector(".screens img");
+const assets = [...document.querySelectorAll("[data-animation]")];
+let language = "en";
+let selected = 0;
+
+function preference(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+function store(key, value) {
+  try { localStorage.setItem(key, value); } catch { /* Storage may be unavailable. */ }
+}
+
+function showScenario() {
+  const pack = COPY[language];
+  const input = pack["case" + selected + "Before"];
+  const output = pack["case" + selected + "After"];
+  example.querySelector("#exampleBefore").textContent = input;
+  example.querySelector("#exampleAfter").textContent = output;
+  tabs.forEach((tab, index) => tab.setAttribute("aria-pressed", String(index === selected)));
+}
+
+function applyLanguage(next) {
+  language = Object.hasOwn(COPY, next) ? next : "en";
+  const pack = COPY[language];
+  document.documentElement.lang = langPicker.value = language;
+  text.forEach(node => { node.textContent = pack[node.dataset.copy]; });
+  labels.forEach(node => { node.setAttribute("aria-label", pack[node.dataset.label]); });
+  altText.alt = pack.case0Shot;
+  for (const image of assets) {
+    const button = image.closest("figure").querySelector(".play");
+    button.textContent = pack[button.getAttribute("aria-pressed") === "true" ? "stop" : "play"];
+  }
+  showScenario();
+}
+
+function applyTheme(mode) {
+  const dark = mode === "dark";
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  themeButton.setAttribute("aria-pressed", String(dark));
+}
+
+for (const [index, tab] of tabs.entries()) {
+  tab.addEventListener("click", () => {
+    selected = index;
+    showScenario();
+    tiles.classList.remove("flip");
+    void tiles.offsetWidth;
+    tiles.classList.add("flip");
+  });
+}
+
+for (const image of assets) {
+  const still = image.getAttribute("src");
+  const button = image.closest("figure").querySelector(".play");
+  button.addEventListener("click", () => {
+    const play = button.getAttribute("aria-pressed") !== "true";
+    image.src = play ? image.dataset.animation : still;
+    button.setAttribute("aria-pressed", String(play));
+    button.textContent = COPY[language][play ? "stop" : "play"];
+  });
+  button.hidden = false;
+}
+langPicker.addEventListener("change", () => {
+  applyLanguage(langPicker.value);
+  store("landing-language", language);
+  const current = new URL(location.href);
+  current.searchParams.set("lang", language);
+  history.replaceState(null, "", current);
+});
+themeButton.addEventListener("click", () => {
+  const mode = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  applyTheme(mode);
+  store("landing-theme", mode);
+});
+menu.querySelectorAll("a").forEach(link => link.addEventListener("click", () => { menu.open = false; }));
+applyLanguage(params.get("lang") || preference("landing-language") || "en");
+applyTheme(params.get("theme") || preference("landing-theme") || "light");
+document.querySelector(".chips").hidden = false;
+
+</script>
 </body>
 </html>
